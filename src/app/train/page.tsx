@@ -12,7 +12,9 @@ import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
 import { demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDefault, supersetColor, type Exercise, type ExerciseLog, type SetType } from "@/lib/data";
-import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from "@/lib/lifting";
+import { baseOf, bests, countsPR, e1rm, hhmmss, liftsOf, mmss, parseResult, setLabels } from "@/lib/lifting";
+import { bodyFor, estimate1rm, isLoadedBodyweight } from "@/lib/strength";
+import OneRM from "@/components/OneRM";
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
 const readRest = () => { try { return Number(localStorage.getItem(REST_KEY)) || 90; } catch { return 90; } };
@@ -36,7 +38,9 @@ export default function Train() {
     return () => clearInterval(id);
   }, []);
 
-  const prev = bests(baseOf(me), s.sessions);
+  const body = bodyFor(s.library, Number(me.bw));
+  const prev = bests(baseOf(me), s.sessions, body);
+  const anchors = { ...liftsOf(prev), bw: Number(me.bw), sex: me.sex };
   const a = s.active;
 
   // null = empty workout; otherwise a routine (yours or an example). Its target sets become the sets to tick off.
@@ -252,7 +256,7 @@ export default function Train() {
               <ExerciseThumb ex={lib.get(ex.name)} size={48} />
               <div className="min-w-0 flex-1">
                 <h2 className="font-semibold">{ex.name}</h2>
-                {best && <p className="muted flex items-center gap-1 text-xs"><Icon name="medal" size={14} />Best est. 1RM <b className="font-semibold text-zinc-700 dark:text-zinc-200">{w(Math.round(best), u)}</b></p>}
+                {!isTimed(ex) && <OneRM logged={best} est={estimate1rm(lib.get(ex.name)?.id, anchors)} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
                 {(a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
                     className={`mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
@@ -273,7 +277,8 @@ export default function Train() {
             <div className={`mt-3 grid ${isTimed(ex) ? "grid-cols-[2.25rem_1fr_1fr_2.25rem_2.5rem_1.5rem]" : "grid-cols-[2.25rem_1fr_1fr_2.5rem_1.5rem]"} items-center gap-2 text-xs`}>
               <span className="muted">Set</span><span className="muted text-center">{u}</span><span className="muted text-center">{isTimed(ex) ? "Time" : "Reps"}</span>{isTimed(ex) && <span />}<span /><span />
               {ex.sets.map((st, j) => {
-                const pr = st.done && countsPR(st.type) && e1rm(st.kg, st.reps) > (best ?? 0);
+                const b = body(ex.name);
+                const pr = st.done && countsPR(st.type) && e1rm(st.kg + b, st.reps) - b > (best ?? 0);
                 return (
                   <div key={j} className="contents">
                     <button onClick={() => setTyping({ i, j })} aria-label={`Set ${labels[j]}: ${st.type ? setTypes[st.type].label : "normal"}. Change set type`}

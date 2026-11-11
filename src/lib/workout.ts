@@ -2,12 +2,13 @@ import { timedByDefault, type Exercise, type ExerciseLog, type PostExercise } fr
 import { countsPR, countsVolume, e1rm, mmss } from "./lifting";
 
 // Turn the sets ticked in a workout into what gets saved: done exercises, PRs, the post's exercise list, volume and set count.
-export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<string, number>) {
+export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<string, number>, body: (name: string) => number = () => 0) {
   const lib = new Map(library.map((e) => [e.name, e]));
   const isTimed = (e: ExerciseLog) => e.timed ?? timedByDefault(lib.get(e.name)?.id);
   const done = exs.map((e) => ({ ...e, sets: e.sets.filter((x) => x.done) })).filter((e) => e.sets.length);
+  const top1rm = (e: ExerciseLog) => { const b = body(e.name); return Math.max(0, ...e.sets.filter((x) => countsPR(x.type)).map((x) => e1rm(x.kg + b, x.reps) - b)); };
   const prs = done
-    .filter((e) => !isTimed(e) && Math.max(0, ...e.sets.filter((x) => countsPR(x.type)).map((x) => e1rm(x.kg, x.reps))) > (prev[e.name] ?? 0))
+    .filter((e) => !isTimed(e) && top1rm(e) > (prev[e.name] ?? 0))
     .map((e) => e.name);
   const groups = [...new Set(done.map((e) => e.superset).filter((g) => g !== undefined))];
 

@@ -13,7 +13,13 @@ test("dots matches published reference values", () => {
 
 test("e1rm", () => {
   assert.equal(e1rm(100, 1), 100);
-  assert.equal(e1rm(100, 5), 100 * (1 + 5 / 30));
+  assert.ok(Math.abs(e1rm(100, 5) - 114.6) < 0.1);       // Epley 116.7, Brzycki 112.5
+  assert.equal(e1rm(100, 20), e1rm(100, 12));           // high reps read as 12s
+  // pull-up at 74 kg bodyweight + 10 kg × 5: 1RM is on 84 kg total, reported as added weight
+  const b = bests({}, [{ exercises: [{ name: "Pull-up", sets: [{ kg: 10, reps: 5, done: true }, { kg: 0, reps: 10, done: true }] }] }], () => 74);
+  // 10 strict bodyweight reps (≈ +24.7 kg) beats +10 kg × 5 (≈ +22.3 kg)
+  assert.ok(Math.abs(b["Pull-up"] - (e1rm(74, 10) - 74)) < 0.01);
+  assert.ok(e1rm(74, 10) - 74 > e1rm(84, 5) - 74);
 });
 
 test("gaps between classes", () => {
@@ -46,7 +52,7 @@ test("set types: numbering, volume and PR rules", () => {
   assert.equal(countsPR("failure"), true);
   // a heavy assisted set (kg = assistance) must not become a PR
   const b = bests({}, [{ exercises: [{ name: "Pull Up", sets: [{ kg: 40, reps: 8, done: true, type: "assisted" }, { kg: 10, reps: 5, done: true }] }] }]);
-  assert.equal(Math.round(b["Pull Up"]), 12);
+  assert.equal(Math.round(b["Pull Up"]), 11);
 });
 test("timer formatting", () => {
   assert.equal(mmss(0), "0:00");

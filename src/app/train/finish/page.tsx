@@ -6,6 +6,7 @@ import { ArrowLeft, CalendarDays, ChevronRight, Eye, Globe, ImagePlus, Lock, Pen
 import { useStore } from "@/lib/store";
 import type { Visibility } from "@/lib/data";
 import { baseOf, bests, liftsOf } from "@/lib/lifting";
+import { bodyFor } from "@/lib/strength";
 import { summarize } from "@/lib/workout";
 import { toUnit } from "@/lib/units";
 
@@ -44,8 +45,9 @@ export default function SaveWorkout() {
     );
   }
 
-  const prev = bests(baseOf(me), s.sessions);
-  const sum = summarize(a.exercises, s.library, prev);
+  const body = bodyFor(s.library, Number(me.bw));
+  const prev = bests(baseOf(me), s.sessions, body);
+  const sum = summarize(a.exercises, s.library, prev, body);
 
   function pickMedia(f?: File) {
     setErr("");
@@ -69,7 +71,7 @@ export default function SaveWorkout() {
           title: title.trim() || a.title, note: note.trim() || undefined, prs: sum.prs, exercises: sum.exercises, volume: sum.volume,
           duration: Math.min(600, Math.max(1, Number(duration) || 1)), visibility, at: at.toISOString(),
         },
-        liftsOf(bests(prev, [{ exercises: sum.done }])),
+        liftsOf(bests(prev, [{ exercises: sum.done }], body)),
         media,
       );
       router.push("/feed" + q);

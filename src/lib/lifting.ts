@@ -12,18 +12,26 @@ export function dots(totalKg: number, bwKg: number, sex: "M" | "F") {
   return (totalKg * 500) / (a + b * bw + c * bw ** 2 + d * bw ** 3 + e * bw ** 4);
 }
 
-// Epley estimated 1-rep max; a true single counts as-is.
-export const e1rm = (kg: number, reps: number) => (reps <= 1 ? kg : kg * (1 + reps / 30));
+// Estimated 1-rep max: mean of Epley (runs high) and Brzycki (runs low); a true single counts as-is.
+// Past ~12 reps both drift badly, so higher-rep sets are read as 12s (a safe underestimate).
+export function e1rm(kg: number, reps: number) {
+  if (reps <= 1) return kg;
+  const r = Math.min(reps, 12);
+  return (kg * (1 + r / 30) + (kg * 36) / (37 - r)) / 2;
+}
 
 type Logged = { exercises: { name: string; sets: { kg: number; reps: number; done?: boolean; type?: string }[] }[] };
 
 // Best estimated 1RM per exercise: starting values merged with every completed set logged since.
-export function bests(base: Record<string, number>, sessions: Logged[]) {
+// body(name) = bodyweight for pull-ups / dips, where kg is added weight: the 1RM is worked out on the total, then shown as added.
+export function bests(base: Record<string, number>, sessions: Logged[], body: (name: string) => number = () => 0) {
   const out = { ...base };
   for (const s of sessions)
-    for (const ex of s.exercises)
+    for (const ex of s.exercises) {
+      const b = body(ex.name);
       for (const set of ex.sets)
-        if (set.done && set.kg > 0 && set.reps > 0 && countsPR(set.type as T)) out[ex.name] = Math.max(out[ex.name] ?? 0, e1rm(set.kg, set.reps));
+        if (set.done && set.kg + b > 0 && set.reps > 0 && countsPR(set.type as T)) out[ex.name] = Math.max(out[ex.name] ?? 0, e1rm(set.kg + b, set.reps) - b);
+    }
   return out;
 }
 
