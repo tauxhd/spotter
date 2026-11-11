@@ -1,0 +1,5 @@
+muscles.glb
+Derived from Z-Anatomy "MuscularSystem100.fbx" (https://github.com/LluisV/Z-Anatomy),
+itself based on BodyParts3D (DBCLS). Licensed CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
+Changes: kept 112 superficial gym muscles (left/right, one material each), decimated to ~150k triangles,
+exported as Draco-compressed glTF. This model file is shared under the same CC BY-SA 4.0 licence.
