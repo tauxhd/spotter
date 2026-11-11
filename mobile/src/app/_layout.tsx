@@ -1,22 +1,25 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, ThemeProvider } from 'expo-router';
+import { Stack } from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
-import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
 import Onboarding from '@/components/onboarding';
 import { ThemedText } from '@/components/themed-text';
-import { Lime } from '@/constants/theme';
+import { Splash } from '@/components/ui/kit';
+import { Colors, Lime } from '@/constants/theme';
 import { StoreProvider, useStatus } from '@/lib/store';
 
 SplashScreen.preventAutoHideAsync();
 
+// Spotter is a dark app, like the website on a phone.
+const theme = { ...DarkTheme, colors: { ...DarkTheme.colors, primary: Lime, background: Colors.dark.background, card: Colors.dark.background, border: Colors.dark.border } };
+
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={theme}>
         <StoreProvider>
           <AnimatedSplashOverlay />
           <Gate />
@@ -26,15 +29,23 @@ export default function RootLayout() {
   );
 }
 
-// Signed in and set up → the tabs; first launch → profile setup.
+// Signed in and set up → the app (tabs, with pages pushed over them); first launch → profile setup.
 function Gate() {
   const st = useStatus();
-  if (st.kind === 'ready') return <AppTabs />;
   if (st.kind === 'onboarding') return <Onboarding onSave={st.save} />;
+  if (st.kind === 'loading') return <Splash />;
+  if (st.kind === 'error') return <View style={styles.center}><ThemedText>Couldn&apos;t connect: {st.message}</ThemedText></View>;
   return (
-    <View style={styles.center}>
-      {st.kind === 'error' ? <ThemedText>Couldn&apos;t connect: {st.message}</ThemedText> : <ActivityIndicator color={Lime} />}
-    </View>
+    <Stack screenOptions={{ headerTintColor: Lime, headerTitleStyle: { color: Colors.dark.text }, headerShadowVisible: false, headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: Colors.dark.background } }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="finish" options={{ title: 'Finish workout', presentation: 'modal' }} />
+      <Stack.Screen name="exercise/[id]" options={{ title: '' }} />
+      <Stack.Screen name="post/[id]" options={{ title: 'Workout' }} />
+      <Stack.Screen name="u/[id]" options={{ title: '' }} />
+      <Stack.Screen name="me" options={{ title: 'Profile' }} />
+      <Stack.Screen name="stats/[id]" options={{ title: 'Gym stats' }} />
+      <Stack.Screen name="map" options={{ title: 'Gym map' }} />
+    </Stack>
   );
 }
 

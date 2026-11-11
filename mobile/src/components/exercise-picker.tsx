@@ -14,7 +14,7 @@ import { Press } from '@/components/ui/button';
 import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
-import { webUrl } from '@/lib/web';
+import { img } from '@/lib/web';
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -41,11 +41,11 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
           style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groups} style={{ flexGrow: 0 }}>
           {pickerGroups.map(([x]) => {
-            const on = g === x, img = webUrl(`/muscles/${x.replace(' ', '-')}.webp`);
+            const on = g === x, pic = img(`/muscles/${x.replace(' ', '-')}.webp`);
             return (
               <Pressable key={x} onPress={() => setG(x)} style={styles.group} accessibilityState={{ selected: on }}>
                 <View style={[styles.figure, { borderColor: on ? Lime : 'transparent', opacity: on ? 1 : 0.7 }]}>
-                  {x !== 'all' && img ? <Image source={{ uri: img }} style={{ width: 44, height: 44 }} /> : <ThemedText style={{ fontSize: 20, color: '#d4d4d8' }}>/</ThemedText>}
+                  {x !== 'all' && pic ? <Image source={pic} style={{ width: 44, height: 44 }} /> : <ThemedText style={{ fontSize: 20, color: '#d4d4d8' }}>/</ThemedText>}
                 </View>
                 <ThemedText type="small" style={{ fontSize: 11, color: on ? Lime : theme.textSecondary }}>{cap(x)}</ThemedText>
               </Pressable>
@@ -68,10 +68,10 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
           ListEmptyComponent={<ThemedText themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 30 }}>No matches. Try another filter.</ThemedText>}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
           renderItem={({ item: e }) => {
-            const has = taken.includes(e.name), img = webUrl(e.image);
+            const has = taken.includes(e.name), pic = img(e.image);
             return (
               <Press disabled={has} onPress={() => onPick(e)} style={[styles.item, { opacity: has ? 0.4 : 1 }]}>
-                {img ? <Image source={{ uri: img }} style={styles.thumb} /> : <View style={[styles.thumb, { backgroundColor: theme.backgroundElement }]} />}
+                {pic ? <Image source={pic} style={styles.thumb} /> : <View style={[styles.thumb, { backgroundColor: theme.backgroundElement }]} />}
                 <View style={{ flex: 1 }}>
                   <ThemedText style={{ fontWeight: '600' }}>{e.name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">{cap(e.muscle)} · {cap(e.equipment)}{has ? ' · added' : ''}</ThemedText>

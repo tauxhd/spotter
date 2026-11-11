@@ -1,5 +1,6 @@
 // Web preview of the tab bar (the phone uses the native one in app-tabs.tsx): a frosted bar along the bottom.
 import { Image } from 'expo-image';
+import type { Href } from 'expo-router';
 import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps } from 'expo-router/ui';
 import { Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
 
@@ -22,7 +23,7 @@ export default function AppTabs() {
       <TabList asChild>
         <View style={StyleSheet.flatten([styles.bar, { borderTopColor: theme.border, backgroundColor: theme.background + 'a0' }])}>
           {tabs.map((t) => (
-            <TabTrigger key={t.name} name={t.name} href={t.href} asChild>
+            <TabTrigger key={t.name} name={t.name} href={t.href as Href} asChild>
               <TabButton icon={t.icon}>{t.label}</TabButton>
             </TabTrigger>
           ))}
