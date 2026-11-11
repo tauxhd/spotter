@@ -19,6 +19,8 @@ import OneRM from "@/components/OneRM";
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
 const readRest = () => { try { return Number(localStorage.getItem(REST_KEY)) || 90; } catch { return 90; } };
 
+let prSound: HTMLAudioElement | undefined; // record fanfare (second clip of Success Sound Effects)
+
 export default function Train() {
   const { s, me, u, setActive, saveRoutine } = useStore();
   const [savedAs, setSavedAs] = useState(false);
@@ -100,6 +102,14 @@ export default function Train() {
 
   function toggle(i: number, j: number) {
     const wasDone = a?.exercises[i].sets[j].done;
+    // New record: this set's 1RM beats your history and every other set ticked today → fanfare.
+    const ex = a?.exercises[i], st = ex?.sets[j];
+    if (!wasDone && ex && st && !isTimed(ex) && countsPR(st.type)) {
+      const today = ex.sets.filter((x, k) => k !== j && x.done && countsPR(x.type)).map((x) => setMax(ex.name, x));
+      if (setMax(ex.name, st) > Math.max(prev[ex.name] ?? 0, ...today)) {
+        try { prSound ??= new Audio("/sounds/pr.mp3"); prSound.currentTime = 0; prSound.play().catch(() => {}); navigator.vibrate?.([60, 40, 120]); } catch {}
+      }
+    }
     edit((ex) => { ex[i].sets[j].done = !ex[i].sets[j].done; });
     if (!wasDone) restAfter(i);
   }
@@ -281,7 +291,7 @@ export default function Train() {
                 const max = countsPR(st.type) ? setMax(ex.name, st) : 0;
                 const pr = st.done && max > (best ?? 0);
                 return (
-                  <div key={j} className="contents">
+                  <div key={j} className={`col-span-full grid grid-cols-subgrid items-center rounded-md transition-colors duration-300 -mx-1.5 px-1.5 py-1 ${st.done ? `[&_.num]:bg-transparent ${pr ? "bg-amber-400/20 ring-1 ring-amber-400/50" : "bg-lime-500/20"}` : ""}`}>
                     <button onClick={() => setTyping({ i, j })} aria-label={`Set ${labels[j]}: ${st.type ? setTypes[st.type].label : "normal"}. Change set type`}
                       className={`flex h-9 items-center gap-1 rounded-lg font-bold tabular-nums ${st.type ? setTypes[st.type].color : ""}`}>
                       {labels[j]}{pr && <Trophy size={12} className="text-amber-500" aria-label="PR" />}
