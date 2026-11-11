@@ -155,10 +155,18 @@ export default function ExerciseStats() {
                     </div>
                     <span className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-zinc-950 bg-lime-400 shadow-[0_0_10px_rgb(132_204_22/0.7)]" style={{ left: `${lvl.pos * 100}%` }} />
                   </div>
-                  <div className="muted mt-2 flex justify-between text-[11px]">{LEVELS.map((l) => <span key={l} className={l === lvl.level ? "font-semibold text-zinc-800 dark:text-zinc-100" : ""}>{l}</span>)}</div>
-                  <p className="muted mt-3 text-sm">
-                    Stronger than about <b className="text-zinc-800 dark:text-zinc-100">{lvl.pct}%</b> of {me.sex === "F" ? "women" : "men"} who train, at your bodyweight.
-                    {lvl.next && <> {lvl.next.level} at {added ? "+" : ""}{w(Math.max(0, Math.ceil(lvl.next.kg / 2.5) * 2.5), u)}.</>}
+                  {/* each tier's name and the 1RM it starts at, under its point on the bar */}
+                  <div className="relative mt-2 h-8 text-[11px]">
+                    {LEVELS.map((l, i) => (
+                      <span key={l} style={{ left: `${i * 25}%` }}
+                        className={`absolute flex flex-col leading-tight ${i === 0 ? "items-start" : i === 4 ? "-translate-x-full items-end" : "-translate-x-1/2 items-center"} ${l === lvl.level ? "font-semibold text-zinc-800 dark:text-zinc-100" : "muted"}`}>
+                        <span>{l}</span>
+                        <span className={`tabular-nums ${l === lvl.level ? "text-lime-600 dark:text-lime-400" : ""}`}>{added ? "+" : ""}{wNum(lvl.tiers[i], u)}</span>
+                      </span>
+                    ))}
+                  </div>
+                  <p className="muted mt-2 text-sm">
+                    Stronger than about <b className="text-zinc-800 dark:text-zinc-100">{lvl.pct}%</b> of {me.sex === "F" ? "women" : "men"} who train, at your bodyweight. Tier weights are 1RMs in {u}.
                   </p>
                 </section>
               )}

@@ -219,5 +219,7 @@ export function strengthLevel(id: string, oneRm: number, bw: number, sex: "M" | 
   const frac = i < 0 ? load / t[0] : i === 4 ? 0 : (load - t[i]) / (t[i + 1] - t[i]);
   const pos = i < 0 ? 0 : i === 4 ? 1 : (i + frac) / 4;
   const pct = i < 0 ? PCT[0] * frac : i === 4 ? Math.min(99, PCT[4] + (4 * (load - t[4])) / (t[4] - t[3])) : PCT[i] + (PCT[i + 1] - PCT[i]) * frac;
-  return { level: LEVELS[Math.max(0, i)], pos, pct: Math.max(1, Math.round(pct)), next: i < 4 ? { level: LEVELS[i + 1], kg: t[i + 1] - (loaded ? bw : 0) } : null };
+  // kg each tier starts at, as logged (added weight for pull-ups / dips), rounded up to a 2.5 kg plate jump
+  const tiers = t.map((x) => Math.max(0, Math.ceil((x - (loaded ? bw : 0)) / 2.5) * 2.5));
+  return { level: LEVELS[Math.max(0, i)], pos, pct: Math.max(1, Math.round(pct)), tiers };
 }

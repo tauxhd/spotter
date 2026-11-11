@@ -19,7 +19,7 @@ test("strength level", () => {
   assert.equal(b.level, "Intermediate");
   assert.ok(Math.abs(b.pos - 0.6) < 0.01);
   assert.equal(b.pct, 62);
-  assert.equal(b.next?.level, "Advanced");
+  assert.deepEqual(b.tiers, [37.5, 57.5, 75, 112.5, 150]);
   assert.equal(strengthLevel("barbell-bench-press", 20, 74, "M")!.level, "Beginner");
   assert.equal(strengthLevel("barbell-bench-press", 200, 74, "M")!.pos, 1);
   // pull-up: +0 kg at 74 kg = 74 kg total vs 1.1 × bench standards → Intermediate-ish
