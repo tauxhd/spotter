@@ -3,7 +3,7 @@ import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, Check, Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
@@ -248,33 +248,29 @@ export default function Train() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-end justify-between">
-        <div>
+      <header className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
           <button onClick={() => setEditingStart(true)} aria-label={`Workout time ${hhmmss(elapsed)}. Change timers`}
-            className="flex items-center gap-1.5 rounded-sm bg-lime-400/15 px-2.5 py-0.5 text-sm font-bold tabular-nums text-lime-600 dark:text-lime-400">
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-sm bg-lime-400/15 px-2.5 py-0.5 text-sm font-bold tabular-nums text-lime-600 dark:text-lime-400">
             <Clock size={14} />{hhmmss(elapsed)}<span className="muted font-medium">· rest {mmss(restSecs)}</span>
           </button>
-          <h1 className="h-title">{a.title}</h1>
+          <h1 className="h-title truncate">{a.title}</h1>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <button onClick={() => confirm("Discard this workout?") && setActive(() => null)} className="muted text-sm font-medium">Discard</button>
+        <div className="flex shrink-0 items-center gap-2">
           {a.exercises.length > 0 && (
-            <button disabled={savedAs} onClick={async () => {
+            <button disabled={savedAs} aria-label={savedAs ? "Saved as routine" : "Save as routine"} title={savedAs ? "Saved as routine" : "Save as routine"} onClick={async () => {
               const name = prompt("Save as routine. Name:", a.title === "Workout" ? "" : a.title);
               if (!name?.trim()) return;
               await saveRoutine({ name, exercises: a.exercises.map((e) => ({ ...e, sets: e.sets.map(({ kg, reps, type, secs }) => ({ kg, reps, ...(type ? { type } : {}), ...(secs !== undefined ? { secs } : {}) })) })) });
               setSavedAs(true);
-            }} className="text-sm font-semibold text-lime-600 disabled:opacity-60 dark:text-lime-400">{savedAs ? "Saved ✓" : "Save as routine"}</button>
+            }} className="btn-ghost p-2 text-lime-600 dark:text-lime-400">{savedAs ? <BookmarkCheck size={20} /> : <BookmarkPlus size={20} />}</button>
           )}
+          <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" aria-label="Muscles hit" className="btn-ghost flex items-center gap-1.5 p-2 text-sm sm:px-4">
+            <Icon name="stats" size={20} /><span className="hidden sm:inline">Muscles</span>
+          </button>
+          <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish & share</button>
         </div>
       </header>
-
-      <div className="flex items-center justify-end gap-2">
-        <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" className="btn-ghost flex items-center gap-1.5 py-2 text-sm">
-          <Icon name="stats" size={18} />Muscles
-        </button>
-        <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish & share</button>
-      </div>
       {showHit && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal aria-label="Muscles hit" onClick={() => setShowHit(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm space-y-3 rounded-3xl bg-white p-4 text-sm shadow-2xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
@@ -385,6 +381,7 @@ export default function Train() {
       })}
 
       <button onClick={() => setPicking(true)} className="btn-ghost flex w-full items-center justify-center gap-2"><Icon name="plus-circle" size={20} />Add exercise</button>
+      <button onClick={() => confirm("Discard this workout?") && setActive(() => null)} className="w-full py-2 text-sm font-medium text-red-500">Discard workout</button>
       {editingStart && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal aria-label="Timers" onClick={() => setEditingStart(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm space-y-3 rounded-3xl bg-white p-4 shadow-2xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
