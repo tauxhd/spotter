@@ -87,6 +87,17 @@ const TIMED = new Set([
   "high-knees", "butt-kicks", "jumping-jack",
 ]);
 export const timedByDefault = (id?: string) => !!id && TIMED.has(id);
+
+// Superset A, B, C… each get their own colour so linked exercises read as one block.
+const SUPERSET_COLORS = [
+  { bar: "border-l-lime-500", tag: "bg-lime-500 text-zinc-950", text: "text-lime-600 dark:text-lime-400" },
+  { bar: "border-l-sky-500", tag: "bg-sky-500 text-zinc-950", text: "text-sky-600 dark:text-sky-400" },
+  { bar: "border-l-violet-500", tag: "bg-violet-500 text-white", text: "text-violet-600 dark:text-violet-400" },
+  { bar: "border-l-amber-500", tag: "bg-amber-500 text-zinc-950", text: "text-amber-600 dark:text-amber-400" },
+  { bar: "border-l-pink-500", tag: "bg-pink-500 text-white", text: "text-pink-600 dark:text-pink-400" },
+  { bar: "border-l-teal-500", tag: "bg-teal-500 text-zinc-950", text: "text-teal-600 dark:text-teal-400" },
+];
+export const supersetColor = (i: number) => SUPERSET_COLORS[Math.max(0, i) % SUPERSET_COLORS.length];
 export type ExerciseLog = { name: string; sets: SetT[]; superset?: number; timed?: boolean }; // same superset id = done back to back
 
 const s = (kg: number, reps: number, n: number): SetT[] => Array.from({ length: n }, () => ({ kg, reps }));

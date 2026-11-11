@@ -12,7 +12,7 @@ import FollowButton from "@/components/FollowButton";
 import ProfileLink from "@/components/ProfileLink";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import { useStore } from "@/lib/store";
-import { bodyArea, findExercise, lifters, oldNames, setTypes } from "@/lib/data";
+import { bodyArea, findExercise, lifters, oldNames, setTypes, supersetColor } from "@/lib/data";
 import { countsPR, e1rm, mmss, setLabels } from "@/lib/lifting";
 
 const dur = (m?: number | null) => (!m ? "—" : m < 60 ? `${m}min` : `${Math.floor(m / 60)}h ${m % 60}min`);
@@ -117,7 +117,7 @@ export default function WorkoutDetail() {
             <div className="flex items-center gap-3">
               <ExerciseThumb ex={ex} size={48} />
               <div className="min-w-0">
-                {e.superset && <span className="mb-0.5 inline-block rounded-sm bg-lime-500 px-2 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {e.superset}</span>}
+                {e.superset && <span className={`mb-0.5 inline-block rounded-sm px-2 text-[10px] font-bold uppercase tracking-wide ${supersetColor(e.superset.charCodeAt(0) - 65).tag}`}>Superset {e.superset}</span>}
                 <p className="font-semibold text-lime-600 dark:text-lime-400">{ex?.name ?? e.name}</p>
                 {ex && <p className="muted text-xs capitalize">{ex.muscle} · {ex.equipment}</p>}
               </div>

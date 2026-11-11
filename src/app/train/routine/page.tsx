@@ -11,7 +11,7 @@ import Icon from "@/components/Icon";
 import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
-import { setTypes, templates, timedByDefault, type Exercise, type ExerciseLog } from "@/lib/data";
+import { setTypes, supersetColor, templates, timedByDefault, type Exercise, type ExerciseLog } from "@/lib/data";
 import { mmss, parseResult, setLabels } from "@/lib/lifting";
 
 // Create / edit a routine. ?id=<routine> edits, ?from=<example name> starts from an example, nothing = blank.
@@ -78,22 +78,23 @@ function Editor() {
 
       {list.map((ex, i) => {
         const labels = setLabels(ex.sets, setTypes);
+        const sc = supersetColor(ex.superset === undefined ? 0 : groups.indexOf(ex.superset));
         return (
-          <section key={ex.name} className={`card relative ${ex.superset !== undefined ? "border-l-4 border-lime-500" : ""}`}>
-            {ex.superset !== undefined && <span className="absolute -top-2 left-3 rounded-sm bg-lime-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {String.fromCharCode(65 + groups.indexOf(ex.superset))}</span>}
+          <section key={ex.name} className={`card relative ${ex.superset !== undefined ? `border-l-4 ${sc.bar}` : ""}`}>
+            {ex.superset !== undefined && <span className={`absolute -top-2 left-3 rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sc.tag}`}>Superset {String.fromCharCode(65 + groups.indexOf(ex.superset))}</span>}
             <div className="flex items-start gap-3">
               <ExerciseThumb ex={lib.get(ex.name)} size={44} />
               <div className="min-w-0 flex-1">
                 <h2 className="font-semibold">{ex.name}</h2>
                 {(list[i + 1] || ex.superset !== undefined) && (
-                  <button onClick={() => superset(i)} className={`mt-0.5 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? "text-lime-600 dark:text-lime-400" : "muted"}`}>
+                  <button onClick={() => superset(i)} className={`mt-0.5 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
                     <Link2 size={13} />{ex.superset !== undefined ? "Unlink superset" : "Superset"}
                   </button>
                 )}
-                <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
+                {(ex.timed || timedByDefault(lib.get(ex.name)?.id)) && <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
                   className="muted mt-0.5 flex items-center gap-1 text-xs font-semibold">
                   {isTimed(ex) ? <><Hash size={13} />Log reps instead</> : <><Clock size={13} />Log time instead</>}
-                </button>
+                </button>}
               </div>
               <button aria-label={`Remove ${ex.name}`} onClick={() => edit((x) => { x.splice(i, 1); })} className="muted p-1"><Trash2 size={16} /></button>
             </div>

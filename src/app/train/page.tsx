@@ -11,7 +11,7 @@ import { fromUnit, w } from "@/lib/units";
 import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
-import { demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDefault, type Exercise, type ExerciseLog, type SetType } from "@/lib/data";
+import { demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDefault, supersetColor, type Exercise, type ExerciseLog, type SetType } from "@/lib/data";
 import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from "@/lib/lifting";
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
@@ -209,6 +209,7 @@ export default function Train() {
   }
   const groups = [...new Set(a.exercises.map((e) => e.superset).filter((g) => g !== undefined))];
   const letter = (g?: number) => (g === undefined ? "" : String.fromCharCode(65 + groups.indexOf(g)));
+  const color = (g?: number) => supersetColor(g === undefined ? 0 : groups.indexOf(g));
   const typingSet = typing && a.exercises[typing.i]?.sets[typing.j];
   const q = typeof window !== "undefined" ? location.search : "";
 
@@ -241,26 +242,27 @@ export default function Train() {
         const best = prev[ex.name];
         const labels = setLabels(ex.sets, setTypes);
         const linkedNext = ex.superset !== undefined && a.exercises[i + 1]?.superset === ex.superset;
+        const sc = color(ex.superset);
         return (
-          <section key={ex.name} className={`card relative ${ex.superset !== undefined ? "border-l-4 border-lime-500" : ""} ${linkedNext ? "rounded-b-md" : ""}`}>
+          <section key={ex.name} className={`card relative ${ex.superset !== undefined ? `border-l-4 ${sc.bar}` : ""} ${linkedNext ? "rounded-b-md" : ""}`}>
             {ex.superset !== undefined && (
-              <span className="absolute -top-2 left-3 rounded-sm bg-lime-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {letter(ex.superset)}</span>
+              <span className={`absolute -top-2 left-3 rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sc.tag}`}>Superset {letter(ex.superset)}</span>
             )}
             <div className="flex items-start gap-3">
               <ExerciseThumb ex={lib.get(ex.name)} size={48} />
               <div className="min-w-0 flex-1">
                 <h2 className="font-semibold">{ex.name}</h2>
-                {best && <p className="muted text-xs">Best est. 1RM {w(Math.round(best), u)}</p>}
+                {best && <p className="muted flex items-center gap-1 text-xs"><Icon name="medal" size={14} />Best est. 1RM <b className="font-semibold text-zinc-700 dark:text-zinc-200">{w(Math.round(best), u)}</b></p>}
                 {(a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
-                    className={`mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? "text-lime-600 dark:text-lime-400" : "muted"}`}>
+                    className={`mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
                     <Link2 size={13} />{ex.superset !== undefined ? "Unlink superset" : "Superset"}
                   </button>
                 )}
-                <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
+                {(ex.timed || timedByDefault(lib.get(ex.name)?.id)) && <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
                   className="muted mt-1 flex items-center gap-1 text-xs font-semibold">
                   {isTimed(ex) ? <><Hash size={13} />Log reps instead</> : <><Clock size={13} />Log time instead</>}
-                </button>
+                </button>}
               </div>
               {eq && (
                 <Link href={`/map${q ? q + "&" : "?"}e=${eq.id}`} className="flex shrink-0 items-center gap-1 rounded-sm bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800">
@@ -342,7 +344,7 @@ export default function Train() {
                 <button aria-label="15 seconds more rest" onClick={() => changeRest(15)} className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-100 font-bold dark:bg-zinc-800">+</button>
               </div>
             </div>
-            <p className="muted text-xs">Hold exercises (planks, hangs, carries…) have a {"▶︎"} timer on each set. Switch any exercise with “Log time instead”.</p>
+            <p className="muted text-xs">Hold exercises (planks, hangs, carries…) have a {"▶︎"} timer on each set. Switch them to reps with “Log reps instead”.</p>
           </div>
         </div>
       )}
