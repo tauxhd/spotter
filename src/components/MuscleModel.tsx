@@ -42,13 +42,19 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
       if (gone) return;
       const body = src.clone(true);
       const max = Math.max(0, ...Object.values(hit));
+      const looks = new Map<THREE.Mesh, THREE.Material>(), ids = new Map<THREE.Mesh, THREE.Material>();
       body.traverse((o) => {
         if (!(o instanceof THREE.Mesh)) return;
         const g = groupOf(o.name) ?? groupOf((o.material as THREE.Material).name ?? "");
         const t = g && max ? (hit[g] ?? 0) / max : 0;
         const c = t > 0 ? BASE.clone().lerp(LIME, 0.2 + 0.8 * t * t) : BASE; // squared so ½ reads clearly lighter than full
-        o.material = new THREE.MeshStandardMaterial({ color: c, emissive: t > 0 ? LIME : new THREE.Color(0), emissiveIntensity: 0.3 * t * t, roughness: 0.7 });
+        looks.set(o, new THREE.MeshStandardMaterial({ color: c, emissive: t > 0 ? LIME : new THREE.Color(0), emissiveIntensity: 0.3 * t * t, roughness: 0.7 }));
+        // flat group id (red channel) for the outline pass; 0 = background, last = muscles outside our groups
+        const id = g ? MAP.findIndex(([k]) => k === g) + 1 : MAP.length + 1;
+        ids.set(o, new THREE.MeshBasicMaterial({ color: new THREE.Color(id / 16, 0, 0) }));
+        o.material = looks.get(o)!;
       });
+      const use = (m: Map<THREE.Mesh, THREE.Material>) => m.forEach((mat, o) => { o.material = mat; });
       const box = new THREE.Box3().setFromObject(body), mid = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
       const scene = new THREE.Scene();
       scene.add(body, new THREE.HemisphereLight(0xffffff, 0x444444, 1.6));
@@ -59,14 +65,40 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
       const w = el.clientWidth, h = el.clientHeight;
       renderer.setSize(w, h, false);
       renderer.setScissorTest(true);
-      const half = h * 1.04 / 2, aspect = w / 2 / h;
+      const half = h * 1.04 / 2, aspect = w / 2 / h, dpr = renderer.getPixelRatio();
+
+      // Outline pass: draw a dark line wherever the group id changes between neighbouring pixels.
+      const ids_rt = new THREE.WebGLRenderTarget(Math.round(w / 2 * dpr), Math.round(h * dpr), { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+      const edge = new THREE.ShaderMaterial({
+        transparent: true, depthTest: false, depthWrite: false,
+        uniforms: { tId: { value: ids_rt.texture }, px: { value: new THREE.Vector2(1 / ids_rt.width, 1 / ids_rt.height) } },
+        vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+        fragmentShader: `uniform sampler2D tId; uniform vec2 px; varying vec2 vUv;
+          float id(vec2 o) { return texture2D(tId, vUv + o * px).r; }
+          void main() {
+            float c = id(vec2(0.0)), d = 0.0;
+            d = max(d, abs(id(vec2(1.0, 0.0)) - c)); d = max(d, abs(id(vec2(-1.0, 0.0)) - c));
+            d = max(d, abs(id(vec2(0.0, 1.0)) - c)); d = max(d, abs(id(vec2(0.0, -1.0)) - c));
+            if (d < 0.03) discard;
+            gl_FragColor = vec4(0.04, 0.04, 0.05, 0.9);
+          }`,
+      });
+      const quad = new THREE.Scene(); quad.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edge));
+      const quadCam = new THREE.Camera();
+
+      renderer.setClearColor(0x000000, 0);
       [1, -1].forEach((z, i) => { // front view on the left, back view on the right
+        const r = renderer!;
         const cam = new THREE.OrthographicCamera(-half * aspect, half * aspect, half, -half, 0.1, 10);
         const s = size.y / h; cam.zoom = 1 / s; cam.updateProjectionMatrix();
         cam.position.set(mid.x, mid.y, mid.z + 3 * z); cam.lookAt(mid);
-        renderer!.setViewport(i * w / 2, 0, w / 2, h); renderer!.setScissor(i * w / 2, 0, w / 2, h);
-        renderer!.render(scene, cam);
+        r.setRenderTarget(ids_rt); use(ids); r.render(scene, cam); use(looks); // id pass (lights don't affect basic materials)
+        r.setRenderTarget(null);
+        r.setViewport(i * w / 2, 0, w / 2, h); r.setScissor(i * w / 2, 0, w / 2, h);
+        r.render(scene, cam);
+        r.autoClear = false; r.render(quad, quadCam); r.autoClear = true;
       });
+      ids_rt.dispose();
     }).catch(() => setFailed(true));
     return () => { gone = true; renderer?.dispose(); };
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
