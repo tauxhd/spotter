@@ -123,18 +123,28 @@ export default function Train() {
   // A neighbour that just swapped: glide it from where it was drawn (its live position) to its new place on a spring.
   const glide = useRef<{ el: HTMLElement; top: number } | null>(null);
   const order = a?.exercises.map((e) => e.name).join("|");
+  // Spring an element from where it was drawn (screen y `top`) to where layout now puts it.
+  const springFrom = (el: HTMLElement, top: number) => {
+    const from = top - el.getBoundingClientRect().top;
+    if (Math.abs(from) < 0.5) return;
+    el.style.transition = "none";
+    el.style.transform = `translateY(${from}px)`;
+    void el.offsetHeight; // commit the start position, then let it spring home
+    el.style.transition = "transform var(--spring-ms) var(--spring)";
+    el.style.transform = "";
+  };
   useLayoutEffect(() => {
     const g = glide.current;
     glide.current = null;
-    if (!g) return;
-    const from = g.top - g.el.getBoundingClientRect().top;
-    if (!from) return;
-    g.el.style.transition = "none";
-    g.el.style.transform = `translateY(${from}px)`;
-    void g.el.offsetHeight; // commit the start position, then let it spring home
-    g.el.style.transition = "transform var(--spring-ms) var(--spring)";
-    g.el.style.transform = "";
+    if (g) springFrom(g.el, g.top);
   }, [order]);
+  // Where every card was drawn just before the hold collapsed them, so they can slide together instead of jumping.
+  const before = useRef(new Map<HTMLElement, number>());
+  const slideTogether = () => {
+    const held = dragRef.current && rows.current[dragRef.current.i];
+    before.current.forEach((top, el) => { if (el !== held && el.isConnected) springFrom(el, top); });
+    before.current.clear();
+  };
   const dragRef = useRef(drag); dragRef.current = drag;
   const [padTop, setPadTop] = useState(0); // room above the list so a row near the top can still reach the finger
   const rows = useRef<(HTMLElement | null)[]>([]);
@@ -143,7 +153,11 @@ export default function Train() {
   const longPress = (i: number) => ({
     onPointerDown: (e: React.PointerEvent) => {
       pressAt.current = { x: e.clientX, y: e.clientY }; finger.current = e.clientY;
-      pressTimer.current = window.setTimeout(() => { setDrag({ i, y: finger.current, dy: 0 }); try { navigator.vibrate?.(15); } catch {} }, 450);
+      pressTimer.current = window.setTimeout(() => {
+        before.current = new Map(rows.current.filter((el): el is HTMLElement => !!el).map((el) => [el, el.getBoundingClientRect().top]));
+        setDrag({ i, y: finger.current, dy: 0 });
+        try { navigator.vibrate?.(15); } catch {}
+      }, 450);
     },
     onPointerMove: (e: React.PointerEvent) => { // moved before the hold finished → it's a scroll, not a drag
       finger.current = e.clientY;
@@ -193,9 +207,9 @@ export default function Train() {
     const r = el.getBoundingClientRect();
     window.scrollBy(0, r.top + r.height / 2 - d.y);
     const short = d.y - (el.getBoundingClientRect().top + r.height / 2); // > 0: page is at the top, row still above the finger
-    if (short > 1) setPadTop(short); else place(d.y, false);
+    if (short > 1) setPadTop(short); else { place(d.y, false); slideTogether(); }
   }, [sorting]); // eslint-disable-line react-hooks/exhaustive-deps
-  useLayoutEffect(() => { if (padTop && dragRef.current) place(dragRef.current.y, false); }, [padTop]); // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => { if (padTop && dragRef.current) { place(dragRef.current.y, false); slideTogether(); } }, [padTop]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!sorting) return;
     const move = (e: PointerEvent) => place(e.clientY, true);
@@ -395,7 +409,7 @@ export default function Train() {
               <div className="min-h-[21rem] w-full shrink-0 snap-center px-4"><MuscleModel hit={hit} /></div>
               <div className="w-full shrink-0 snap-center px-4"><Radar cur={areas} className="h-80 w-full" /></div>
             </div>
-            <div className="flex justify-center gap-1.5" aria-hidden>{[0, 1].map((k) => <span key={k} className={`h-1.5 rounded-full transition-all ${slide === k ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}</div>
+            <div className="flex justify-center gap-1.5" aria-hidden>{[0, 1].map((k) => <span key={k} className={`h-1.5 rounded-full transition-all duration-[var(--spring-ms)] ease-[var(--spring)] ${slide === k ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}</div>
             <p className="muted text-xs">Sets this workout. The main muscle counts 1, others worked count ½.</p>
             {ranked.length === 0 ? <p className="muted py-4 text-center">Tick sets to see muscles hit.</p> : ranked.map(([m, n]) => (
               <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">
@@ -532,7 +546,7 @@ export default function Train() {
               Rest timer
               <button role="switch" aria-checked={restOn} aria-label="Rest timer" onClick={toggleRest}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${restOn ? "bg-lime-500" : "bg-zinc-300 dark:bg-zinc-700"}`}>
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${restOn ? "left-[1.375rem]" : "left-0.5"}`} />
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all duration-[var(--spring-ms)] ease-[var(--spring)] ${restOn ? "left-[1.375rem]" : "left-0.5"}`} />
               </button>
             </div>
             <div className={`flex items-center justify-between gap-3 text-sm font-medium transition-opacity ${restOn ? "" : "pointer-events-none opacity-40"}`} aria-disabled={!restOn}>

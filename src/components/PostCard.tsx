@@ -60,7 +60,7 @@ function Swipe({ p, find }: { p: Post; find: Find }) {
         <div className="w-full shrink-0 snap-center px-4 py-1"><Summary p={p} find={find} /></div>
       </div>
       <div className="mt-2 flex justify-center gap-1.5" aria-hidden>
-        {[0, 1].map((i) => <span key={i} className={`h-1.5 rounded-full transition-all ${page === i ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}
+        {[0, 1].map((i) => <span key={i} className={`h-1.5 rounded-full transition-all duration-[var(--spring-ms)] ease-[var(--spring)] ${page === i ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}
       </div>
     </div>
   );
