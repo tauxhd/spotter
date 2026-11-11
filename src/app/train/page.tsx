@@ -3,7 +3,7 @@ import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, Trophy, X } from "lucide-react";
+import { Check, Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, Trophy, X } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
@@ -301,11 +301,11 @@ export default function Train() {
                         onChange={(e) => edit((x) => { x[i].sets[j].reps = Number(e.target.value.replace(/\D/g, "")) || 0; })} />
                     )}
                     <button aria-label={st.done ? "Mark set not done" : "Mark set done"} aria-pressed={!!st.done} onClick={() => toggle(i, j)}
-                      className={`grid h-9 place-items-center rounded-lg transition active:scale-90 ${st.done ? "bg-lime-500/20 ring-1 ring-lime-500" : "bg-zinc-100 dark:bg-zinc-800"}`}>
-                      <Icon name="tick" size={20} className={st.done ? "" : "opacity-30 grayscale"} />
+                      className={`grid h-9 place-items-center rounded-lg transition active:scale-90 ${st.done ? "bg-lime-500 text-zinc-950" : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"}`}>
+                      <Check size={18} strokeWidth={st.done ? 2.25 : 1.75} />
                     </button>
                     <button aria-label={`Remove set ${labels[j]}`} onClick={() => removeSet(i, j)} className="grid h-9 place-items-center rounded-lg opacity-70 transition hover:opacity-100 active:scale-90">
-                      <Icon name="cross" size={14} />
+                      <X size={16} strokeWidth={1.75} className="text-red-500" />
                     </button>
                   </div>
                 );

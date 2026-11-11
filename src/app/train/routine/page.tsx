@@ -2,7 +2,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Clock, Hash, Link2, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Hash, Link2, Trash2, X } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
@@ -110,7 +110,7 @@ function Editor() {
                         onBlur={(e) => { const v = parseResult(e.target.value, "time"); edit((x) => { x[i].sets[j].secs = v ?? 0; }); }} />
                     : <input aria-label={`Set ${labels[j]} reps`} inputMode="numeric" className="num" value={st.reps}
                         onChange={(e) => edit((x) => { x[i].sets[j].reps = Number(e.target.value.replace(/\D/g, "")) || 0; })} />}
-                  <button aria-label={`Remove set ${labels[j]}`} onClick={() => edit((x) => { x[i].sets.splice(j, 1); if (!x[i].sets.length) x.splice(i, 1); })} className="grid place-items-center opacity-70 transition hover:opacity-100 active:scale-90"><Icon name="cross" size={14} /></button>
+                  <button aria-label={`Remove set ${labels[j]}`} onClick={() => edit((x) => { x[i].sets.splice(j, 1); if (!x[i].sets.length) x.splice(i, 1); })} className="grid place-items-center opacity-70 transition hover:opacity-100 active:scale-90"><X size={16} strokeWidth={1.75} className="text-red-500" /></button>
                 </div>
               ))}
             </div>

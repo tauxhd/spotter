@@ -113,7 +113,7 @@ export default function GymStats() {
         <Big icon="flame" value={`${streak} wk`} label="Weekly streak" />
         <Big icon="calendar" value={total.workouts} label="Workouts" />
         <Big icon="stopwatch" value={hrs(total.minutes)} label="Time trained" />
-        <Big icon="tick-box" value={total.sets} label="Sets" />
+        <Big icon="target" value={total.sets} label="Sets" />
         <Big icon="medal" value={total.prs} label="Personal records" />
         <Big icon="barbell" value={u === "lb" ? `${Math.round(toUnit(total.volume, u) / 1000)}k lb` : `${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
       </section>
