@@ -7,6 +7,11 @@ export const OBLIQUES = /twist|side-bend|side-plank|woodchop|windshield|landmine
 export const ADDUCTORS = /adduction|adductor|copenhagen|cossack|lateral-lunge|sumo-squat|sumo-deadlift/;
 export const ABDUCTORS = /hip-abduction|clamshell|side-lying-leg-raise|lateral-walk|fire-hydrant|curtsy-lunge|lateral-step-up|lateral-shuffle/;
 
-// "back" split for the workout tally and 3D body: lats, lower back, or upper back (traps, rhomboids, rear shoulder blade).
-export const backPart = (id = "") => (LATS.test(id) ? "lats" : LOWER_BACK.test(id) ? "lower back" : "upper back");
-export const muscleFor = (m: string, id?: string) => (m === "back" ? backPart(id) : m);
+// Finer split for the workout tally and 3D body: back → traps / lats / lower back / upper back (rhomboids, rear shoulder
+// blade), shrug-type shoulder work → traps, abs → obliques for twisting / side work.
+export function muscleFor(m: string, id = "") {
+  if ((m === "back" || m === "shoulders") && TRAPS.test(id)) return "traps";
+  if (m === "back") return LATS.test(id) ? "lats" : LOWER_BACK.test(id) ? "lower back" : "upper back";
+  if (m === "abs" && OBLIQUES.test(id)) return "obliques";
+  return m;
+}

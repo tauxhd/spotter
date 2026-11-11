@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ratioIds, strengthLevel } from "./strength.ts";
 import { addSets } from "./data.ts";
+import { muscleFor } from "./muscles.ts";
 
 test("every strength ratio points at a real exercise, once", () => {
   const lib: { id: string }[] = JSON.parse(readFileSync(new URL("../../supabase/exercises.json", import.meta.url), "utf8"));
@@ -25,6 +26,18 @@ test("strength level", () => {
   // pull-up: +0 kg at 74 kg = 74 kg total vs 1.1 × bench standards → Intermediate-ish
   assert.equal(strengthLevel("pull-up", 0, 74, "M")!.level, "Novice");
   assert.equal(strengthLevel("plank", 50, 74, "M"), null);
+});
+
+test("finer muscle parts for the workout tally / 3D body", () => {
+  assert.equal(muscleFor("back", "barbell-shrug"), "traps");
+  assert.equal(muscleFor("shoulders", "upright-row"), "traps");
+  assert.equal(muscleFor("shoulders", "overhead-press"), "shoulders");
+  assert.equal(muscleFor("back", "lat-pulldown"), "lats");
+  assert.equal(muscleFor("back", "deadlift"), "lower back");
+  assert.equal(muscleFor("back", "seated-cable-row"), "upper back");
+  assert.equal(muscleFor("abs", "russian-twist"), "obliques");
+  assert.equal(muscleFor("abs", "crunch"), "abs");
+  assert.equal(muscleFor("chest", "bench-press"), "chest");
 });
 
 test("muscle split: main muscle full sets, other areas half", () => {
