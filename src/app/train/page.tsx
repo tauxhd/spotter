@@ -18,7 +18,7 @@ import OneRM from "@/components/OneRM";
 import { Radar } from "@/components/MuscleDistribution";
 import { muscleFor } from "@/lib/muscles";
 import dynamic from "next/dynamic";
-const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-80 w-full rounded-xl" /> });
+const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-full min-h-10 w-full rounded-xl" /> });
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
 const readRest = () => { try { return Number(localStorage.getItem(REST_KEY)) || 90; } catch { return 90; } };
@@ -267,6 +267,10 @@ export default function Train() {
           </button>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" aria-label="Muscles hit"
+            className="btn-ghost h-12 w-14 overflow-hidden p-0.5">
+            <MuscleModel hit={hit} compact />
+          </button>
           {a.exercises.length > 0 && (
             <button disabled={savedAs} aria-label={savedAs ? "Saved as routine" : "Save as routine"} title={savedAs ? "Saved as routine" : "Save as routine"} onClick={async () => {
               const name = prompt("Save as routine. Name:", a.title === "Workout" ? "" : a.title);
@@ -275,9 +279,6 @@ export default function Train() {
               setSavedAs(true);
             }} className="btn-ghost p-2 text-lime-600 dark:text-lime-400">{savedAs ? <BookmarkCheck size={20} /> : <BookmarkPlus size={20} />}</button>
           )}
-          <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" aria-label="Muscles hit" className="btn-ghost flex items-center gap-1.5 p-2 text-sm sm:px-4">
-            <Icon name="stats" size={20} /><span className="hidden sm:inline">Muscles</span>
-          </button>
           <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish & share</button>
         </div>
       </header>
@@ -289,7 +290,7 @@ export default function Train() {
               <button aria-label="Close" onClick={() => setShowHit(false)} className="muted p-1"><X size={18} /></button>
             </div>
             <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto" onScroll={(e) => setSlide(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
-              <div className="w-full shrink-0 snap-center px-4"><MuscleModel hit={hit} /></div>
+              <div className="min-h-[21rem] w-full shrink-0 snap-center px-4"><MuscleModel hit={hit} /></div>
               <div className="w-full shrink-0 snap-center px-4"><Radar cur={areas} className="h-80 w-full" /></div>
             </div>
             <div className="flex justify-center gap-1.5" aria-hidden>{[0, 1].map((k) => <span key={k} className={`h-1.5 rounded-full transition-all ${slide === k ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}</div>

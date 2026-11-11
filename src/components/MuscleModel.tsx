@@ -34,7 +34,8 @@ function load() {
 const BASE = new THREE.Color("#52525b"), LIME = new THREE.Color("#84cc16");
 
 // Front + back view of the muscle model; worked groups glow lime, faint for a little, full for the most.
-export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
+// `compact`: a thumbnail (fills its parent, no outlines or labels) for the workout header button.
+export default function MuscleModel({ hit, compact = false }: { hit: Record<string, number>; compact?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
   const key = JSON.stringify(hit);
@@ -148,11 +149,11 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
         const cam = new THREE.OrthographicCamera(-half * aspect, half * aspect, half, -half, 0.1, 10);
         const s = size.y / h; cam.zoom = 1 / s; cam.updateProjectionMatrix();
         cam.position.set(mid.x, mid.y, mid.z + 3 * z); cam.lookAt(mid);
-        r.setRenderTarget(ids_rt); use(ids); r.render(scene, cam); use(looks); // id pass (lights don't affect basic materials)
+        if (!compact) { r.setRenderTarget(ids_rt); use(ids); r.render(scene, cam); use(looks); } // id pass (lights don't affect basic materials)
         r.setRenderTarget(null);
         r.setViewport(i * w / 2, 0, w / 2, h); r.setScissor(i * w / 2, 0, w / 2, h);
         r.render(scene, cam);
-        r.autoClear = false; r.render(quad, quadCam); r.autoClear = true;
+        if (!compact) { r.autoClear = false; r.render(quad, quadCam); r.autoClear = true; }
       });
       ids_rt.dispose();
     }).catch(() => setFailed(true));
@@ -160,6 +161,7 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (failed) return null;
+  if (compact) return <canvas ref={canvas} className="h-full w-full" aria-hidden />;
   return (
     <div>
       <canvas ref={canvas} className="h-80 w-full" role="img" aria-label="Body diagram, front and back, with worked muscles highlighted" />
