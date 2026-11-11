@@ -10,13 +10,14 @@ const MAP: [string, RegExp][] = [
   ["shoulders", /deltoid/],
   ["triceps", /triceps brachii|anconeus/],
   ["biceps", /biceps brachii|brachialis/],
-  ["forearms", /brachioradialis|flexor carpi|extensor carpi|palmaris longus|flexor digitorum (superficialis|profundus)|extensor digitorum(?! (longus|brevis))|pronator|supinator|flexor pollicis longus|extensor pollicis|abductor pollicis longus/],
-  ["back", /latissimus|trapezius|rhomboid|teres (major|minor)|infraspinatus|iliocostalis|levator scapulae/],
+  // Long finger/toe muscles, sartorius and the Achilles stay out: they run into the hands, knees and feet and clutter the outlines.
+  ["forearms", /brachioradialis|flexor carpi|extensor carpi|pronator|supinator/],
+  ["back", /latissimus|trapezius|rhomboid|teres (major|minor)|infraspinatus|iliocostalis/],
   ["abs", /rectus abdominis|external abdominal oblique|pyramidalis/],
   ["glutes", /gluteus|tensor fasciae/],
-  ["quads", /rectus femoris|vastus|sartorius/],
+  ["quads", /rectus femoris|vastus/],
   ["hamstrings", /biceps femoris|semitendinosus|semimembranosus/],
-  ["calves", /gastrocnemius|soleus|plantaris|calcaneal tendon/],
+  ["calves", /gastrocnemius|soleus/],
 ];
 const groupOf = (name: string) => { const n = name.toLowerCase().replace(/_/g, " "); return MAP.find(([, re]) => re.test(n))?.[0]; };
 
@@ -54,6 +55,18 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
         ids.set(o, new THREE.MeshBasicMaterial({ color: new THREE.Color(id / 16, 0, 0) }));
         o.material = looks.get(o)!;
       });
+      // Solid grey filler inside the head, so the gaps in the face muscles don't show the traps behind.
+      const head = new THREE.Box3();
+      body.traverse((o) => { if (o instanceof THREE.Mesh && /frontalis|occipitalis|temporalis|masseter|epicranial/i.test(o.name.replace(/_/g, " "))) head.expandByObject(o); });
+      if (!head.isEmpty()) {
+        const plug = new THREE.Mesh(new THREE.SphereGeometry(0.5, 24, 16));
+        plug.scale.copy(head.getSize(new THREE.Vector3()).multiplyScalar(0.9));
+        plug.position.copy(head.getCenter(new THREE.Vector3()));
+        body.attach(plug);
+        looks.set(plug, new THREE.MeshStandardMaterial({ color: BASE.clone().multiplyScalar(0.6), roughness: 0.9 }));
+        ids.set(plug, new THREE.MeshBasicMaterial({ color: new THREE.Color((MAP.length + 1) / 16, 0, 0) }));
+        plug.material = looks.get(plug)!;
+      }
       const use = (m: Map<THREE.Mesh, THREE.Material>) => m.forEach((mat, o) => { o.material = mat; });
       const box = new THREE.Box3().setFromObject(body), mid = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
       const scene = new THREE.Scene();
@@ -76,11 +89,12 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
         fragmentShader: `uniform sampler2D tId; uniform vec2 px; varying vec2 vUv;
           float id(vec2 o) { return texture2D(tId, vUv + o * px).r; }
           void main() {
-            float c = id(vec2(0.0)), d = 0.0;
+            float c = id(vec2(0.0)), g = c * 16.0, d = 0.0;
+            if (g < 0.5 || g > ${MAP.length}.5) discard; // only outline the app's muscle groups (not hands, face, knees…)
             d = max(d, abs(id(vec2(1.0, 0.0)) - c)); d = max(d, abs(id(vec2(-1.0, 0.0)) - c));
             d = max(d, abs(id(vec2(0.0, 1.0)) - c)); d = max(d, abs(id(vec2(0.0, -1.0)) - c));
             if (d < 0.03) discard;
-            gl_FragColor = vec4(0.04, 0.04, 0.05, 0.9);
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 0.85);
           }`,
       });
       const quad = new THREE.Scene(); quad.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edge));
