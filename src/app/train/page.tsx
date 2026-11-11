@@ -7,13 +7,13 @@ import { Check, Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, Trophy, X
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
-import { fromUnit, w } from "@/lib/units";
+import { fromUnit, w, wNum } from "@/lib/units";
 import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
 import { demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDefault, supersetColor, type Exercise, type ExerciseLog, type SetType } from "@/lib/data";
-import { baseOf, bests, countsPR, e1rm, hhmmss, liftsOf, mmss, parseResult, setLabels } from "@/lib/lifting";
-import { bodyFor, estimate1rm, isLoadedBodyweight } from "@/lib/strength";
+import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from "@/lib/lifting";
+import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "@/components/OneRM";
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
@@ -40,7 +40,8 @@ export default function Train() {
 
   const body = bodyFor(s.library, Number(me.bw));
   const prev = bests(baseOf(me), s.sessions, body);
-  const anchors = { ...liftsOf(prev), bw: Number(me.bw), sex: me.sex };
+  // 1RM a set works out to (added weight for pull-ups / dips)
+  const setMax = (name: string, st: { kg: number; reps: number }) => { const b = body(name); return st.reps > 0 && st.kg + b > 0 ? e1rm(st.kg + b, st.reps) - b : 0; };
   const a = s.active;
 
   // null = empty workout; otherwise a routine (yours or an example). Its target sets become the sets to tick off.
@@ -256,7 +257,7 @@ export default function Train() {
               <ExerciseThumb ex={lib.get(ex.name)} size={48} />
               <div className="min-w-0 flex-1">
                 <h2 className="font-semibold">{ex.name}</h2>
-                {!isTimed(ex) && <OneRM logged={best} est={estimate1rm(lib.get(ex.name)?.id, anchors)} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
+                {!isTimed(ex) && <OneRM kg={Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
                 {(a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
                     className={`mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
@@ -274,11 +275,11 @@ export default function Train() {
                 </Link>
               )}
             </div>
-            <div className={`mt-3 grid ${isTimed(ex) ? "grid-cols-[2.25rem_1fr_1fr_2.25rem_2.5rem_1.5rem]" : "grid-cols-[2.25rem_1fr_1fr_2.5rem_1.5rem]"} items-center gap-2 text-xs`}>
-              <span className="muted">Set</span><span className="muted text-center">{u}</span><span className="muted text-center">{isTimed(ex) ? "Time" : "Reps"}</span>{isTimed(ex) && <span />}<span /><span />
+            <div className={`mt-3 grid ${isTimed(ex) ? "grid-cols-[2.25rem_1fr_1fr_2.25rem_2.5rem_1.5rem]" : "grid-cols-[2.25rem_1fr_1fr_2.75rem_2.5rem_1.5rem]"} items-center gap-2 text-xs`}>
+              <span className="muted">Set</span><span className="muted text-center">{u}</span><span className="muted text-center">{isTimed(ex) ? "Time" : "Reps"}</span>{isTimed(ex) ? <span /> : <span className="muted text-center">1RM</span>}<span /><span />
               {ex.sets.map((st, j) => {
-                const b = body(ex.name);
-                const pr = st.done && countsPR(st.type) && e1rm(st.kg + b, st.reps) - b > (best ?? 0);
+                const max = countsPR(st.type) ? setMax(ex.name, st) : 0;
+                const pr = st.done && max > (best ?? 0);
                 return (
                   <div key={j} className="contents">
                     <button onClick={() => setTyping({ i, j })} aria-label={`Set ${labels[j]}: ${st.type ? setTypes[st.type].label : "normal"}. Change set type`}
@@ -305,6 +306,9 @@ export default function Train() {
                       <input aria-label={`Set ${j + 1} reps`} inputMode="numeric" className="num" value={st.reps}
                         onChange={(e) => edit((x) => { x[i].sets[j].reps = Number(e.target.value.replace(/\D/g, "")) || 0; })} />
                     )}
+                    {!isTimed(ex) && <span aria-label={`Set ${labels[j]} estimated 1RM`} className={`text-center text-xs font-semibold tabular-nums ${st.done ? "text-zinc-800 dark:text-zinc-100" : "text-zinc-400 dark:text-zinc-600"}`}>
+                      {max > 0 ? `${isLoadedBodyweight(lib.get(ex.name)?.id) ? "+" : ""}${wNum(Math.round(max), u)}` : "–"}
+                    </span>}
                     <button aria-label={st.done ? "Mark set not done" : "Mark set done"} aria-pressed={!!st.done} onClick={() => toggle(i, j)}
                       className={`grid h-9 place-items-center rounded-lg transition active:scale-90 ${st.done ? "bg-lime-500 text-zinc-950" : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"}`}>
                       <Check size={18} strokeWidth={st.done ? 2.25 : 1.75} />

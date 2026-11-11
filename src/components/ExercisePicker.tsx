@@ -5,8 +5,8 @@ import ExerciseThumb from "./ExerciseThumb";
 import EmptyState from "./EmptyState";
 import { useStore } from "@/lib/store";
 import type { Exercise } from "@/lib/data";
-import { baseOf, bests, liftsOf } from "@/lib/lifting";
-import { bodyFor, estimate1rm, isLoadedBodyweight } from "@/lib/strength";
+import { baseOf, bests } from "@/lib/lifting";
+import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "./OneRM";
 
 const groups = ["all", "chest", "back", "shoulders", "biceps", "triceps", "forearms", "quads", "hamstrings", "glutes", "calves", "abs", "full body", "cardio"];
@@ -19,7 +19,6 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (e: Exercise) => void; onClose: () => void; taken: string[] }) {
   const { s, me, u } = useStore();
   const logged = bests(baseOf(me), s.sessions, bodyFor(s.library, Number(me.bw)));
-  const anchors = { ...liftsOf(logged), bw: Number(me.bw), sex: me.sex };
   const [q, setQ] = useState("");
   const [g, setG] = useState("all");
   const [k, setK] = useState("any");
@@ -55,7 +54,7 @@ export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (e:
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium leading-snug">{e.name}</span>
                     <span className="muted block text-xs">{cap(e.muscle)} · {cap(e.equipment)}{has ? " · added" : ""}</span>
-                    <OneRM logged={logged[e.name]} est={estimate1rm(e.id, anchors)} added={isLoadedBodyweight(e.id)} u={u} className="mt-0.5" />
+                    <OneRM kg={logged[e.name]} added={isLoadedBodyweight(e.id)} u={u} className="mt-0.5" />
                   </span>
                   <Plus size={18} className="text-lime-500" />
                 </button>
