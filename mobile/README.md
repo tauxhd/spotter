@@ -30,10 +30,17 @@ are imported straight from the website's `../src/lib` (alias `@shared/*`), so bo
 ## What's in it
 
 - **Tabs:** the native system tab bar (Liquid Glass on iOS 26) with Spotter's illustrated icons.
-- **Train:** start a routine, edit kg × reps, tick sets (lime, or amber + success haptic for a new record), add sets, finish
-  to save the workout and post it, or discard. The in-progress workout is kept on the phone until finished.
+- **Gym:** clock in with the door QR (simulated scan), time inside, live crowd with the typical-day chart, and today's best
+  free hour between your classes (APU timetable via the website when `EXPO_PUBLIC_WEB_URL` is set, else the sample timetable).
+- **Train:** start a routine or an empty workout, add exercises from the library (search, muscle and equipment filters,
+  in a native page sheet), edit kg × reps, tick sets (lime, or amber + success haptic for a new record), remove sets or
+  exercises, a rest timer after each set (−15 / +15 / skip, buzz when it's over), save as a routine, finish to save the
+  workout and post it, or discard. The in-progress workout is kept on the phone until finished.
+- **Eat:** calories and macros against the target, snap a meal for an AI estimate (the website's `/api/meal`), today's
+  log, and the cafeteria menu by stall.
+- **Ranks:** leaderboards by event with open, pound-for-pound (DOTS) and weight-class standards, podium, your rank;
+  log self-reported results for non-gym events.
 - **Feed:** everyone's posts, pull to refresh, like.
-- **Gym, Eat, Ranks:** placeholders, still on the website.
 - First launch asks for a short profile (each phone signs in anonymously, like the website does per browser).
 
 Motion follows Apple's fluid-interface guidance: springs (`Spring`, `SpringBounce` in `src/constants/theme.ts`),

@@ -9,26 +9,10 @@ import type { Exercise } from "@/lib/data";
 import { baseOf, bests } from "@/lib/lifting";
 import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "./OneRM";
-import { ABDUCTORS, ADDUCTORS, LATS, LOWER_BACK, OBLIQUES, REAR_DELTS, TRAPS } from "@/lib/muscles";
+import { family, kit, pickerGroups } from "@/lib/muscles";
 
-// Muscle filter, pictured by an anatomy figure with that group glowing (public/muscles).
-const groups: [string, (e: Exercise) => boolean][] = [
-  ["all", () => true],
-  ["chest", (e) => e.muscle === "chest" && !LATS.test(e.id)],
-  ["shoulders", (e) => e.muscle === "shoulders" && !REAR_DELTS.test(e.id) && !TRAPS.test(e.id)],
-  ["rear delts", (e) => REAR_DELTS.test(e.id)],
-  ["biceps", (e) => e.muscle === "biceps"], ["triceps", (e) => e.muscle === "triceps"], ["forearms", (e) => e.muscle === "forearms"],
-  ["abs", (e) => e.muscle === "abs" && !OBLIQUES.test(e.id)], ["obliques", (e) => OBLIQUES.test(e.id)],
-  ["lats", (e) => LATS.test(e.id)], ["traps", (e) => TRAPS.test(e.id)],
-  ["upper back", (e) => e.muscle === "back" && !LATS.test(e.id) && !LOWER_BACK.test(e.id) && !TRAPS.test(e.id) && !REAR_DELTS.test(e.id)],
-  ["lower back", (e) => LOWER_BACK.test(e.id)],
-  ["glutes", (e) => e.muscle === "glutes"],
-  ["adductors", (e) => ADDUCTORS.test(e.id)], ["abductors", (e) => ABDUCTORS.test(e.id)], ["quads", (e) => e.muscle === "quads"], ["hamstrings", (e) => e.muscle === "hamstrings"],
-  ["calves", (e) => e.muscle === "calves"], ["full body", (e) => e.muscle === "full body"], ["cardio", (e) => e.muscle === "cardio"],
-];
-const kit = [["any", "Any equipment"], ["dumbbell", "Dumbbell"], ["barbell", "Barbell"], ["bodyweight", "Bodyweight"], ["cable", "Cable"], ["machine", "Machine"], ["other", "Other"]] as const;
-// barbell family = barbell + EZ bar + Smith; bodyweight family = bodyweight + rings; other = kettlebell, cardio, misc
-const family = (e: string) => (["barbell", "ez-bar", "smith"].includes(e) ? "barbell" : ["bodyweight", "rings"].includes(e) ? "bodyweight" : ["dumbbell", "cable", "machine"].includes(e) ? e : "other");
+// Muscle filter, pictured by an anatomy figure with that group glowing (public/muscles). Groups live in lib/muscles (shared with the app).
+const groups = pickerGroups;
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 // Full-screen library browser: search + muscle chips, tap to add.

@@ -228,7 +228,7 @@ export const fmt = (min: number) => `${String(Math.floor(min / 60)).padStart(2, 
 // Demo override: add ?t=17:30 to any URL to pretend it's that time today.
 export function demoNow() {
   const d = new Date();
-  const t = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("t");
+  const t = typeof window !== "undefined" && window.location?.search && new URLSearchParams(window.location.search).get("t"); // (no location in the phone app)
   if (t && /^\d{1,2}:\d{2}$/.test(t)) d.setHours(Math.floor(toMin(t) / 60), toMin(t) % 60); // keep real seconds so posts still sort newest-first
   return d;
 }

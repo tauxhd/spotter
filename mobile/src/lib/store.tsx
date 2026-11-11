@@ -20,7 +20,8 @@ export type Session = { id: string; at: string; title: string; exercises: Exerci
 export type Active = { title: string; startedAt: string; exercises: ExerciseLog[] } | null;
 type Row = Record<string, any>;
 
-type State = { sessions: Session[]; posts: Post[]; library: Exercise[]; routines: Routine[]; active: Active };
+export type FoodEntry = { id: string; name: string; kcal: number; p: number; c: number; f: number; at: string };
+type State = { sessions: Session[]; posts: Post[]; library: Exercise[]; routines: Routine[]; active: Active; clockedIn: string | null; food: FoodEntry[] };
 type Ctx = {
   s: State;
   me: Profile;
@@ -29,6 +30,11 @@ type Ctx = {
   finishWorkout: (w: { title: string; exercises: ExerciseLog[] }, post: Pick<Post, "title" | "exercises" | "volume" | "prs" | "duration">, lifts: Pick<Profile, "squat" | "bench" | "deadlift">) => Promise<void>;
   like: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
+  saveRoutine: (r: { name: string; exercises: ExerciseLog[] }) => Promise<void>;
+  clockIn: () => Promise<void>;
+  clockOut: () => Promise<void>;
+  addFood: (f: Omit<FoodEntry, "id" | "at">) => Promise<void>;
+  removeFood: (id: string) => Promise<void>;
 };
 export type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "onboarding"; save: (p: Omit<Profile, "id">) => Promise<void> } | { kind: "ready" };
 
@@ -52,7 +58,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<State>(() => {
     let active: Active = null;
     try { const a = localStorage.getItem(ACTIVE); if (a) active = JSON.parse(a); } catch {}
-    return { sessions: [], posts: [], library: [], routines: [], active };
+    return { sessions: [], posts: [], library: [], routines: [], active, clockedIn: null, food: [] };
   });
 
   const loadPosts = useCallback(async (id: string) => {
@@ -60,12 +66,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (data) setS((x) => ({ ...x, posts: data.map((r) => toPost(r, id)) }));
   }, []);
   const loadMine = useCallback(async () => {
-    const [w, ro] = await Promise.all([
+    const [w, ro, v, f] = await Promise.all([
       sb.from("workouts").select("*").order("created_at", { ascending: false }).limit(400),
       sb.from("routines").select("id, name, exercises").order("updated_at", { ascending: false }),
+      sb.from("visits").select("in_at").is("out_at", null).order("in_at", { ascending: false }).limit(1),
+      sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
     setS((x) => ({
       ...x,
+      food: (f.data ?? []).map((r) => ({ id: r.id, name: r.name, kcal: +r.kcal, p: +r.p, c: +r.c, f: +r.f, at: r.created_at })).reverse(),
+      clockedIn: v.data?.[0]?.in_at ?? null,
       sessions: (w.data ?? []).map((r) => ({ id: r.id, at: r.created_at, title: r.title, exercises: r.exercises.map((e: ExerciseLog) => ({ ...e, name: oldNames[e.name] ?? e.name })) })),
       routines: ro.data ?? [],
     }));
@@ -125,6 +135,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       else await sb.from("likes").insert({ post_id: id });
     },
     refresh: () => loadPosts(me.id),
+    async saveRoutine(r) {
+      const row = { name: r.name.trim().slice(0, 60) || "My routine", exercises: r.exercises, updated_at: new Date().toISOString() };
+      const { data, error } = await sb.from("routines").insert(row).select("id, name, exercises").single();
+      if (error) throw error;
+      setS((x) => ({ ...x, routines: [data, ...x.routines] }));
+    },
+    async clockIn() {
+      const at = new Date().toISOString();
+      await sb.from("visits").update({ out_at: at }).is("out_at", null);
+      const { error } = await sb.from("visits").insert({ in_at: at });
+      if (!error) setS((x) => ({ ...x, clockedIn: at }));
+    },
+    async clockOut() {
+      await sb.from("visits").update({ out_at: new Date().toISOString() }).is("out_at", null);
+      setS((x) => ({ ...x, clockedIn: null }));
+    },
+    async addFood(f) {
+      const { data } = await sb.from("food_logs").insert({ ...f, created_at: new Date().toISOString() }).select().single();
+      if (data) setS((x) => ({ ...x, food: [...x.food, { ...f, id: data.id, at: data.created_at }] }));
+    },
+    async removeFood(id) {
+      setS((x) => ({ ...x, food: x.food.filter((y) => y.id !== id) }));
+      await sb.from("food_logs").delete().eq("id", id);
+    },
   } : null;
 
   return <S.Provider value={status}>{ctx ? <C.Provider value={ctx}>{children}</C.Provider> : children}</S.Provider>;
