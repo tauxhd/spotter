@@ -8,7 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import { useStore } from "@/lib/store";
 import { setTypes, timedByDefault } from "@/lib/data";
 import { countsPR, countsVolume, e1rm, mmss, setLabels } from "@/lib/lifting";
-import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
+import { LEVELS, bodyFor, isLoadedBodyweight, strengthLevel } from "@/lib/strength";
 import { w, wNum } from "@/lib/units";
 
 type Point = { at: number; heaviest: number; orm: number; setVol: number; vol: number; reps: number; hold: number };
@@ -69,6 +69,8 @@ export default function ExerciseStats() {
   const bestSet = allSets.reduce<{ kg: number; reps: number } | null>((b, st) => (!b || st.kg * st.reps > b.kg * b.reps ? st : b), null);
   const repRecords = Object.entries(allSets.reduce<Record<number, number>>((r, st) => { if (st.reps > 0) r[st.reps] = Math.max(r[st.reps] ?? -Infinity, st.kg); return r; }, {}))
     .map(([reps, kg]) => [Number(reps), kg] as const).sort((a, b) => a[0] - b[0]);
+
+  const lvl = !timed && points.length ? strengthLevel(id, best("orm"), Number(me.bw), me.sex) : null;
 
   if (!ex) return s.library.length ? <EmptyState art="not-found" title="Exercise not found" className="mt-16" /> : null;
 
@@ -131,6 +133,31 @@ export default function ExerciseStats() {
                   ))}
                 </ul>
               </section>
+
+              {lvl && (
+                <section className="-mx-4 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800/80">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold"><Icon name="ranks" size={22} />Strength level</h3>
+                  <div className="grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800">
+                    <div><p className="muted text-xs">Best 1RM</p><p className="text-lg font-bold tabular-nums">{added ? "+" : ""}{w(Math.round(best("orm") * 10) / 10, u)}</p></div>
+                    <div className="pl-4"><p className="muted text-xs">Level</p><p className="text-lg font-bold text-lime-600 dark:text-lime-400">{lvl.level}</p></div>
+                  </div>
+                  <div className="relative mt-4" role="meter" aria-label="Strength level" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(lvl.pos * 100)} aria-valuetext={lvl.level}>
+                    <div className="flex gap-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="h-2 flex-1 overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-800">
+                          <div className="h-full bg-lime-500" style={{ width: `${Math.min(100, Math.max(0, (lvl.pos * 4 - i) * 100))}%` }} />
+                        </div>
+                      ))}
+                    </div>
+                    <span className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-zinc-950 bg-lime-400 shadow-[0_0_10px_rgb(132_204_22/0.7)]" style={{ left: `${lvl.pos * 100}%` }} />
+                  </div>
+                  <div className="muted mt-2 flex justify-between text-[11px]">{LEVELS.map((l) => <span key={l} className={l === lvl.level ? "font-semibold text-zinc-800 dark:text-zinc-100" : ""}>{l}</span>)}</div>
+                  <p className="muted mt-3 text-sm">
+                    Stronger than about <b className="text-zinc-800 dark:text-zinc-100">{lvl.pct}%</b> of {me.sex === "F" ? "women" : "men"} who train, at your bodyweight.
+                    {lvl.next && <> {lvl.next.level} at {added ? "+" : ""}{w(Math.max(0, Math.ceil(lvl.next.kg / 2.5) * 2.5), u)}.</>}
+                  </p>
+                </section>
+              )}
 
               {!timed && repRecords.length > 0 && (
                 <section className="-mx-4 px-4 py-4">
