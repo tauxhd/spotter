@@ -17,6 +17,8 @@ const LOWER_BACK = /^deadlift$|deadlift-dumbbell|deficit-deadlift|paused-deadlif
 const TRAPS = /shrug|upright-row|high-pull/;
 const REAR_DELTS = /rear-delt|reverse-pec-deck|face-pull|y-raise|t-raise/;
 const OBLIQUES = /twist|side-bend|side-plank|woodchop|windshield|landmine-180|bicycle|anti-rotation|copenhagen|human-flag/;
+const ADDUCTORS = /copenhagen|cossack|lateral-lunge|sumo-squat|sumo-deadlift/;
+const ABDUCTORS = /hip-abduction|fire-hydrant|curtsy-lunge|lateral-step-up|lateral-shuffle/;
 const groups: [string, (e: Exercise) => boolean][] = [
   ["all", () => true],
   ["chest", (e) => e.muscle === "chest" && !LATS.test(e.id)],
@@ -27,7 +29,8 @@ const groups: [string, (e: Exercise) => boolean][] = [
   ["lats", (e) => LATS.test(e.id)], ["traps", (e) => TRAPS.test(e.id)],
   ["upper back", (e) => e.muscle === "back" && !LATS.test(e.id) && !LOWER_BACK.test(e.id) && !TRAPS.test(e.id) && !REAR_DELTS.test(e.id)],
   ["lower back", (e) => LOWER_BACK.test(e.id)],
-  ["glutes", (e) => e.muscle === "glutes"], ["quads", (e) => e.muscle === "quads"], ["hamstrings", (e) => e.muscle === "hamstrings"],
+  ["glutes", (e) => e.muscle === "glutes"],
+  ["adductors", (e) => ADDUCTORS.test(e.id)], ["abductors", (e) => ABDUCTORS.test(e.id)], ["quads", (e) => e.muscle === "quads"], ["hamstrings", (e) => e.muscle === "hamstrings"],
   ["calves", (e) => e.muscle === "calves"], ["full body", (e) => e.muscle === "full body"], ["cardio", (e) => e.muscle === "cardio"],
 ];
 const kit = [["any", "Any equipment"], ["dumbbell", "Dumbbell"], ["barbell", "Barbell"], ["bodyweight", "Bodyweight"], ["cable", "Cable"], ["machine", "Machine"], ["other", "Other"]] as const;
