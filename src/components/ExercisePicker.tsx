@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import { Plus, Search, X } from "lucide-react";
+import Image from "next/image";
+import { Plus, Search, Slash, X } from "lucide-react";
 import ExerciseThumb from "./ExerciseThumb";
-import Icon from "./Icon";
 import EmptyState from "./EmptyState";
 import { useStore } from "@/lib/store";
 import type { Exercise } from "@/lib/data";
@@ -10,11 +10,25 @@ import { baseOf, bests } from "@/lib/lifting";
 import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "./OneRM";
 
-// Muscle filter: each group pictured by a signature exercise from the library.
-const groups: [string, string | null][] = [
-  ["all", null], ["chest", "barbell-bench-press"], ["back", "pull-up"], ["shoulders", "overhead-press"], ["biceps", "barbell-curl"],
-  ["triceps", "rope-pushdown"], ["forearms", "wrist-curl-barbell"], ["quads", "back-squat"], ["hamstrings", "romanian-deadlift"],
-  ["glutes", "hip-thrust"], ["calves", "standing-calf-raise"], ["abs", "crunch"], ["full body", "power-clean"], ["cardio", "treadmill-run"],
+// Muscle filter, pictured by an anatomy figure with that group glowing (public/muscles). The library only tags "back" / "abs" /
+// "shoulders", so the finer groups are picked out by exercise id.
+const LATS = /pull-up|chin-up|pulldown|pullover|muscle-up|lever|skin-the-cat|dead-hang/;
+const LOWER_BACK = /^deadlift$|deadlift-dumbbell|deficit-deadlift|paused-deadlift|snatch-grip-deadlift|rack-pull|block-pull|jefferson|back-extension|good-morning|superman/;
+const TRAPS = /shrug|upright-row|high-pull/;
+const REAR_DELTS = /rear-delt|reverse-pec-deck|face-pull|y-raise|t-raise/;
+const OBLIQUES = /twist|side-bend|side-plank|woodchop|windshield|landmine-180|bicycle|anti-rotation|copenhagen|human-flag/;
+const groups: [string, (e: Exercise) => boolean][] = [
+  ["all", () => true],
+  ["chest", (e) => e.muscle === "chest" && !LATS.test(e.id)],
+  ["shoulders", (e) => e.muscle === "shoulders" && !REAR_DELTS.test(e.id) && !TRAPS.test(e.id)],
+  ["rear delts", (e) => REAR_DELTS.test(e.id)],
+  ["biceps", (e) => e.muscle === "biceps"], ["triceps", (e) => e.muscle === "triceps"], ["forearms", (e) => e.muscle === "forearms"],
+  ["abs", (e) => e.muscle === "abs" && !OBLIQUES.test(e.id)], ["obliques", (e) => OBLIQUES.test(e.id)],
+  ["lats", (e) => LATS.test(e.id)], ["traps", (e) => TRAPS.test(e.id)],
+  ["upper back", (e) => e.muscle === "back" && !LATS.test(e.id) && !LOWER_BACK.test(e.id) && !TRAPS.test(e.id) && !REAR_DELTS.test(e.id)],
+  ["lower back", (e) => LOWER_BACK.test(e.id)],
+  ["glutes", (e) => e.muscle === "glutes"], ["quads", (e) => e.muscle === "quads"], ["hamstrings", (e) => e.muscle === "hamstrings"],
+  ["calves", (e) => e.muscle === "calves"], ["full body", (e) => e.muscle === "full body"], ["cardio", (e) => e.muscle === "cardio"],
 ];
 const kit = [["any", "Any equipment"], ["dumbbell", "Dumbbell"], ["barbell", "Barbell"], ["bodyweight", "Bodyweight"], ["cable", "Cable"], ["machine", "Machine"], ["other", "Other"]] as const;
 // barbell family = barbell + EZ bar + Smith; bodyweight family = bodyweight + rings; other = kettlebell, cardio, misc
@@ -28,7 +42,8 @@ export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (e:
   const [q, setQ] = useState("");
   const [g, setG] = useState("all");
   const [k, setK] = useState("any");
-  const list = s.library.filter((e) => (g === "all" || e.muscle === g) && (k === "any" || family(e.equipment) === k) && `${e.name} ${e.muscle} ${e.equipment}`.toLowerCase().includes(q.toLowerCase()));
+  const inGroup = groups.find(([x]) => x === g)![1];
+  const list = s.library.filter((e) => inGroup(e) && (k === "any" || family(e.equipment) === k) && `${e.name} ${e.muscle} ${e.equipment}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto bg-zinc-100 dark:bg-zinc-950" role="dialog" aria-modal aria-label="Add exercise">
@@ -44,12 +59,14 @@ export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (e:
             className="w-full rounded-xl bg-white py-2.5 pl-9 pr-3 text-base outline-none ring-1 ring-zinc-200 focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900 dark:ring-zinc-800" />
         </div>
         <div className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 pt-1" role="group" aria-label="Muscle">
-          {groups.map(([x, id]) => {
+          {groups.map(([x]) => {
             const on = g === x;
             return (
               <button key={x} aria-pressed={on} onClick={() => setG(x)} className="flex w-[4.25rem] shrink-0 flex-col items-center gap-1.5">
                 <span className={`rounded-full transition ${on ? "ring-2 ring-lime-500 shadow-[0_0_14px_rgb(132_204_22/0.55)]" : "opacity-70"}`}>
-                  {id ? <ExerciseThumb ex={s.library.find((e) => e.id === id)} size={48} /> : <span className="grid h-12 w-12 place-items-center rounded-full bg-zinc-900 ring-1 ring-zinc-700/60"><Icon name="all" size={30} /></span>}
+                  <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-zinc-900 ring-1 ring-zinc-700/60">
+                    {x === "all" ? <Slash size={20} strokeWidth={1.75} className="text-zinc-300" /> : <Image src={`/muscles/${x.replace(" ", "-")}.webp`} alt="" width={44} height={44} />}
+                  </span>
                 </span>
                 <span className={`text-[11px] font-semibold ${on ? "text-lime-600 dark:text-lime-400" : "muted"}`}>{cap(x)}</span>
               </button>
