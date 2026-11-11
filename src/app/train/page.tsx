@@ -3,7 +3,7 @@ import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, Trophy, X } from "lucide-react";
+import { Check, Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
@@ -294,7 +294,7 @@ export default function Train() {
                   <div key={j} className={`col-span-full grid grid-cols-subgrid items-center rounded-md transition-colors duration-300 -mx-1.5 px-1.5 py-1 ${st.done ? `[&_.num]:bg-transparent ${pr ? "bg-amber-400/20 ring-1 ring-amber-400/50" : "bg-lime-500/20"}` : ""}`}>
                     <button onClick={() => setTyping({ i, j })} aria-label={`Set ${labels[j]}: ${st.type ? setTypes[st.type].label : "normal"}. Change set type`}
                       className={`flex h-9 items-center gap-1 rounded-lg font-bold tabular-nums ${st.type ? setTypes[st.type].color : ""}`}>
-                      {labels[j]}{pr && <Trophy size={12} className="text-amber-500" aria-label="PR" />}
+                      {labels[j]}{pr && <span role="img" aria-label="PR" className="flex"><Icon name="trophy" size={16} /></span>}
                     </button>
                     <WeightInput aria-label={`Set ${j + 1} weight, ${u}`} placeholder="0" kg={st.kg} unit={u} onKg={(v) => edit((x) => { x[i].sets[j].kg = v; })} />
                     {isTimed(ex) ? (() => {
