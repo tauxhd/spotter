@@ -9,16 +9,9 @@ import type { Exercise } from "@/lib/data";
 import { baseOf, bests } from "@/lib/lifting";
 import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "./OneRM";
+import { ABDUCTORS, ADDUCTORS, LATS, LOWER_BACK, OBLIQUES, REAR_DELTS, TRAPS } from "@/lib/muscles";
 
-// Muscle filter, pictured by an anatomy figure with that group glowing (public/muscles). The library only tags "back" / "abs" /
-// "shoulders", so the finer groups are picked out by exercise id.
-const LATS = /pull-up|chin-up|pulldown|pullover|muscle-up|lever|skin-the-cat|dead-hang/;
-const LOWER_BACK = /^deadlift$|deadlift-dumbbell|deficit-deadlift|paused-deadlift|snatch-grip-deadlift|rack-pull|block-pull|jefferson|back-extension|good-morning|superman|reverse-hyper|kettlebell-deadlift|pull-through/;
-const TRAPS = /shrug|upright-row|high-pull/;
-const REAR_DELTS = /rear-delt|reverse-pec-deck|face-pull|y-raise|t-raise|pull-apart|snow-angel|face-pull/;
-const OBLIQUES = /twist|side-bend|side-plank|woodchop|windshield|landmine-180|bicycle|anti-rotation|copenhagen|human-flag|pallof|oblique|torso-rotation|windmill/;
-const ADDUCTORS = /adduction|adductor|copenhagen|cossack|lateral-lunge|sumo-squat|sumo-deadlift/;
-const ABDUCTORS = /hip-abduction|clamshell|side-lying-leg-raise|lateral-walk|fire-hydrant|curtsy-lunge|lateral-step-up|lateral-shuffle/;
+// Muscle filter, pictured by an anatomy figure with that group glowing (public/muscles).
 const groups: [string, (e: Exercise) => boolean][] = [
   ["all", () => true],
   ["chest", (e) => e.muscle === "chest" && !LATS.test(e.id)],

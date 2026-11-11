@@ -16,6 +16,7 @@ import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } f
 import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "@/components/OneRM";
 import { Radar } from "@/components/MuscleDistribution";
+import { muscleFor } from "@/lib/muscles";
 import dynamic from "next/dynamic";
 const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-80 w-full rounded-xl" /> });
 
@@ -236,8 +237,9 @@ export default function Train() {
   for (const e of a.exercises) {
     const ex = lib.get(e.name), n = e.sets.filter((x) => x.done && countsPR(x.type)).length;
     if (!ex || !n) continue;
-    hit[ex.muscle] = (hit[ex.muscle] ?? 0) + n;
-    for (const m of new Set(ex.secondary)) if (m !== ex.muscle) hit[m] = (hit[m] ?? 0) + n / 2;
+    const main = muscleFor(ex.muscle, ex.id);
+    hit[main] = (hit[main] ?? 0) + n;
+    for (const m of new Set(ex.secondary.map((x) => muscleFor(x, ex.id)))) if (m !== main) hit[m] = (hit[m] ?? 0) + n / 2;
   }
   const ranked = Object.entries(hit).sort((x, y) => y[1] - x[1]);
   const areas: Record<string, number> = {}; // same sets by body area, for the spider chart

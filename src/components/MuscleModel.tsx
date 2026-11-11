@@ -12,7 +12,9 @@ const MAP: [string, RegExp][] = [
   ["biceps", /biceps brachii|brachialis/],
   // Long finger/toe muscles, sartorius and the Achilles stay out: they run into the hands, knees and feet and clutter the outlines.
   ["forearms", /brachioradialis|flexor carpi|extensor carpi|pronator|supinator/],
-  ["back", /latissimus|trapezius|rhomboid|teres (major|minor)|infraspinatus|iliocostalis/],
+  ["lats", /latissimus/],
+  ["upper back", /trapezius|rhomboid|teres (major|minor)|infraspinatus/],
+  ["lower back", /iliocostalis/],
   ["abs", /rectus abdominis|external abdominal oblique|pyramidalis/],
   ["glutes", /gluteus|tensor fasciae/],
   ["quads", /rectus femoris|vastus/],
@@ -67,6 +69,18 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
         ids.set(plug, new THREE.MeshBasicMaterial({ color: new THREE.Color((MAP.length + 1) / 16, 0, 0) }));
         plug.material = looks.get(plug)!;
       }
+      // Thin grey divider down the middle of the torso, so the back doesn't show through the breastbone / abs gap (and vice versa).
+      const torso = new THREE.Box3();
+      body.traverse((o) => { if (o instanceof THREE.Mesh && /pectoralis major|rectus abdominis|gluteus maximus|latissimus/i.test(o.name.replace(/_/g, " "))) torso.expandByObject(o); });
+      if (!torso.isEmpty()) {
+        const t = torso.getSize(new THREE.Vector3()), at = torso.getCenter(new THREE.Vector3());
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(t.x * 0.04, t.y * 0.95, t.z * 0.7));
+        wall.position.copy(at);
+        body.attach(wall);
+        looks.set(wall, new THREE.MeshStandardMaterial({ color: BASE.clone().multiplyScalar(0.6), roughness: 0.9 }));
+        ids.set(wall, new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) })); // reads as a gap: filled, no outline
+        wall.material = looks.get(wall)!;
+      }
       const use = (m: Map<THREE.Mesh, THREE.Material>) => m.forEach((mat, o) => { o.material = mat; });
       const box = new THREE.Box3().setFromObject(body), mid = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
       const scene = new THREE.Scene();
@@ -87,11 +101,25 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
         uniforms: { tId: { value: ids_rt.texture }, px: { value: new THREE.Vector2(1 / ids_rt.width, 1 / ids_rt.height) } },
         vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
         fragmentShader: `uniform sampler2D tId; uniform vec2 px; varying vec2 vUv;
-          float id(vec2 o) { return texture2D(tId, vUv + o * px).r; }
+          float raw(vec2 o) { return textureLod(tId, vUv + o * px, 0.0).r; }
+          // A thin gap (e.g. down the middle of the abs): background with body close by on both sides.
+          bool gap(vec2 o) {
+            bool l = false, r = false, u = false, d = false;
+            for (int i = 1; i <= 8; i++) {
+              float f = float(i);
+              l = l || raw(o - vec2(f, 0.0)) > 0.03; r = r || raw(o + vec2(f, 0.0)) > 0.03;
+              d = d || raw(o - vec2(0.0, f)) > 0.03; u = u || raw(o + vec2(0.0, f)) > 0.03;
+            }
+            return (l && r) || (u && d);
+          }
+          float id(vec2 o, float c) { float v = raw(o); return v < 0.03 && gap(o) ? c : v; } // gaps count as the muscle next to them
           void main() {
-            float c = id(vec2(0.0)), g = c * 16.0;
-            if (g < 0.5) discard; // background
-            float r = id(vec2(1.0, 0.0)), l = id(vec2(-1.0, 0.0)), u = id(vec2(0.0, 1.0)), b = id(vec2(0.0, -1.0));
+            float c = raw(vec2(0.0)), g = c * 16.0;
+            if (g < 0.5) {
+              if (gap(vec2(0.0))) gl_FragColor = vec4(0.22, 0.22, 0.24, 1.0); else discard; // fill gaps, leave real background
+              return;
+            }
+            float r = id(vec2(1.0, 0.0), c), l = id(vec2(-1.0, 0.0), c), u = id(vec2(0.0, 1.0), c), b = id(vec2(0.0, -1.0), c);
             bool edgeOfBody = min(min(r, l), min(u, b)) < 0.03; // one outline around the whole figure
             bool group = g < ${MAP.length}.5; // and around the app's muscle groups (not hands, face, knees…)
             float d = max(max(abs(r - c), abs(l - c)), max(abs(u - c), abs(b - c)));
