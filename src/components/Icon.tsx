@@ -5,7 +5,9 @@ export type IconName = "all" | "high-protein" | "kcal" | "protein" | "carbs" | "
   | "gym" | "train" | "eat" | "ranks" | "feed" | "map" | "qr" | "calendar" | "crowd"
   | "p4p" | "squat" | "bench" | "deadlift" | "scale" | "barbell" | "faculty" | "medal" | "verified"
   | "ohp" | "clean" | "pullup" | "pushup" | "plank" | "vjump" | "broadjump" | "sprint" | "run"
-  | "tick" | "tick-box" | "tick-circle" | "cross" | "cross-box" | "cross-circle" | "plus" | "plus-circle" | "trash";
+  | "tick" | "tick-box" | "tick-circle" | "cross" | "cross-box" | "cross-circle" | "plus" | "plus-circle" | "trash"
+  | "stats" | "edit" | "share" | "settings" | "bell" | "comment" | "heart" | "stopwatch" | "flame"
+  | "id-card" | "grad-cap" | "building" | "intake" | "person" | "category" | "shield" | "lock" | "book";
 
 export default function Icon({ name, size = 24, className = "" }: { name: IconName; size?: number; className?: string }) {
   return <Image src={`/icons/${name}.webp`} alt="" width={size} height={size} className={`shrink-0 ${className}`} />;

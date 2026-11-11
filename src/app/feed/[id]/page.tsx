@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Heart, MessageCircle, SendHorizontal, Share2 } from "lucide-react";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
+import EmptyState from "@/components/EmptyState";
+import { w, wTotal } from "@/lib/units";
 import FollowButton from "@/components/FollowButton";
 import ProfileLink from "@/components/ProfileLink";
 import ExerciseThumb from "@/components/ExerciseThumb";
@@ -16,12 +18,14 @@ const dur = (m?: number | null) => (!m ? "—" : m < 60 ? `${m}min` : `${Math.fl
 
 export default function WorkoutDetail() {
   const { id } = useParams<{ id: string }>();
-  const { s, me, like, comment } = useStore();
+  const { s, me, u, like, comment } = useStore();
   const [draft, setDraft] = useState("");
   const p = s.posts.find((x) => x.id === id);
   const back = "/feed" + (typeof window !== "undefined" ? location.search : "");
 
-  if (!p) return <p className="muted mt-20 text-center text-sm">{s.posts.length ? "This workout isn't available." : "Loading…"}</p>;
+  if (!p) return s.posts.length
+    ? <EmptyState art="not-found" title="This workout isn't available" text="It may be private, friends-only, or deleted." className="mt-16" />
+    : <p className="muted mt-20 text-center text-sm">Loading…</p>;
 
   const rows = p.exercises.map((e) => {
     const ex = findExercise(s.library, e.id, e.name);
@@ -73,7 +77,7 @@ export default function WorkoutDetail() {
           ? <video src={p.media.url} controls playsInline loop muted className="-mx-4 aspect-[4/5] w-[calc(100%+2rem)] max-w-none bg-black object-cover" />
           : <img src={p.media.url} alt={`${p.by}'s workout`} className="-mx-4 aspect-[4/5] w-[calc(100%+2rem)] max-w-none bg-black object-cover" />)} {/* eslint-disable-line @next/next/no-img-element */}
         <div className="grid grid-cols-4 gap-2">
-          {[["Time", dur(p.duration)], ["Volume", `${p.volume.toLocaleString()} kg`], ["Sets", totalSets]].map(([k, v]) => (
+          {[["Time", dur(p.duration)], ["Volume", wTotal(p.volume, u)], ["Sets", totalSets]].map(([k, v]) => (
             <div key={k}><p className="muted text-xs">{k}</p><p className="font-semibold tabular-nums">{v}</p></div>
           ))}
           <div><p className="muted text-xs">Records</p><p className="flex items-center gap-1 font-semibold"><Icon name="medal" size={18} />{p.prs.length}</p></div>
@@ -96,7 +100,7 @@ export default function WorkoutDetail() {
               <div key={k}>
                 <p className="mb-1 text-sm">{k}</p>
                 <div className="flex items-center gap-3">
-                  <div className="h-3 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"><div className="h-full rounded-full bg-lime-500" style={{ width: `${pct}%` }} /></div>
+                  <div className="h-3 flex-1 overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-800"><div className="h-full rounded-sm bg-lime-500" style={{ width: `${pct}%` }} /></div>
                   <span className="muted w-10 text-right text-sm tabular-nums">{pct}%</span>
                 </div>
               </div>
@@ -112,7 +116,7 @@ export default function WorkoutDetail() {
             <div className="flex items-center gap-3">
               <ExerciseThumb ex={ex} size={48} />
               <div className="min-w-0">
-                {e.superset && <span className="mb-0.5 inline-block rounded-full bg-lime-500 px-2 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {e.superset}</span>}
+                {e.superset && <span className="mb-0.5 inline-block rounded-sm bg-lime-500 px-2 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {e.superset}</span>}
                 <p className="font-semibold text-lime-600 dark:text-lime-400">{ex?.name ?? e.name}</p>
                 {ex && <p className="muted text-xs capitalize">{ex.muscle} · {ex.equipment}</p>}
               </div>
@@ -123,8 +127,8 @@ export default function WorkoutDetail() {
                 <div key={i} className={`grid grid-cols-[3rem_1fr] items-center px-3 py-2.5 text-sm tabular-nums ${i % 2 ? "" : "bg-white dark:bg-zinc-900"}`}>
                   <span className={`font-bold ${x.type ? setTypes[x.type].color : ""}`} title={x.type ? setTypes[x.type].label : "Working set"}>{labels[i]}</span>
                   <span>
-                    {x.secs !== undefined ? (x.kg ? `${x.kg} kg × ${mmss(x.secs)}` : mmss(x.secs)) : x.kg ? `${x.kg} kg × ${x.reps}` : `${x.reps} reps`}
-                    {pr && i === top && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 text-[11px] font-bold text-amber-500"><Icon name="medal" size={12} />1RM</span>}
+                    {x.secs !== undefined ? (x.kg ? `${w(x.kg, u)} × ${mmss(x.secs)}` : mmss(x.secs)) : x.kg ? `${w(x.kg, u)} × ${x.reps}` : `${x.reps} reps`}
+                    {pr && i === top && <span className="ml-2 inline-flex items-center gap-1 rounded-sm bg-amber-400/15 px-2 text-[11px] font-bold text-amber-500"><Icon name="medal" size={12} />1RM</span>}
                   </span>
                 </div>
               )) : (
@@ -145,7 +149,7 @@ export default function WorkoutDetail() {
 
       <section id="comments" className="space-y-2">
         <h3 className="text-lg font-bold">Comments</h3>
-        {p.comments.length === 0 && <p className="muted text-sm">No comments yet. Hype them up 💪</p>}
+        {p.comments.length === 0 && <EmptyState art="comments" size={96} className="py-4" title="No comments yet" text="Hype them up 💪" />}
         {p.comments.map((c, i) => <p key={i} className="text-sm"><ProfileLink id={c.uid} name={c.by} className="font-semibold">{c.by}</ProfileLink> {c.text}</p>)}
         <form onSubmit={(ev) => { ev.preventDefault(); if (draft.trim()) { comment(p.id, draft.trim()); setDraft(""); } }} className="flex gap-2">
           <input value={draft} onChange={(ev) => setDraft(ev.target.value)} placeholder={`Comment as ${me.name}…`} aria-label="Comment"

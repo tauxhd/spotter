@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import Avatar from "@/components/Avatar";
+import EmptyState from "@/components/EmptyState";
+import { ChevronDown } from "lucide-react";
+import { fromUnit, w } from "@/lib/units";
 import FollowButton from "@/components/FollowButton";
 import ProfileLink from "@/components/ProfileLink";
 import { sb, useStore, type Profile } from "@/lib/store";
@@ -17,17 +20,17 @@ const standards: { id: Standard; label: string; icon: IconName }[] = [
 const placeholder = { kg: "kg", reps: "reps", cm: "cm", sec: "seconds, e.g. 12.8", time: "m:ss, e.g. 9:45" };
 
 function Stat({ icon, children }: { icon: IconName; children: React.ReactNode }) {
-  return <span className="flex items-center gap-1 rounded-full bg-zinc-100 py-0.5 pl-1 pr-2 dark:bg-zinc-800/80"><Icon name={icon} size={14} />{children}</span>;
+  return <span className="flex items-center gap-1 rounded-sm bg-zinc-100 py-0.5 pl-1 pr-2 dark:bg-zinc-800/80"><Icon name={icon} size={14} />{children}</span>;
 }
 
 export default function Ranks() {
-  const { s, me } = useStore();
+  const { s, me, u } = useStore();
   const [others, setOthers] = useState<Omit<Profile, "intake">[]>([]);
   const [group, setGroup] = useState<string>("Powerlifting");
   const [eventId, setEventId] = useState("total");
   const [std, setStd] = useState<Standard>("p4p");
   const [sex, setSex] = useState<"all" | Sex>("all");
-  const [mine, setMine] = useState(false);
+  const [who, setWho] = useState<"all" | "faculty" | "following" | "followers" | "friends">("all");
   const [cls, setCls] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, number>>({}); // user_id -> value, for the selected non-gym event
   const [draft, setDraft] = useState("");
@@ -67,11 +70,16 @@ export default function Ranks() {
   const rows = people
     .filter((l) => l.value && l.value > 0)
     .filter((l) => (standard === "class" ? l.sex === classSex && weightClass(l.bw, limits) === activeClass : sex === "all" || l.sex === sex))
-    .filter((l) => !mine || l.faculty === me.faculty)
+    .filter((l) => l.id === me.id || who === "all" // you always stay in, so you see where you rank
+      || (who === "faculty" && l.faculty === me.faculty)
+      || (who === "following" && s.following.includes(l.id))
+      || (who === "followers" && s.followers.includes(l.id))
+      || (who === "friends" && s.following.includes(l.id) && s.followers.includes(l.id)))
     .map((l) => ({ ...l, score: standard !== "p4p" ? l.value! : ev.p4p === "dots" ? dots(l.value!, l.bw, l.sex) : l.value! / l.bw }))
     .sort((x, y) => (ev.lower && standard !== "p4p" ? x.score - y.score : y.score - x.score));
 
-  const show = (n: number) => (standard === "p4p" ? (ev.p4p === "dots" ? n.toFixed(1) : `${n.toFixed(2)}×`) : fmtResult(Math.round(n * 10) / 10, ev.unit));
+  const show = (n: number) => (standard === "p4p" ? (ev.p4p === "dots" ? n.toFixed(1) : `${n.toFixed(2)}×`) : fmt(n, ev.unit));
+  function fmt(v: number, unit: typeof ev.unit) { return unit === "kg" ? w(v, u) : fmtResult(v, unit); }
   const unitLabel = standard === "p4p" ? (ev.p4p === "dots" ? "DOTS" : "× bodyweight") : "";
   const myRank = rows.findIndex((l) => l.id === me.id);
   const ahead = myRank > 0 ? rows[myRank - 1] : null;
@@ -80,8 +88,9 @@ export default function Ranks() {
   const myValue = people.at(-1)!.value;
 
   async function save() {
-    const v = parseResult(draft, ev.unit);
-    if (!v) return;
+    const raw = parseResult(draft, ev.unit);
+    if (!raw) return;
+    const v = ev.unit === "kg" ? Math.round(fromUnit(raw, u) * 100) / 100 : raw; // results stored in kg
     const better = !myValue || (ev.lower ? v < myValue : v > myValue);
     if (!better) return setDraft("");
     setSaving(true);
@@ -101,9 +110,9 @@ export default function Ranks() {
       </header>
 
       {/* event */}
-      <div className="no-scrollbar flex gap-2 overflow-x-auto">
+      <div className="no-scrollbar -mx-4 flex gap-5 overflow-x-auto border-b border-zinc-200 px-4 dark:border-zinc-800">
         {eventGroups.map((g) => (
-          <button key={g} aria-pressed={group === g} onClick={() => { setGroup(g); setEventId(events.find((e) => e.group === g)!.id); }} className="chip">{g}</button>
+          <button key={g} aria-pressed={group === g} onClick={() => { setGroup(g); setEventId(events.find((e) => e.group === g)!.id); }} className="tab">{g}</button>
         ))}
       </div>
       <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 py-1" role="group" aria-label="Event">
@@ -133,11 +142,22 @@ export default function Ranks() {
         })}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex items-end gap-5">
         {(standard === "class" ? (["M", "F"] as const) : (["all", "M", "F"] as const)).map((x) => (
-          <button key={x} aria-pressed={(standard === "class" ? classSex : sex) === x} onClick={() => setSex(x)} className="chip">{x === "all" ? "Everyone" : x === "M" ? "Men" : "Women"}</button>
+          <button key={x} aria-pressed={(standard === "class" ? classSex : sex) === x} onClick={() => setSex(x)} className="tab">{x === "all" ? "Everyone" : x === "M" ? "Men" : "Women"}</button>
         ))}
-        <button aria-pressed={mine} onClick={() => setMine((v) => !v)} className="chip ml-auto flex items-center gap-1"><Icon name="faculty" size={14} />{me.faculty}</button>
+        <label className="relative ml-auto flex items-center gap-1 pb-2 text-sm font-semibold">
+          <Icon name={who === "faculty" ? "faculty" : who === "all" ? "crowd" : "person"} size={16} />
+          <select value={who} onChange={(e) => setWho(e.target.value as typeof who)} aria-label="Show"
+            className="appearance-none bg-transparent pr-4 outline-none">
+            <option value="all">All students</option>
+            <option value="faculty">{me.faculty}</option>
+            <option value="following">Following</option>
+            <option value="followers">Followers</option>
+            <option value="friends">Friends</option>
+          </select>
+          <ChevronDown size={14} className="pointer-events-none absolute right-0 muted" />
+        </label>
       </div>
 
       {standard === "class" && (
@@ -190,8 +210,8 @@ export default function Ranks() {
         <form onSubmit={(e) => { e.preventDefault(); save(); }} className="card flex items-center gap-3">
           <Icon name={ev.icon as IconName} size={40} />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">{myValue ? `Your best: ${fmtResult(myValue, ev.unit)}` : `Log your ${ev.name.toLowerCase()}`}</p>
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={placeholder[ev.unit]} aria-label={`New ${ev.name} result`}
+            <p className="text-sm font-semibold">{myValue ? `Your best: ${fmt(myValue, ev.unit)}` : `Log your ${ev.name.toLowerCase()}`}</p>
+            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={ev.unit === "kg" ? u : placeholder[ev.unit]} aria-label={`New ${ev.name} result`}
               inputMode={ev.unit === "time" ? "text" : "decimal"} className="num mt-1 text-left" />
           </div>
           <button disabled={saving || !parseResult(draft, ev.unit)} className="btn self-end py-2 text-sm">{saving ? "…" : "Save"}</button>
@@ -209,8 +229,8 @@ export default function Ranks() {
               <p className="flex items-center gap-1 font-semibold"><span className="truncate">{l.name}</span>{l.verified && <Icon name="verified" size={16} />}</p>
               <p className="muted flex items-center gap-1 text-xs"><Icon name="faculty" size={14} />{l.faculty}</p>
               <div className="muted mt-1 flex flex-wrap gap-1 text-[11px] font-medium tabular-nums">
-                <Stat icon="scale">{l.bw} kg · {weightClass(l.bw, weightClasses[l.sex])}</Stat>
-                {standard === "p4p" && <Stat icon={ev.icon as IconName}>{fmtResult(l.value!, ev.unit)}</Stat>}
+                <Stat icon="scale">{w(l.bw, u)} · {weightClass(l.bw, weightClasses[l.sex])} kg class</Stat>
+                {standard === "p4p" && <Stat icon={ev.icon as IconName}>{fmt(l.value!, ev.unit)}</Stat>}
               </div>
             </div>
             </ProfileLink>
@@ -220,7 +240,7 @@ export default function Ranks() {
             </div>
           </li>
         ))}
-        {rows.length === 0 && <li className="card muted text-center text-sm">Nobody here yet. Be the first!</li>}
+        {rows.length === 0 && <li><EmptyState art="podium" title="Nobody here yet" text={["following", "followers", "friends"].includes(who) ? "Follow students from the feed to compare with them." : "Log a result and take first place."} /></li>}
       </ol>
       <p className="muted flex items-center gap-1 text-xs"><Icon name="verified" size={14} />Verified = checked by a gym rep. Gym lifts come from logged sets; other events are self-reported.</p>
     </div>

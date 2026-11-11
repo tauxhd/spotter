@@ -72,7 +72,7 @@ export default function GymHome() {
           <h1 className="h-title">{gym.name}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${open ? "bg-lime-100 text-lime-700 dark:bg-lime-400/10 dark:text-lime-400" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
+          <span className={`rounded-sm px-2.5 py-1 text-xs font-semibold ${open ? "bg-lime-100 text-lime-700 dark:bg-lime-400/10 dark:text-lime-400" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
             {open ? `Open until ${gym.close}` : `Opens ${gym.open}`}
           </span>
           <Link href={"/me" + location.search} aria-label="Your profile"><Avatar id={me.id} url={me.avatar_url} name={me.name} size={38} className="ring-2 ring-lime-400/40" /></Link>
@@ -118,8 +118,8 @@ export default function GymHome() {
           <span className="muted text-sm">/ {gym.capacity} people</span>
           <span className={`ml-auto text-sm font-semibold ${lv.text}`}>{open ? lv.label : "Closed"}</span>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-          <div className={`h-full rounded-full transition-all duration-700 ${lv.bar}`} style={{ width: `${pct}%` }} />
+        <div className="mt-2 h-2 overflow-hidden rounded-sm bg-zinc-100 dark:bg-zinc-800">
+          <div className={`h-full rounded-sm transition-all duration-700 ${lv.bar}`} style={{ width: `${pct}%` }} />
         </div>
         {friends.length > 0 ? (
           <div className="mt-3 flex items-center gap-3 rounded-xl bg-lime-50 p-2.5 dark:bg-lime-400/10">

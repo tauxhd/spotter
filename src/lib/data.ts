@@ -114,16 +114,16 @@ export const templates: { name: string; exercises: ExerciseLog[] }[] = [
 
 
 export const lifters = [
-  { id: "u1", name: "Hafiz R.", sex: "M" as Sex, bw: 83, faculty: "Engineering", squat: 200, bench: 135, deadlift: 240, verified: true },
-  { id: "u2", name: "Jun Wei", sex: "M" as Sex, bw: 66, faculty: "Computing", squat: 165, bench: 110, deadlift: 210, verified: true },
-  { id: "u3", name: "Priya S.", sex: "F" as Sex, bw: 58, faculty: "Business", squat: 115, bench: 62.5, deadlift: 145, verified: true },
-  { id: "u4", name: "Daniel K.", sex: "M" as Sex, bw: 102, faculty: "Engineering", squat: 230, bench: 160, deadlift: 260, verified: false },
-  { id: "u5", name: "Nurul A.", sex: "F" as Sex, bw: 52, faculty: "Computing", squat: 95, bench: 50, deadlift: 125, verified: true },
-  { id: "u6", name: "Kenji T.", sex: "M" as Sex, bw: 74, faculty: "Design", squat: 150, bench: 105, deadlift: 190, verified: true },
-  { id: "u7", name: "Mei Ling", sex: "F" as Sex, bw: 63, faculty: "Design", squat: 105, bench: 55, deadlift: 135, verified: false },
-  { id: "u8", name: "Ravi M.", sex: "M" as Sex, bw: 90, faculty: "Business", squat: 180, bench: 140, deadlift: 220, verified: true },
-  { id: "u9", name: "Aisyah Z.", sex: "F" as Sex, bw: 70, faculty: "Engineering", squat: 130, bench: 70, deadlift: 160, verified: true },
-  { id: "u10", name: "Farhan I.", sex: "M" as Sex, bw: 60, faculty: "Computing", squat: 140, bench: 95, deadlift: 185, verified: false },
+  { id: "u1", name: "Hafiz R.", sex: "M" as Sex, bw: 83, faculty: "Engineering", tp: "TP061037", course: "BEng (Hons) Mechatronic Engineering", squat: 200, bench: 135, deadlift: 240, verified: true },
+  { id: "u2", name: "Jun Wei", sex: "M" as Sex, bw: 66, faculty: "Computing", tp: "TP061074", course: "BSc (Hons) Computer Science", squat: 165, bench: 110, deadlift: 210, verified: true },
+  { id: "u3", name: "Priya S.", sex: "F" as Sex, bw: 58, faculty: "Business", tp: "TP061111", course: "BA (Hons) Business Management", squat: 115, bench: 62.5, deadlift: 145, verified: true },
+  { id: "u4", name: "Daniel K.", sex: "M" as Sex, bw: 102, faculty: "Engineering", tp: "TP061148", course: "BEng (Hons) Mechatronic Engineering", squat: 230, bench: 160, deadlift: 260, verified: false },
+  { id: "u5", name: "Nurul A.", sex: "F" as Sex, bw: 52, faculty: "Computing", tp: "TP061185", course: "BSc (Hons) Computer Science", squat: 95, bench: 50, deadlift: 125, verified: true },
+  { id: "u6", name: "Kenji T.", sex: "M" as Sex, bw: 74, faculty: "Design", tp: "TP061222", course: "BA (Hons) Graphic Design & Multimedia", squat: 150, bench: 105, deadlift: 190, verified: true },
+  { id: "u7", name: "Mei Ling", sex: "F" as Sex, bw: 63, faculty: "Design", tp: "TP061259", course: "BA (Hons) Graphic Design & Multimedia", squat: 105, bench: 55, deadlift: 135, verified: false },
+  { id: "u8", name: "Ravi M.", sex: "M" as Sex, bw: 90, faculty: "Business", tp: "TP061296", course: "BA (Hons) Business Management", squat: 180, bench: 140, deadlift: 220, verified: true },
+  { id: "u9", name: "Aisyah Z.", sex: "F" as Sex, bw: 70, faculty: "Engineering", tp: "TP061333", course: "BEng (Hons) Mechatronic Engineering", squat: 130, bench: 70, deadlift: 160, verified: true },
+  { id: "u10", name: "Farhan I.", sex: "M" as Sex, bw: 60, faculty: "Computing", tp: "TP061370", course: "BSc (Hons) Computer Science", squat: 140, bench: 95, deadlift: 185, verified: false },
 ];
 
 // ---- leaderboard events ----

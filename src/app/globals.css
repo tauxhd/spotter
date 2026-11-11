@@ -4,6 +4,19 @@
   --font-sans: var(--font-geist-sans);
 }
 
+/* House style: tight corners and slightly denser spacing, so it reads less "default UI kit".
+   Overrides Tailwind's scale, so every rounded-* / p-* / gap-* class follows. */
+@theme {
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 5px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
+  --spacing: 0.235rem;
+}
+
 /* ---- feel native on phones (mobile-native skill) ---- */
 html {
   -webkit-tap-highlight-color: transparent; /* no grey flash on tap; every control has its own :active */
@@ -13,6 +26,7 @@ html {
 
 body {
   @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+  line-height: 1.45;
 }
 
 /* iOS zooms into any input under 16px and never zooms back out. Element-level, so bigger sizes set by classes still win. */
@@ -67,10 +81,18 @@ button, a { transition: opacity 160ms ease-out; }
 }
 
 .chip {
-  @apply shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold transition dark:bg-zinc-900;
+  @apply shrink-0 rounded-md bg-zinc-100 px-3 py-1.5 text-xs font-semibold transition dark:bg-zinc-900;
 }
 .chip[aria-pressed="true"] {
   @apply bg-zinc-900 text-white dark:bg-lime-400 dark:text-zinc-950;
+}
+
+/* Text tab with an underline when selected: filters that stay out of the way. */
+.tab {
+  @apply -mb-px shrink-0 border-b-2 border-transparent pb-2 text-sm font-semibold text-zinc-500 transition-colors dark:text-zinc-400;
+}
+.tab[aria-pressed="true"] {
+  @apply border-lime-500 text-zinc-900 dark:text-zinc-100;
 }
 
 .num {

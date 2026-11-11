@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Clock, Hash, Link2, Trash2 } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
+import EmptyState from "@/components/EmptyState";
+import WeightInput from "@/components/WeightInput";
+import { fromUnit } from "@/lib/units";
 import Icon from "@/components/Icon";
 import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
@@ -14,7 +17,7 @@ import { mmss, parseResult, setLabels } from "@/lib/lifting";
 // Create / edit a routine. ?id=<routine> edits, ?from=<example name> starts from an example, nothing = blank.
 function Editor() {
   const params = useSearchParams();
-  const { s, saveRoutine, deleteRoutine } = useStore();
+  const { s, u, saveRoutine, deleteRoutine } = useStore();
   const router = useRouter();
   const id = params.get("id");
   const existing = s.routines.find((r) => r.id === id);
@@ -32,7 +35,7 @@ function Editor() {
   const add = (e: Exercise) => {
     const bw = e.equipment === "bodyweight" || e.equipment === "cardio" || e.equipment === "other";
     const timed = timedByDefault(e.id);
-    edit((x) => { x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [0, 1, 2].map(() => (timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bw ? 0 : 20, reps: 10 })) }); });
+    edit((x) => { x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [0, 1, 2].map(() => (timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bw ? 0 : fromUnit(u === "lb" ? 45 : 20, u), reps: 10 })) }); });
     setPicking(false);
   };
   const superset = (i: number) => edit((x) => {
@@ -55,7 +58,7 @@ function Editor() {
     } catch (x) { setErr((x as Error).message); setSaving(false); }
   }
 
-  if (id && !existing) return <p className="muted mt-20 text-center text-sm">Routine not found.</p>;
+  if (id && !existing) return <EmptyState art="not-found" title="Routine not found" text="It may have been deleted." className="mt-16" />;
 
   return (
     <div className="space-y-4">
@@ -70,14 +73,14 @@ function Editor() {
       {err && <p className="text-sm text-red-600">{err}</p>}
 
       {list.length === 0 && (
-        <div className="card muted py-8 text-center text-sm">No exercises yet. Add some below and set the target sets, kg and reps.</div>
+        <EmptyState art="exercises" title="No exercises yet" text="Add some below and set the target sets, weight and reps." />
       )}
 
       {list.map((ex, i) => {
         const labels = setLabels(ex.sets, setTypes);
         return (
           <section key={ex.name} className={`card relative ${ex.superset !== undefined ? "border-l-4 border-lime-500" : ""}`}>
-            {ex.superset !== undefined && <span className="absolute -top-2 left-3 rounded-full bg-lime-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {String.fromCharCode(65 + groups.indexOf(ex.superset))}</span>}
+            {ex.superset !== undefined && <span className="absolute -top-2 left-3 rounded-sm bg-lime-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {String.fromCharCode(65 + groups.indexOf(ex.superset))}</span>}
             <div className="flex items-start gap-3">
               <ExerciseThumb ex={lib.get(ex.name)} size={44} />
               <div className="min-w-0 flex-1">
@@ -95,13 +98,12 @@ function Editor() {
               <button aria-label={`Remove ${ex.name}`} onClick={() => edit((x) => { x.splice(i, 1); })} className="muted p-1"><Trash2 size={16} /></button>
             </div>
             <div className="mt-3 grid grid-cols-[3.25rem_1fr_1fr_2rem] items-center gap-2 text-xs">
-              <span className="muted">Set</span><span className="muted text-center">kg</span><span className="muted text-center">{isTimed(ex) ? "Target time" : "Reps"}</span><span />
+              <span className="muted">Set</span><span className="muted text-center">{u}</span><span className="muted text-center">{isTimed(ex) ? "Target time" : "Reps"}</span><span />
               {ex.sets.map((st, j) => (
                 <div key={j} className="contents">
                   <button onClick={() => setTyping({ i, j })} aria-label={`Set ${labels[j]}: ${st.type ? setTypes[st.type].label : "normal"}. Change set type`}
                     className={`grid h-9 place-items-center rounded-lg bg-zinc-100 font-bold dark:bg-zinc-800 ${st.type ? setTypes[st.type].color : ""}`}>{labels[j]}</button>
-                  <input aria-label={`Set ${labels[j]} weight`} inputMode="decimal" className="num" value={st.kg}
-                    onChange={(e) => edit((x) => { x[i].sets[j].kg = Number(e.target.value.replace(/[^\d.]/g, "")) || 0; })} />
+                  <WeightInput aria-label={`Set ${labels[j]} weight, ${u}`} placeholder="0" kg={st.kg} unit={u} onKg={(v) => edit((x) => { x[i].sets[j].kg = v; })} />
                   {isTimed(ex)
                     ? <input key={`${j}-${st.secs}`} aria-label={`Set ${labels[j]} target time, minutes:seconds`} className="num" defaultValue={mmss(st.secs ?? 0)}
                         onBlur={(e) => { const v = parseResult(e.target.value, "time"); edit((x) => { x[i].sets[j].secs = v ?? 0; }); }} />

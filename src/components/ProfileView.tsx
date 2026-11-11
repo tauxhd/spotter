@@ -2,13 +2,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, BarChart3, Dumbbell, Pencil, Share2, X } from "lucide-react";
+import { ArrowLeft, Share2, X } from "lucide-react";
 import Avatar from "./Avatar";
+import EmptyState from "./EmptyState";
+import Icon from "./Icon";
 import FollowButton from "./FollowButton";
 import PostCard from "./PostCard";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
 import { lifters, type Post } from "@/lib/data";
-import { baseOf, bests, dots, liftsOf } from "@/lib/lifting";
 
 type Person = { id: string; name: string; faculty: string; avatar_url: string | null };
 type Stats = { workouts: number; followers: number; following: number };
@@ -29,7 +30,7 @@ export default function ProfileView({ userId }: { userId: string }) {
 
   useEffect(() => {
     if (own) return;
-    if (demo) { setOther({ ...demo, intake: null, avatar_url: null, tp: null, course: null }); return; }
+    if (demo) { setOther({ ...demo, intake: null, avatar_url: null, bio: null }); return; }
     sb.from("profiles").select("*").eq("id", userId).maybeSingle().then(({ data }) => setOther(data));
   }, [own, userId, demo]);
 
@@ -61,10 +62,8 @@ export default function ProfileView({ userId }: { userId: string }) {
   }
 
   if (p === undefined) return <p className="muted mt-20 text-center text-sm">Loading…</p>;
-  if (p === null) return <p className="muted mt-20 text-center text-sm">This profile doesn&apos;t exist.</p>;
+  if (p === null) return <EmptyState art="not-found" title="This profile doesn't exist" text="The link may be old, or the student deleted their account." className="mt-16" />;
 
-  const lifts = own ? liftsOf(bests(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
-  const total = lifts.squat + lifts.bench + lifts.deadlift;
   const stat = (n: number | undefined, label: string, onClick?: () => void) => (
     <button onClick={onClick} disabled={!onClick} className="flex flex-col items-center disabled:opacity-100">
       <span className="text-lg font-bold tabular-nums">{n ?? "–"}</span>
@@ -78,8 +77,8 @@ export default function ProfileView({ userId }: { userId: string }) {
         {own ? <span /> : <button onClick={() => router.back()} aria-label="Back" className="grid h-9 w-9 place-items-center"><ArrowLeft size={20} /></button>}
         <h1 className="truncate text-center text-base font-semibold">{own ? "Profile" : p.name}</h1>
         <div className="flex justify-end">
-          <Link href={`/u/${p.id}/stats${q}`} aria-label="Gym stats" className="grid h-9 w-9 place-items-center text-lime-600 dark:text-lime-400"><BarChart3 size={20} /></Link>
-          {own && <Link href={`/me/edit${q}`} aria-label="Edit profile" className="grid h-9 w-9 place-items-center"><Pencil size={18} /></Link>}
+          <Link href={`/u/${p.id}/stats${q}`} aria-label="Gym stats" className="grid h-9 w-9 place-items-center"><Icon name="stats" size={26} /></Link>
+          {own && <Link href={`/me/edit${q}`} aria-label="Edit profile" className="grid h-9 w-9 place-items-center"><Icon name="edit" size={26} /></Link>}
         </div>
       </header>
 
@@ -95,17 +94,12 @@ export default function ProfileView({ userId }: { userId: string }) {
 
         <h2 className="mt-3 text-lg font-bold">{p.name}</h2>
         <p className="text-sm">
-          {p.tp ? <span className="font-semibold tabular-nums">{p.tp}</span> : own ? <Link href={`/me/edit${q}`} className="font-semibold text-lime-600 dark:text-lime-400">Add TP number</Link> : null}
-          {(p.tp || own) && <span className="muted"> · </span>}
+          {p.tp && <><span className="font-semibold tabular-nums">{p.tp}</span><span className="muted"> · </span></>}
           <span className="muted">{p.course || p.faculty}</span>
         </p>
-        {total > 0 && (
-          <p className="mt-1 text-sm">
-            <span className="font-semibold tabular-nums">{total} kg</span> <span className="muted">SBD total ·</span>{" "}
-            <span className="font-semibold tabular-nums">{dots(total, Number(p.bw), p.sex).toFixed(1)}</span> <span className="muted">DOTS ·</span>{" "}
-            <span className="font-semibold tabular-nums">{Number(p.bw)} kg</span> <span className="muted">bodyweight</span>
-          </p>
-        )}
+        {p.bio
+          ? <p className="mt-2 whitespace-pre-line text-sm">{p.bio}</p>
+          : own && <Link href={`/me/edit${q}`} className="mt-2 block text-sm font-semibold text-lime-600 dark:text-lime-400">Add a bio</Link>}
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           {own
@@ -120,12 +114,10 @@ export default function ProfileView({ userId }: { userId: string }) {
       <h3 id="workouts" className="scroll-mt-4 pt-4 font-semibold">Workouts</h3>
       {posts === null && <p className="muted py-6 text-center text-sm">Loading…</p>}
       {posts?.length === 0 && (
-        <div className="py-10 text-center">
-          <Dumbbell className="muted mx-auto" size={28} />
-          <p className="mt-2 font-semibold">{own ? "No workouts posted yet" : "Nothing to show yet"}</p>
-          <p className="muted text-sm">{own ? "Finish a workout and it shows up here." : "Their workouts appear here once they post (or follow each other to see friends-only ones)."}</p>
+        <EmptyState art="workouts" title={own ? "No workouts posted yet" : "Nothing to show yet"}
+          text={own ? "Finish a workout and it shows up here." : "Their workouts appear here once they post (or follow each other to see friends-only ones)."}>
           {own && <Link href={`/train${q}`} className="btn mt-4 inline-block py-2 text-sm">Start a workout</Link>}
-        </div>
+        </EmptyState>
       )}
       {posts?.map((post) => <PostCard key={post.id} post={post} showFollow={false} />)}
 
@@ -138,7 +130,7 @@ export default function ProfileView({ userId }: { userId: string }) {
             </div>
             <ul className="overflow-y-auto overscroll-contain px-4">
               {list.people === null && <li className="muted py-6 text-center text-sm">Loading…</li>}
-              {list.people?.length === 0 && <li className="muted py-6 text-center text-sm">{list.kind === "followers" ? "No followers yet." : "Not following anyone yet."}</li>}
+              {list.people?.length === 0 && <li><EmptyState art="followers" size={96} title={list.kind === "followers" ? "No followers yet" : "Not following anyone yet"} text={list.kind === "followers" ? "Post workouts and people will find you." : "Follow students from the feed to see their workouts."} /></li>}
               {list.people?.map((u) => (
                 <li key={u.id} className="flex items-center gap-3 border-b border-zinc-100 py-3 last:border-0 dark:border-zinc-800/80">
                   <Link href={u.id === me.id ? `/me${q}` : `/u/${u.id}${q}`} onClick={() => setList(null)} className="flex min-w-0 flex-1 items-center gap-3">

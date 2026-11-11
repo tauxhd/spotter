@@ -219,3 +219,5 @@ grant execute on function follow_list(uuid, text) to authenticated;
 -- Student identity. TP number = APU student ID; later it links the account to APU records (timetable, course).
 alter table profiles add column if not exists tp text unique check (tp ~ '^TP[0-9]{6}$');
 alter table profiles add column if not exists course text check (length(course) <= 80);
+alter table profiles add column if not exists bio text check (length(bio) <= 150);
+alter table profiles add column if not exists unit text not null default 'kg' check (unit in ('kg', 'lb')); -- display only, weights stay kg

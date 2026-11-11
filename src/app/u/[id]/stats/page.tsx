@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Dumbbell, Flame, Layers, MapPin, Trophy } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
+import EmptyState from "@/components/EmptyState";
+import { toUnit, w, wNum, wTotal } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
 import { bodyArea, findExercise, lifters, type Post } from "@/lib/data";
 import { baseOf, bests, dots, liftsOf } from "@/lib/lifting";
@@ -15,7 +17,7 @@ const hrs = (min: number) => (min < 60 ? `${min}m` : `${Math.floor(min / 60)}h $
 // Gym stats for a student: consistency, volume, muscle balance, favourite lifts, bests, and (for yourself) gym visits.
 export default function GymStats() {
   const { id } = useParams<{ id: string }>();
-  const { s, me } = useStore();
+  const { s, me, u } = useStore();
   const router = useRouter();
   const own = id === me.id;
   const demo = lifters.find((l) => l.id === id);
@@ -33,7 +35,7 @@ export default function GymStats() {
   }, [id, own, demo, me.id]);
 
   if (p === undefined || posts === null) return <p className="muted mt-20 text-center text-sm">Loading…</p>;
-  if (p === null) return <p className="muted mt-20 text-center text-sm">This profile doesn&apos;t exist.</p>;
+  if (p === null) return <EmptyState art="not-found" title="This profile doesn't exist" className="mt-16" />;
 
   // ---- numbers ----
   const now = new Date();
@@ -93,7 +95,7 @@ export default function GymStats() {
       <section className={section}>
         <p className="muted text-xs font-semibold uppercase tracking-wider">This week</p>
         <p className="mt-1 text-3xl font-bold tabular-nums">{week.length} <span className="text-base font-medium text-zinc-500">workout{week.length === 1 ? "" : "s"}</span></p>
-        <p className="muted text-sm tabular-nums">{week.reduce((n, x) => n + x.volume, 0).toLocaleString()} kg · {hrs(week.reduce((n, x) => n + (x.duration ?? 0), 0))} trained</p>
+        <p className="muted text-sm tabular-nums">{wTotal(week.reduce((n, x) => n + x.volume, 0), u)} · {hrs(week.reduce((n, x) => n + (x.duration ?? 0), 0))} trained</p>
         <div className="mt-4 flex h-24 items-end gap-2" aria-label={`Workouts per week, last ${WEEKS} weeks`}>
           {perWeek.map((w, i) => (
             <div key={w.start} className="flex flex-1 flex-col items-center gap-1">
@@ -111,7 +113,7 @@ export default function GymStats() {
         <Big icon={Clock} value={hrs(total.minutes)} label="Time trained" />
         <Big icon={Layers} value={total.sets} label="Sets" />
         <Big icon={Trophy} value={total.prs} label="Personal records" />
-        <Big icon={Dumbbell} value={`${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
+        <Big icon={Dumbbell} value={u === "lb" ? `${Math.round(toUnit(total.volume, u) / 1000)}k lb` : `${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
       </section>
 
       {sbd > 0 && (
@@ -119,10 +121,10 @@ export default function GymStats() {
           <h2 className="mb-3 font-semibold">Best lifts</h2>
           <div className="grid grid-cols-4 text-center">
             {[["Squat", lifts.squat], ["Bench", lifts.bench], ["Deadlift", lifts.deadlift], ["Total", sbd]].map(([k, v]) => (
-              <div key={k}><p className="text-lg font-bold tabular-nums">{v}</p><p className="muted text-xs">{k} kg</p></div>
+              <div key={k}><p className="text-lg font-bold tabular-nums">{wNum(v as number, u)}</p><p className="muted text-xs">{k} {u}</p></div>
             ))}
           </div>
-          <p className="muted mt-3 text-center text-xs"><span className="font-semibold text-lime-600 dark:text-lime-400">{dots(sbd, Number(p.bw), p.sex).toFixed(1)} DOTS</span> at {Number(p.bw)} kg bodyweight</p>
+          <p className="muted mt-3 text-center text-xs"><span className="font-semibold text-lime-600 dark:text-lime-400">{dots(sbd, Number(p.bw), p.sex).toFixed(1)} DOTS</span> at {w(Number(p.bw), u)} bodyweight</p>
         </section>
       )}
 
@@ -135,7 +137,7 @@ export default function GymStats() {
               return (
                 <div key={k} className="grid grid-cols-[4.5rem_1fr_2.5rem] items-center gap-3 text-sm">
                   <span>{k}</span>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"><div className="h-full rounded-full bg-lime-500" style={{ width: `${pct}%` }} /></div>
+                  <div className="h-2.5 overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-800"><div className="h-full rounded-sm bg-lime-500" style={{ width: `${pct}%` }} /></div>
                   <span className="muted text-right tabular-nums">{pct}%</span>
                 </div>
               );
@@ -171,7 +173,7 @@ export default function GymStats() {
         </section>
       )}
 
-      {posts.length === 0 && <p className="muted py-10 text-center text-sm">{own ? "Post a workout and your stats start here." : "No workouts to show yet."}</p>}
+      {posts.length === 0 && <EmptyState art="stats" title="No stats yet" text={own ? "Post a workout and your stats start here." : "No workouts to show yet."} />}
     </div>
   );
 }

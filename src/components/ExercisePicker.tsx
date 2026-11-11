@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import ExerciseThumb from "./ExerciseThumb";
+import EmptyState from "./EmptyState";
 import { useStore } from "@/lib/store";
 import type { Exercise } from "@/lib/data";
 
@@ -55,7 +56,7 @@ export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (e:
               </li>
             );
           })}
-          {list.length === 0 && <li className="muted p-4 text-center text-sm">No exercise matches “{q}”</li>}
+          {list.length === 0 && <li><EmptyState art="search" size={96} title="No matches" text={q ? `Nothing called “${q}” with these filters.` : "Try another muscle or equipment filter."} /></li>}
         </ul>
       </div>
     </div>

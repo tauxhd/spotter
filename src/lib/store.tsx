@@ -3,10 +3,11 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { createClient } from "@supabase/supabase-js";
 import { demoNow, oldNames, type Exercise, type ExerciseLog, type Post, type Sex } from "./data";
 import Onboarding from "@/components/Onboarding";
+import type { Unit } from "./units";
 
 export const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_KEY!);
 
-export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; tp?: string | null; course?: string | null };
+export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit };
 export type Routine = { id: string; name: string; exercises: ExerciseLog[] };
 export type Session = { id: string; at: string; title: string; exercises: ExerciseLog[] };
 export type FoodEntry = { id: string; name: string; kcal: number; p: number; c: number; f: number; at: string };
@@ -16,6 +17,7 @@ type State = { clockedIn: string | null; sessions: Session[]; food: FoodEntry[];
 type Ctx = {
   s: State & { active: Active };
   me: Profile;
+  u: Unit; // viewer's preferred weight unit
   setActive: (fn: (a: Active) => Active) => void;
   saveProfile: (p: Omit<Profile, "id">) => Promise<void>;
   clockIn: () => Promise<void>;
@@ -122,7 +124,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setMe(data);
     await loadMine(data.id);
   };
-  if (!me) return <Onboarding onSave={saveProfile} />;
+  if (!me) return <main className="mx-auto min-h-dvh max-w-md overflow-x-hidden px-4 pb-10"><Onboarding onSave={saveProfile} /></main>;
 
   const setActive: Ctx["setActive"] = (fn) => setActiveRaw((a) => {
     const n = fn(a);
@@ -131,7 +133,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   });
 
   const ctx: Ctx = {
-    s: { ...s, active }, me, setActive, saveProfile,
+    s: { ...s, active }, me, u: me.unit ?? "kg", setActive, saveProfile,
     async clockIn() {
       const at = demoNow().toISOString();
       await sb.from("visits").update({ out_at: at }).is("out_at", null);

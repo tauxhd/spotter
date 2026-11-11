@@ -8,6 +8,7 @@ import ExerciseThumb from "./ExerciseThumb";
 import FollowButton from "./FollowButton";
 import ProfileLink from "./ProfileLink";
 import { useStore } from "@/lib/store";
+import { wTotal } from "@/lib/units";
 import { demoNow, findExercise, lifters, timeAgo, type Exercise, type Post } from "@/lib/data";
 
 const SHOWN = 3; // exercises before "See N more"
@@ -17,11 +18,12 @@ type Find = (id?: string, name?: string) => Exercise | undefined;
 
 // The workout half of a post: Time / Volume / Records + exercise names. Tapping it opens the full workout.
 function Summary({ p, find }: { p: Post; find: Find }) {
+  const { u } = useStore();
   const more = p.exercises.length - SHOWN;
   return (
     <Link href={`/feed/${p.id}${q()}`} className="block" aria-label={`Open ${p.title}`}>
       <div className="grid grid-cols-3 gap-2">
-        {[["Time", dur(p.duration)], ["Volume", `${p.volume.toLocaleString()} kg`]].map(([k, v]) => (
+        {[["Time", dur(p.duration)], ["Volume", wTotal(p.volume, u)]].map(([k, v]) => (
           <div key={k}><p className="muted text-xs">{k}</p><p className="font-semibold tabular-nums">{v}</p></div>
         ))}
         <div><p className="muted text-xs">Records</p><p className="flex items-center gap-1 font-semibold"><Icon name="medal" size={18} />{p.prs.length}</p></div>
@@ -66,7 +68,7 @@ function Swipe({ p, find }: { p: Post; find: Find }) {
 
 // One workout post (feed and profile pages). Keeps a local copy so likes/comments respond instantly anywhere.
 export default function PostCard({ post, showFollow = true }: { post: Post; showFollow?: boolean }) {
-  const { s, me, like, comment } = useStore();
+  const { s, me, u, like, comment } = useStore();
   const [p, setP] = useState(post);
   useEffect(() => setP(post), [post]);
   const [open, setOpen] = useState(false);
@@ -88,7 +90,7 @@ export default function PostCard({ post, showFollow = true }: { post: Post; show
     setDraft("");
   }
   async function share() {
-    const text = `${p.by} on Spotter: ${p.title} · ${p.volume.toLocaleString()} kg`;
+    const text = `${p.by} on Spotter: ${p.title} · ${wTotal(p.volume, u)}`;
     const url = `${location.origin}/feed/${p.id}`;
     try { if (navigator.share) await navigator.share({ title: p.title, text, url }); else await navigator.clipboard.writeText(`${text} ${url}`); } catch {}
   }

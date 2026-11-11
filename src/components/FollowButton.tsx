@@ -12,7 +12,7 @@ export default function FollowButton({ id, name }: { id?: string | null; name: s
   return (
     <button aria-pressed={iFollow} aria-label={`${label}, ${name}`}
       onClick={() => (iFollow ? confirm(`Unfollow ${name}?`) && unfollow(id) : follow(id))}
-      className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-bold transition active:scale-95 ${
+      className={`flex shrink-0 items-center gap-1 rounded-sm px-3 py-1 text-xs font-bold transition active:scale-95 ${
         iFollow ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" : "bg-lime-500 text-zinc-950"}`}>
       {iFollow ? <UserCheck size={13} /> : <UserPlus size={13} />}{label}
     </button>

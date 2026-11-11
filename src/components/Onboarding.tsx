@@ -1,32 +1,106 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import { faculties, type Sex } from "@/lib/data";
+import { LogIn } from "lucide-react";
+import Icon, { type IconName } from "./Icon";
+import { apuStudent, isTp, type ApuStudent } from "@/lib/apu";
+import type { Sex } from "@/lib/data";
+import type { Unit } from "@/lib/units";
+import WeightInput from "./WeightInput";
 
-type P = { name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; tp?: string | null; course?: string | null };
+type P = { name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit };
+const field = "mt-1 w-full rounded-xl bg-zinc-100 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800";
 
-// A few APU programmes as suggestions; any course can be typed. (Later this comes from APU records via the TP number.)
-const courses = [
-  "BSc (Hons) Computer Science", "BSc (Hons) Software Engineering", "BSc (Hons) Information Technology", "BSc (Hons) Cyber Security",
-  "BSc (Hons) Computer Science (Data Analytics)", "BSc (Hons) Computer Science (Artificial Intelligence)", "BEng (Hons) Mechatronic Engineering",
-  "BEng (Hons) Electrical & Electronic Engineering", "BA (Hons) Business Management", "BA (Hons) Accounting & Finance",
-  "BA (Hons) Graphic Design & Multimedia", "BSc (Hons) Psychology", "Diploma in ICT", "Foundation in Computing",
-];
+// Sign in with your TP number: name, course, faculty, intake and category come from APU records.
+function Login({ onFound }: { onFound: (s: ApuStudent) => void }) {
+  const [tp, setTp] = useState("");
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState("");
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const s = apuStudent(tp);
+    if (!s) return setErr("TP number looks like TP012345");
+    onFound(s);
+  }
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <label className="block">
+        <span className="muted text-xs font-semibold">TP number</span>
+        <input required autoFocus value={tp} onChange={(e) => { setTp(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)); setErr(""); }}
+          placeholder="TP012345" autoComplete="username" autoCapitalize="characters" autoCorrect="off" spellCheck={false}
+          className={`${field} uppercase tabular-nums placeholder:normal-case`} />
+      </label>
+      <label className="block">
+        <span className="muted text-xs font-semibold">APU password</span>
+        <input required type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" className={field} />
+      </label>
+      {err && <p className="text-sm text-red-600">{err}</p>}
+      <button disabled={!isTp(tp) || !pw} className="btn flex w-full items-center justify-center gap-2"><LogIn size={18} />Sign in with APU</button>
+      <p className="muted text-center text-xs">Demo build: any TP number and password works. Your details are pulled from APU records.</p>
+    </form>
+  );
+}
 
-// First launch (and the profile screen later): one form. Lifts and intake are optional so beginners aren't put off.
+// The read-only part of a profile that comes from APU.
+function Records({ p }: { p: P }) {
+  const rows: [IconName, string, string | null | undefined][] = [
+    ["grad-cap", "Course", p.course], ["building", "Faculty", p.faculty], ["intake", "Intake", p.intake], ["category", "Category", p.sex === "F" ? "Women" : "Men"],
+  ];
+  return (
+    <section className="-mx-4 border-b border-zinc-200 px-4 pb-4 dark:border-zinc-800/80">
+      <div className="flex items-center gap-4 py-2">
+        <Icon name="id-card" size={52} />
+        <div className="min-w-0">
+          <p className="truncate text-xl font-bold leading-tight">{p.name}</p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-sm">
+            {p.tp && <span className="font-mono font-semibold tracking-wider">{p.tp}</span>}
+            <Icon name="shield" size={14} /><span className="font-medium text-lime-600 dark:text-lime-400">APU verified</span>
+          </p>
+        </div>
+      </div>
+      <ul className="mt-2">
+        {rows.filter(([, , v]) => v).map(([icon, k, v]) => (
+          <li key={k} className="group flex items-center gap-4 py-2.5">
+            <Icon name={icon} size={30} />
+            <div className="min-w-0 flex-1 group-last:border-0 border-b border-zinc-100 pb-2.5 -mb-2.5 dark:border-zinc-800/60">
+              <p className="muted text-xs">{k}</p>
+              <p className="font-medium leading-snug">{v}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// First launch: sign in, then bodyweight and (optional) lifts. Edit profile: bio, bodyweight, lifts.
 export default function Onboarding({ initial, onSave }: { initial?: P; onSave: (p: P) => Promise<void> }) {
-  const [p, setP] = useState<P>(initial ?? { name: "", faculty: faculties[0], sex: "M", bw: 70, squat: 0, bench: 0, deadlift: 0, intake: null });
+  const [p, setP] = useState<P | null>(initial ?? null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const num = (k: keyof P) => (e: React.ChangeEvent<HTMLInputElement>) => setP({ ...p, [k]: Number(e.target.value.replace(/[^\d.]/g, "")) || 0 });
 
+  if (!p) return (
+    <div className="space-y-5 pt-6">
+      <header>
+        <Image src="/welcome.webp" alt="Students training, sipping a shake and scanning in at the gym door" width={1200} height={800} priority
+          className="-mx-4 mb-5 w-[calc(100%+2rem)] max-w-none sm:mx-0 sm:w-full sm:rounded-2xl" />
+        <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-lime-600 dark:text-lime-400">
+          <Image src="/icon-192.png" alt="" width={24} height={24} className="rounded-md" />Spotter
+        </p>
+        <h1 className="h-title mt-1">Welcome to the APU gym</h1>
+        <p className="muted text-sm">Sign in with your student account.</p>
+      </header>
+      <Login onFound={(s) => setP({ ...s, bw: 70, squat: 0, bench: 0, deadlift: 0 })} />
+    </div>
+  );
+
+  const unit = p.unit ?? "kg";
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr("");
-    const tp = p.tp?.trim().toUpperCase() || null;
-    if (tp && !/^TP\d{6}$/.test(tp)) { setErr("TP number looks like TP012345"); setBusy(false); return; }
-    try { await onSave({ ...p, name: p.name.trim(), intake: p.intake?.trim().toUpperCase() || null, tp, course: p.course?.trim() || null }); } catch (x) { setErr((x as Error).message); }
+    const r = (n: number) => Math.round(n * 100) / 100;
+    try { await onSave({ ...p!, bw: r(p!.bw), squat: r(p!.squat), bench: r(p!.bench), deadlift: r(p!.deadlift), bio: p!.bio?.trim() || null }); } catch (x) { setErr((x as Error).message); }
     setBusy(false);
   }
 
@@ -34,80 +108,56 @@ export default function Onboarding({ initial, onSave }: { initial?: P; onSave: (
     <form onSubmit={submit} className={`space-y-5 ${initial ? "" : "pt-6"}`}>
       {!initial && (
         <header>
-          <Image src="/welcome.webp" alt="Students training, sipping a shake and scanning in at the gym door" width={1200} height={800} priority
-            className="-mx-4 mb-5 w-[calc(100%+2rem)] max-w-none sm:mx-0 sm:w-full sm:rounded-2xl" />
-          <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-lime-600 dark:text-lime-400">
-            <Image src="/icon-192.png" alt="" width={24} height={24} className="rounded-md" />Spotter
-          </p>
-          <h1 className="h-title mt-1">Welcome to the APU gym</h1>
-          <p className="muted text-sm">Set up once. This is what other students see on the feed and leaderboard.</p>
+          <h1 className="h-title">Hi, {p.name.split(" ")[0]} 👋</h1>
+          <p className="muted text-sm">We found you. Add your bodyweight and you&apos;re in.</p>
         </header>
       )}
+      <Records p={p} />
 
-      <section className="card space-y-4">
-        <label className="block">
-          <span className="muted text-xs font-semibold">Display name</span>
-          <input required maxLength={40} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} placeholder="e.g. Arif"
-            className="mt-1 w-full rounded-xl bg-zinc-100 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800" />
-        </label>
-        <div className="grid grid-cols-[8.5rem_1fr] gap-3">
+      {initial && <section className="card">
+        {(
           <label className="block">
-            <span className="muted text-xs font-semibold">TP number</span>
-            <input value={p.tp ?? ""} onChange={(e) => setP({ ...p, tp: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) })} placeholder="TP012345"
-              autoCapitalize="characters" autoCorrect="off" spellCheck={false} aria-describedby="tp-hint"
-              className="mt-1 w-full rounded-xl bg-zinc-100 px-3 py-2.5 text-base uppercase tabular-nums outline-none placeholder:normal-case focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800" />
+            <span className="flex items-center gap-2 font-semibold"><Icon name="edit" size={20} />Bio</span>
+            <span className="mt-2 block">
+              <textarea rows={3} maxLength={150} value={p.bio ?? ""} onChange={(e) => setP({ ...p, bio: e.target.value })}
+                placeholder="Goals, split, PRs you're chasing…" aria-describedby="bio-count"
+                className="block min-h-[5.5rem] w-full resize-none rounded-xl bg-zinc-100 px-3 py-2.5 text-base leading-relaxed outline-none ring-1 ring-zinc-200 transition-shadow [field-sizing:content] placeholder:text-zinc-500 focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900 dark:ring-zinc-800" />
+              <span className="mt-2 flex items-center gap-2">
+                <span className="h-0.5 flex-1 overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-800">
+                  <span className={`block h-full rounded-sm transition-[width] ${(p.bio ?? "").length > 135 ? "bg-amber-500" : "bg-lime-500"}`} style={{ width: `${((p.bio ?? "").length / 150) * 100}%` }} />
+                </span>
+                <span id="bio-count" className="muted text-xs tabular-nums">{150 - (p.bio ?? "").length}</span>
+              </span>
+            </span>
           </label>
-          <label className="block">
-            <span className="muted text-xs font-semibold">Course</span>
-            <input value={p.course ?? ""} onChange={(e) => setP({ ...p, course: e.target.value.slice(0, 80) })} list="apu-courses" placeholder="e.g. BSc (Hons) Computer Science"
-              className="mt-1 w-full rounded-xl bg-zinc-100 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800" />
-            <datalist id="apu-courses">{courses.map((c) => <option key={c} value={c} />)}</datalist>
-          </label>
-        </div>
-        <p id="tp-hint" className="muted -mt-2 text-xs">Your APU student ID. It will link Spotter to your APU records later.</p>
-        <label className="block">
-          <span className="muted text-xs font-semibold">Faculty</span>
-          <select value={p.faculty} onChange={(e) => setP({ ...p, faculty: e.target.value })}
-            className="mt-1 w-full rounded-xl bg-zinc-100 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800">
-            {faculties.map((f) => <option key={f}>{f}</option>)}
-          </select>
-        </label>
-        <label className="block">
-          <span className="muted text-xs font-semibold">Intake code <span className="font-normal">(optional, finds gym time between your classes)</span></span>
-          <input value={p.intake ?? ""} onChange={(e) => setP({ ...p, intake: e.target.value.toUpperCase().replace(/[^A-Z0-9()]/g, "") })} placeholder="e.g. APD2F2602CS" maxLength={30}
-            className="mt-1 w-full rounded-xl bg-zinc-100 px-3 py-2.5 text-base uppercase outline-none placeholder:normal-case focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800" />
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          <fieldset>
-            <legend className="muted text-xs font-semibold">Category</legend>
-            <div className="mt-1 flex gap-2">
-              {(["M", "F"] as const).map((x) => (
-                <button type="button" key={x} aria-pressed={p.sex === x} onClick={() => setP({ ...p, sex: x })} className="chip flex-1 py-2.5">{x === "M" ? "Men" : "Women"}</button>
-              ))}
-            </div>
-          </fieldset>
-          <label className="block">
-            <span className="muted text-xs font-semibold">Bodyweight (kg)</span>
-            <input required inputMode="decimal" value={p.bw || ""} onChange={num("bw")} className="num mt-1 py-2.5" />
-          </label>
-        </div>
-      </section>
+        )}
+      </section>}
 
       <section className="card">
-        <p className="font-semibold">Current bests <span className="muted text-sm font-normal">(optional, kg)</span></p>
-        <p className="muted text-xs">Puts you on the leaderboard straight away. Logged sets update these.</p>
-        <div className="mt-3 grid grid-cols-3 gap-3">
-          {(["squat", "bench", "deadlift"] as const).map((k) => (
-            <label key={k} className="block">
-              <span className="muted text-xs capitalize">{k}</span>
-              <input inputMode="decimal" value={p[k] || ""} onChange={num(k)} placeholder="0" className="num mt-1" />
+        <div className="flex items-center justify-between">
+          <p className="font-semibold">Body &amp; bests <span className="muted text-sm font-normal">({unit})</span></p>
+          <div role="radiogroup" aria-label="Preferred weight unit" className="flex rounded-sm bg-zinc-100 p-0.5 text-sm font-semibold dark:bg-zinc-900">
+            {(["kg", "lb"] as const).map((x) => (
+              <button type="button" key={x} role="radio" aria-checked={unit === x} onClick={() => setP({ ...p, unit: x })}
+                className={`rounded-sm px-3 py-1 ${unit === x ? "bg-lime-500 text-zinc-950" : "muted"}`}>{x}</button>
+            ))}
+          </div>
+        </div>
+        <p className="muted text-xs">Bodyweight is needed for DOTS. Lifts are optional, they put you on the leaderboard and update as you log sets. Everyone sees weights in their own unit.</p>
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          {([["bw", "Body", "scale"], ["squat", "Squat", "squat"], ["bench", "Bench", "bench"], ["deadlift", "Deadlift", "deadlift"]] as const).map(([k, label, icon]) => (
+            <label key={k} className="flex flex-col items-center gap-1.5">
+              <Icon name={icon} size={36} />
+              <span className="muted text-xs">{label}</span>
+              <WeightInput key={k + unit} required={k === "bw"} kg={p[k]} unit={unit} onKg={(v) => setP((x) => x && { ...x, [k]: v })} placeholder="0" aria-label={`${label} ${unit}`}
+                className={`num w-full ${k === "bw" ? "ring-1 ring-lime-500/50" : ""}`} />
             </label>
           ))}
         </div>
       </section>
 
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <button disabled={busy || !p.name.trim() || p.bw < 30 || p.bw > 250} className="btn w-full">{busy ? "Saving…" : initial ? "Save" : "Let's go"}</button>
+      <button disabled={busy || p.bw < 30 || p.bw > 250} className="btn w-full">{busy ? "Saving…" : initial ? "Save" : "Let's go"}</button>
     </form>
   );
 }

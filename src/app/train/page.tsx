@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, Trophy, X } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
+import EmptyState from "@/components/EmptyState";
+import WeightInput from "@/components/WeightInput";
+import { fromUnit, w } from "@/lib/units";
 import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
@@ -15,7 +18,7 @@ const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this 
 const readRest = () => { try { return Number(localStorage.getItem(REST_KEY)) || 90; } catch { return 90; } };
 
 export default function Train() {
-  const { s, me, setActive, saveRoutine } = useStore();
+  const { s, me, u, setActive, saveRoutine } = useStore();
   const [savedAs, setSavedAs] = useState(false);
   const router = useRouter();
   const [restEnd, setRestEnd] = useState<number | null>(null);
@@ -45,7 +48,7 @@ export default function Train() {
   function addExercise(e: Exercise) {
     const bodyweight = e.equipment === "bodyweight" || e.equipment === "cardio" || e.equipment === "other";
     const timed = timedByDefault(e.id);
-    edit((x) => { x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bodyweight ? 0 : 20, reps: 10 }] }); });
+    edit((x) => { x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bodyweight ? 0 : fromUnit(u === "lb" ? 45 : 20, u), reps: 10 }] }); });
     setPicking(false);
   }
 
@@ -167,7 +170,7 @@ export default function Train() {
             <h2 className="font-semibold">My routines <span className="muted text-sm font-normal">({s.routines.length})</span></h2>
             <Link href={withQ("/train/routine")} className="flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 text-sm font-semibold ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"><Plus size={16} />New routine</Link>
           </div>
-          {s.routines.length === 0 && <p className="card muted text-sm">No routines yet. Build one with <b>New routine</b>, or copy an example below.</p>}
+          {s.routines.length === 0 && <EmptyState art="routines" size={104} className="py-4" title="No routines yet" text={<>Build one with <b>New routine</b>, or copy an example below.</>} />}
           {s.routines.map((r) => (
             <RoutineCard key={r.id} name={r.name} list={r.exercises} onStart={() => start(r)} editHref={withQ("/train/routine", `id=${r.id}`)} />
           ))}
@@ -214,7 +217,7 @@ export default function Train() {
       <header className="flex items-end justify-between">
         <div>
           <button onClick={() => setEditingStart(true)} aria-label={`Workout time ${hhmmss(elapsed)}. Change timers`}
-            className="flex items-center gap-1.5 rounded-full bg-lime-400/15 px-2.5 py-0.5 text-sm font-bold tabular-nums text-lime-600 dark:text-lime-400">
+            className="flex items-center gap-1.5 rounded-sm bg-lime-400/15 px-2.5 py-0.5 text-sm font-bold tabular-nums text-lime-600 dark:text-lime-400">
             <Clock size={14} />{hhmmss(elapsed)}<span className="muted font-medium">· rest {mmss(restSecs)}</span>
           </button>
           <h1 className="h-title">{a.title}</h1>
@@ -232,6 +235,7 @@ export default function Train() {
         </div>
       </header>
 
+      {a.exercises.length === 0 && <EmptyState art="exercises" title="Empty workout" text="Add your first exercise to start logging sets." />}
       {a.exercises.map((ex, i) => {
         const eq = equipment.find((e) => e.id === exercises[ex.name]?.equip);
         const best = prev[ex.name];
@@ -240,13 +244,13 @@ export default function Train() {
         return (
           <section key={ex.name} className={`card relative ${ex.superset !== undefined ? "border-l-4 border-lime-500" : ""} ${linkedNext ? "rounded-b-md" : ""}`}>
             {ex.superset !== undefined && (
-              <span className="absolute -top-2 left-3 rounded-full bg-lime-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {letter(ex.superset)}</span>
+              <span className="absolute -top-2 left-3 rounded-sm bg-lime-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950">Superset {letter(ex.superset)}</span>
             )}
             <div className="flex items-start gap-3">
               <ExerciseThumb ex={lib.get(ex.name)} size={48} />
               <div className="min-w-0 flex-1">
                 <h2 className="font-semibold">{ex.name}</h2>
-                {best && <p className="muted text-xs">Best est. 1RM {Math.round(best)} kg</p>}
+                {best && <p className="muted text-xs">Best est. 1RM {w(Math.round(best), u)}</p>}
                 {(a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
                     className={`mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? "text-lime-600 dark:text-lime-400" : "muted"}`}>
@@ -259,13 +263,13 @@ export default function Train() {
                 </button>
               </div>
               {eq && (
-                <Link href={`/map${q ? q + "&" : "?"}e=${eq.id}`} className="flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800">
+                <Link href={`/map${q ? q + "&" : "?"}e=${eq.id}`} className="flex shrink-0 items-center gap-1 rounded-sm bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800">
                   <MapPin size={12} />{eq.name}
                 </Link>
               )}
             </div>
             <div className={`mt-3 grid ${isTimed(ex) ? "grid-cols-[2.25rem_1fr_1fr_2.25rem_2.5rem_1.5rem]" : "grid-cols-[2.25rem_1fr_1fr_2.5rem_1.5rem]"} items-center gap-2 text-xs`}>
-              <span className="muted">Set</span><span className="muted text-center">kg</span><span className="muted text-center">{isTimed(ex) ? "Time" : "Reps"}</span>{isTimed(ex) && <span />}<span /><span />
+              <span className="muted">Set</span><span className="muted text-center">{u}</span><span className="muted text-center">{isTimed(ex) ? "Time" : "Reps"}</span>{isTimed(ex) && <span />}<span /><span />
               {ex.sets.map((st, j) => {
                 const pr = st.done && countsPR(st.type) && e1rm(st.kg, st.reps) > (best ?? 0);
                 return (
@@ -274,8 +278,7 @@ export default function Train() {
                       className={`flex h-9 items-center gap-1 rounded-lg font-bold tabular-nums ${st.type ? setTypes[st.type].color : ""}`}>
                       {labels[j]}{pr && <Trophy size={12} className="text-amber-500" aria-label="PR" />}
                     </button>
-                    <input aria-label={`Set ${j + 1} weight`} inputMode="decimal" className="num" value={st.kg}
-                      onChange={(e) => edit((x) => { x[i].sets[j].kg = Number(e.target.value.replace(/[^\d.]/g, "")) || 0; })} />
+                    <WeightInput aria-label={`Set ${j + 1} weight, ${u}`} placeholder="0" kg={st.kg} unit={u} onKg={(v) => edit((x) => { x[i].sets[j].kg = v; })} />
                     {isTimed(ex) ? (() => {
                       const running = hold?.i === i && hold?.j === j;
                       return (

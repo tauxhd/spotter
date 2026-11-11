@@ -67,16 +67,16 @@ export default function Eat() {
           </div>
           <p className="muted self-start text-sm tabular-nums">{Math.round(sum.kcal)} / {targets.kcal}</p>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-          <div className={`h-full rounded-full ${left >= 0 ? "bg-lime-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, (sum.kcal / targets.kcal) * 100)}%` }} />
+        <div className="mt-2 h-2 overflow-hidden rounded-sm bg-zinc-100 dark:bg-zinc-800">
+          <div className={`h-full rounded-sm ${left >= 0 ? "bg-lime-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, (sum.kcal / targets.kcal) * 100)}%` }} />
         </div>
         <div className="mt-4 grid grid-cols-3 gap-3">
           {macros.map((m) => (
             <div key={m.k}>
               <p className="muted flex items-center gap-1 text-xs"><Icon name={m.icon} size={16} />{m.label}</p>
               <p className="text-sm font-semibold tabular-nums">{Math.round(sum[m.k])}<span className="muted font-normal">/{targets[m.k]}{m.unit}</span></p>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div className={`h-full rounded-full ${m.bar}`} style={{ width: `${Math.min(100, (sum[m.k] / targets[m.k]) * 100)}%` }} />
+              <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-zinc-100 dark:bg-zinc-800">
+                <div className={`h-full rounded-sm ${m.bar}`} style={{ width: `${Math.min(100, (sum[m.k] / targets[m.k]) * 100)}%` }} />
               </div>
             </div>
           ))}
@@ -158,8 +158,8 @@ export default function Eat() {
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold leading-snug">{f.name}</p>
                     <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-bold uppercase tracking-wide">
-                      {pick !== f.stall && <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{f.stall}</span>}
-                      {highProtein(f) && <span className="rounded-full bg-lime-100 px-2 py-0.5 text-lime-700 dark:bg-lime-400/10 dark:text-lime-400">High protein</span>}
+                      {pick !== f.stall && <span className="rounded-sm bg-zinc-100 px-2 py-0.5 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{f.stall}</span>}
+                      {highProtein(f) && <span className="rounded-sm bg-lime-100 px-2 py-0.5 text-lime-700 dark:bg-lime-400/10 dark:text-lime-400">High protein</span>}
                     </div>
                   </div>
                   <button aria-label={`Add ${f.name}`} onClick={() => add(f)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-lime-500 text-zinc-950 shadow-sm shadow-lime-500/30 active:scale-95"><Plus size={18} strokeWidth={2.5} /></button>

@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import type { Visibility } from "@/lib/data";
 import { baseOf, bests, liftsOf } from "@/lib/lifting";
 import { summarize } from "@/lib/workout";
+import { toUnit } from "@/lib/units";
 
 const visibilities: { id: Visibility; label: string; hint: string; icon: typeof Globe }[] = [
   { id: "everyone", label: "Everyone", hint: "Anyone on Spotter can see this workout.", icon: Globe },
@@ -18,7 +19,7 @@ const visibilities: { id: Visibility; label: string; hint: string; icon: typeof 
 const localInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
 export default function SaveWorkout() {
-  const { s, me, setActive, finishWorkout } = useStore();
+  const { s, me, u, setActive, finishWorkout } = useStore();
   const router = useRouter();
   const a = s.active;
   const q = typeof window !== "undefined" ? location.search : "";
@@ -92,7 +93,7 @@ export default function SaveWorkout() {
       <header className="sticky top-0 z-20 -mx-4 grid grid-cols-[1fr_auto_1fr] items-center bg-zinc-50/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur dark:bg-zinc-950/90">
         <Link href={"/train" + q} className="flex items-center gap-1 text-sm font-medium text-lime-600 dark:text-lime-400"><ArrowLeft size={18} />Resume</Link>
         <h1 className="text-base font-semibold">Save workout</h1>
-        <button onClick={save} disabled={saving || !sum.done.length} className="justify-self-end rounded-full bg-lime-500 px-4 py-1.5 text-sm font-bold text-zinc-950 disabled:opacity-40">
+        <button onClick={save} disabled={saving || !sum.done.length} className="justify-self-end rounded-sm bg-lime-500 px-4 py-1.5 text-sm font-bold text-zinc-950 disabled:opacity-40">
           {saving ? (media ? "Uploading…" : "Saving…") : "Save"}
         </button>
       </header>
@@ -117,7 +118,7 @@ export default function SaveWorkout() {
             <span className="muted text-sm">min</span>
           </span>
         </label>
-        <div><p className="muted text-xs">Volume</p><p className="text-xl font-bold tabular-nums">{sum.volume.toLocaleString()}<span className="muted ml-1 text-sm font-normal">kg</span></p></div>
+        <div><p className="muted text-xs">Volume</p><p className="text-xl font-bold tabular-nums">{Math.round(toUnit(sum.volume, u)).toLocaleString()}<span className="muted ml-1 text-sm font-normal">{u}</span></p></div>
         <div><p className="muted text-xs">Sets</p><p className="text-xl font-bold tabular-nums">{sum.sets}</p></div>
       </section>
 
