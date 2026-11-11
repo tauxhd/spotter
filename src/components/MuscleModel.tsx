@@ -89,11 +89,13 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
         fragmentShader: `uniform sampler2D tId; uniform vec2 px; varying vec2 vUv;
           float id(vec2 o) { return texture2D(tId, vUv + o * px).r; }
           void main() {
-            float c = id(vec2(0.0)), g = c * 16.0, d = 0.0;
-            if (g < 0.5 || g > ${MAP.length}.5) discard; // only outline the app's muscle groups (not hands, face, knees…)
-            d = max(d, abs(id(vec2(1.0, 0.0)) - c)); d = max(d, abs(id(vec2(-1.0, 0.0)) - c));
-            d = max(d, abs(id(vec2(0.0, 1.0)) - c)); d = max(d, abs(id(vec2(0.0, -1.0)) - c));
-            if (d < 0.03) discard;
+            float c = id(vec2(0.0)), g = c * 16.0;
+            if (g < 0.5) discard; // background
+            float r = id(vec2(1.0, 0.0)), l = id(vec2(-1.0, 0.0)), u = id(vec2(0.0, 1.0)), b = id(vec2(0.0, -1.0));
+            bool edgeOfBody = min(min(r, l), min(u, b)) < 0.03; // one outline around the whole figure
+            bool group = g < ${MAP.length}.5; // and around the app's muscle groups (not hands, face, knees…)
+            float d = max(max(abs(r - c), abs(l - c)), max(abs(u - c), abs(b - c)));
+            if (!edgeOfBody && !(group && d > 0.03)) discard;
             gl_FragColor = vec4(1.0, 1.0, 1.0, 0.85);
           }`,
       });
