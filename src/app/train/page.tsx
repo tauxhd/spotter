@@ -1,9 +1,9 @@
 "use client";
 import Icon from "@/components/Icon";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookmarkCheck, BookmarkPlus, Check, Clock, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, Check, Clock, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
@@ -114,6 +114,33 @@ export default function Train() {
       fn(ex);
       return { ...x, exercises: ex };
     });
+  }
+
+  // Hold an exercise name → reorder mode: every exercise collapses to a row you drag up or down.
+  const [sorting, setSorting] = useState(false);
+  const [drag, setDrag] = useState<{ i: number; y: number; dy: number } | null>(null);
+  const rows = useRef<(HTMLDivElement | null)[]>([]);
+  const pressTimer = useRef<number | undefined>(undefined), pressed = useRef(false);
+  const longPress = {
+    onPointerDown: () => {
+      pressed.current = false;
+      pressTimer.current = window.setTimeout(() => { pressed.current = true; setSorting(true); try { navigator.vibrate?.(15); } catch {} }, 450);
+    },
+    onPointerUp: () => clearTimeout(pressTimer.current),
+    onPointerLeave: () => clearTimeout(pressTimer.current),
+    onPointerCancel: () => clearTimeout(pressTimer.current), // fires when the finger starts scrolling instead
+    onClickCapture: (e: React.MouseEvent) => { if (pressed.current) { e.preventDefault(); e.stopPropagation(); pressed.current = false; } }, // no link after a hold
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+  };
+  function dragMove(e: React.PointerEvent) {
+    if (!drag) return;
+    const dy = e.clientY - drag.y, i = drag.i;
+    const swapWith = dy > 0 ? i + 1 : i - 1, other = rows.current[swapWith];
+    const step = other ? other.offsetHeight + 8 : 0; // row height + gap
+    if (other && Math.abs(dy) > step / 2) { // passed the middle of the neighbour → swap and keep following the finger
+      edit((x) => { const [m] = x.splice(i, 1); x.splice(swapWith, 0, m); });
+      setDrag({ i: swapWith, y: drag.y + Math.sign(dy) * step, dy: dy - Math.sign(dy) * step });
+    } else setDrag({ ...drag, dy });
   }
 
   function toggle(i: number, j: number) {
@@ -258,14 +285,11 @@ export default function Train() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="h-title truncate">{a.title}</h1>
-          <button onClick={() => setEditingStart(true)} aria-label={`Workout time ${hhmmss(elapsed)}. Change timers`}
-            className="muted flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold tabular-nums">
-            <Clock size={14} />{hhmmss(elapsed)}<span className="font-medium">· rest {restOn ? mmss(restSecs) : "off"}</span>
-          </button>
-        </div>
+      <header className="flex items-center justify-between gap-3">
+        <button onClick={() => setEditingStart(true)} aria-label={`Workout time ${hhmmss(elapsed)}. Change timers`} className="min-w-0 text-left">
+          <span className="flex items-center gap-2 whitespace-nowrap text-3xl font-bold tabular-nums"><Clock size={24} className="shrink-0 text-lime-500" />{hhmmss(elapsed)}</span>
+          <span className="muted block text-xs font-medium">Rest {restOn ? mmss(restSecs) : "off"}</span>
+        </button>
         <div className="flex shrink-0 items-center gap-2">
           <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" aria-label="Muscles hit"
             className="h-16 w-20 transition active:scale-[0.97]">
@@ -307,7 +331,29 @@ export default function Train() {
       )}
 
       {a.exercises.length === 0 && <EmptyState art="exercises" title="Empty workout" text="Add your first exercise to start logging sets." />}
-      {a.exercises.map((ex, i) => {
+      {sorting ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="muted text-sm">Drag to reorder</p>
+            <button onClick={() => { setSorting(false); setDrag(null); }} className="btn py-1.5 text-sm">Done</button>
+          </div>
+          {a.exercises.map((ex, i) => {
+            const dragging = drag?.i === i;
+            return (
+              <div key={ex.name} ref={(el) => { rows.current[i] = el; }}
+                onPointerDown={(e) => { try { e.currentTarget.setPointerCapture(e.pointerId); } catch {} setDrag({ i, y: e.clientY, dy: 0 }); }}
+                onPointerMove={dragMove} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)}
+                style={dragging ? { transform: `translateY(${drag!.dy}px) scale(1.02)` } : undefined}
+                className={`card flex cursor-grab touch-none select-none items-center gap-3 py-2 ${ex.superset !== undefined ? `border-l-4 ${color(ex.superset).bar}` : ""} ${dragging ? "relative z-10 shadow-xl ring-1 ring-lime-500" : "transition-transform"}`}>
+                <GripVertical size={18} className="muted shrink-0" />
+                <ExerciseThumb ex={lib.get(ex.name)} size={36} />
+                <span className="min-w-0 flex-1 truncate font-semibold">{ex.name}</span>
+                <span className="muted shrink-0 text-xs">{ex.sets.length} {ex.sets.length === 1 ? "set" : "sets"}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : a.exercises.map((ex, i) => {
         const eq = equipment.find((e) => e.id === exercises[ex.name]?.equip);
         const best = prev[ex.name];
         const labels = setLabels(ex.sets, setTypes);
@@ -321,7 +367,7 @@ export default function Train() {
             <div className="flex items-start gap-3">
               <ExerciseThumb ex={lib.get(ex.name)} size={48} />
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} className="underline-offset-2 hover:underline">{ex.name}</Link> : ex.name}</h2>
+                <h2 {...longPress} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} className="underline-offset-2 hover:underline">{ex.name}</Link> : ex.name}</h2>
                 {!isTimed(ex) && <OneRM kg={Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
                 {(a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
