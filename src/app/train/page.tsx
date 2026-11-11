@@ -226,6 +226,15 @@ export default function Train() {
   const letter = (g?: number) => (g === undefined ? "" : String.fromCharCode(65 + groups.indexOf(g)));
   const color = (g?: number) => supersetColor(g === undefined ? 0 : groups.indexOf(g));
   const typingSet = typing && a.exercises[typing.i]?.sets[typing.j];
+  // Muscles hit so far: ticked working sets, main muscle 1 set, each other muscle ½. Most first.
+  const hit: Record<string, number> = {};
+  for (const e of a.exercises) {
+    const ex = lib.get(e.name), n = e.sets.filter((x) => x.done && countsPR(x.type)).length;
+    if (!ex || !n) continue;
+    hit[ex.muscle] = (hit[ex.muscle] ?? 0) + n;
+    for (const m of new Set(ex.secondary)) if (m !== ex.muscle) hit[m] = (hit[m] ?? 0) + n / 2;
+  }
+  const ranked = Object.entries(hit).sort((x, y) => y[1] - x[1]);
   const q = typeof window !== "undefined" ? location.search : "";
 
   return (
@@ -250,6 +259,17 @@ export default function Train() {
           )}
         </div>
       </header>
+
+      <div className="flex items-center gap-3">
+        <p className="no-scrollbar flex min-w-0 flex-1 gap-3 overflow-x-auto whitespace-nowrap text-sm" aria-label="Sets per muscle this workout">
+          {ranked.length === 0 ? <span className="muted">Tick sets to see muscles hit</span> : ranked.map(([m, n], k) => (
+            <span key={m} className={k === 0 ? "text-lime-600 dark:text-lime-400" : "muted"}>
+              <span className="capitalize">{m}</span> <b className="tabular-nums">{n}</b>
+            </span>
+          ))}
+        </p>
+        <button onClick={openPost} disabled={!ranked.length} className="btn shrink-0 py-2 text-sm">Finish & share</button>
+      </div>
 
       {a.exercises.length === 0 && <EmptyState art="exercises" title="Empty workout" text="Add your first exercise to start logging sets." />}
       {a.exercises.map((ex, i) => {
@@ -337,8 +357,6 @@ export default function Train() {
       })}
 
       <button onClick={() => setPicking(true)} className="btn-ghost flex w-full items-center justify-center gap-2"><Icon name="plus-circle" size={20} />Add exercise</button>
-      <button onClick={openPost} disabled={!a.exercises.some((e) => e.sets.some((x) => x.done))} className="btn w-full">Finish & share</button>
-
       {editingStart && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal aria-label="Timers" onClick={() => setEditingStart(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm space-y-3 rounded-3xl bg-white p-4 shadow-2xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
