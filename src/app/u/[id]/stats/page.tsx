@@ -5,11 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Icon, { type IconName } from "@/components/Icon";
 import ExerciseThumb from "@/components/ExerciseThumb";
+import MuscleDistribution, { type Log } from "@/components/MuscleDistribution";
 import EmptyState from "@/components/EmptyState";
 import { StatsSkeleton } from "@/components/Skeleton";
 import { toUnit, w, wNum, wTotal } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
-import { addSets, findExercise, lifters, type Post } from "@/lib/data";
+import { findExercise, lifters, type Post } from "@/lib/data";
 import { baseOf, bests, dots, liftsOf } from "@/lib/lifting";
 
 const WEEKS = 8;
@@ -55,17 +56,17 @@ export default function GymStats() {
   let streak = 0; // consecutive weeks with a workout, counting back from this week (or last week if this one is still empty)
   for (let i = WEEKS - 1 - (perWeek[WEEKS - 1].n ? 0 : 1); i >= 0 && perWeek[i].n > 0; i--) streak++;
 
-  const areaSets: Record<string, number> = {};
   const exSets: Record<string, number> = {};
   for (const x of posts) for (const e of x.exercises) {
     const ex = findExercise(s.library, e.id, e.name);
     const n = e.log?.length || e.sets || 1;
-    addSets(areaSets, ex, n);
     const name = ex?.name ?? e.name;
     exSets[name] = (exSets[name] ?? 0) + n;
   }
-  const split = Object.entries(areaSets).sort((a, b) => b[1] - a[1]);
-  const splitTotal = split.reduce((n, [, v]) => n + v, 0) || 1;
+  // Muscle distribution: your own logged sets (full history), or the sets in someone's posts.
+  const logs: Log[] = own
+    ? s.sessions.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(s.library, undefined, e.name), sets: e.sets.filter((st) => st.done) })) }))
+    : posts.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(s.library, e.id, e.name), sets: e.log ?? Array.from({ length: e.sets || 1 }, () => ({ kg: 0, reps: 0 })) })) }));
   const favourites = Object.entries(exSets).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   const lifts = own ? liftsOf(bests(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
@@ -137,23 +138,7 @@ export default function GymStats() {
         </section>
       )}
 
-      {split.length > 0 && (
-        <section className={section}>
-          <h2 className="mb-3 font-semibold">Muscle split</h2>
-          <div className="space-y-2.5">
-            {split.map(([k, n]) => {
-              const pct = Math.round((n / splitTotal) * 100);
-              return (
-                <div key={k} className="grid grid-cols-[4.5rem_1fr_2.5rem] items-center gap-3 text-sm">
-                  <span>{k}</span>
-                  <div className="h-2.5 overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-800"><div className="h-full rounded-sm bg-lime-500" style={{ width: `${pct}%` }} /></div>
-                  <span className="muted text-right tabular-nums">{pct}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+      {logs.length > 0 && <MuscleDistribution logs={logs} u={u} />}
 
       {favourites.length > 0 && (
         <section className={section}>
