@@ -262,22 +262,27 @@ export default function Train() {
       </header>
 
       <div className="flex items-center justify-end gap-2">
-        <button onClick={() => setShowHit((v) => !v)} aria-expanded={showHit} aria-label="Muscles hit this workout"
-          className={`btn-ghost flex items-center gap-1.5 py-2 text-sm ${showHit ? "ring-1 ring-lime-500" : ""}`}>
+        <button onClick={() => setShowHit(true)} aria-haspopup="dialog" className="btn-ghost flex items-center gap-1.5 py-2 text-sm">
           <Icon name="stats" size={18} />Muscles
         </button>
         <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish & share</button>
       </div>
       {showHit && (
-        <div className="animate-[rise_200ms_ease-out] space-y-2 rounded-xl bg-zinc-100 p-3 text-sm dark:bg-zinc-900">
-          <p className="muted text-xs">Sets per muscle this workout (others worked count ½)</p>
-          {ranked.length === 0 ? <p className="muted">Tick sets to see muscles hit.</p> : ranked.map(([m, n]) => (
-            <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">
-              <span className="truncate capitalize">{m}</span>
-              <span className="h-2 rounded-full bg-lime-500" style={{ width: `${(n / ranked[0][1]) * 100}%` }} />
-              <b className="text-right tabular-nums">{n}</b>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal aria-label="Muscles hit" onClick={() => setShowHit(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm space-y-3 rounded-3xl bg-white p-4 text-sm shadow-2xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-base font-bold"><Icon name="stats" size={20} />Muscles hit</h2>
+              <button aria-label="Close" onClick={() => setShowHit(false)} className="muted p-1"><X size={18} /></button>
             </div>
-          ))}
+            <p className="muted text-xs">Sets this workout. The main muscle counts 1, others worked count ½.</p>
+            {ranked.length === 0 ? <p className="muted py-4 text-center">Tick sets to see muscles hit.</p> : ranked.map(([m, n]) => (
+              <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">
+                <span className="truncate capitalize">{m}</span>
+                <span className="h-2 rounded-full bg-lime-500" style={{ width: `${(n / ranked[0][1]) * 100}%` }} />
+                <b className="text-right tabular-nums">{n}</b>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
