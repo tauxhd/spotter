@@ -16,7 +16,7 @@ export default function Nav() {
   const t = useSearchParams().get("t"); // keep demo time across tabs
   const q = t ? `?t=${encodeURIComponent(t)}` : "";
   return (
-    <nav className="fixed inset-x-0 print:hidden bottom-0 z-20 border-t border-zinc-200 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+    <nav className="glass-bar fixed inset-x-0 print:hidden bottom-0 z-20 pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto flex max-w-md justify-around">
         {tabs.map(({ href, label, icon }) => {
           const active = href === "/" ? path === "/" || path === "/map" : path.startsWith(href);

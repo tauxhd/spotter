@@ -411,10 +411,10 @@ export default function Train() {
             </div>
             <div className="flex justify-center gap-1.5" aria-hidden>{[0, 1].map((k) => <span key={k} className={`h-1.5 rounded-full transition-all duration-[var(--spring-ms)] ease-[var(--spring)] ${slide === k ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}</div>
             <p className="muted text-xs">Sets this workout. The main muscle counts 1, others worked count ½.</p>
-            {ranked.length === 0 ? <p className="muted py-4 text-center">Tick sets to see muscles hit.</p> : ranked.map(([m, n]) => (
+            {ranked.length === 0 ? <p className="muted py-4 text-center">Tick sets to see muscles hit.</p> : ranked.map(([m, n], k) => (
               <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">
                 <span className="truncate capitalize">{m}</span>
-                <span className="h-2 rounded-full bg-lime-500" style={{ width: `${(n / ranked[0][1]) * 100}%` }} />
+                <span className="anim-grow h-2 rounded-full bg-lime-500" style={{ width: `${(n / ranked[0][1]) * 100}%`, "--i": k } as React.CSSProperties} />
                 <b className="text-right tabular-nums">{n}</b>
               </div>
             ))}

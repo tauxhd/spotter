@@ -68,15 +68,15 @@ export default function Eat() {
           <p className="muted self-start text-sm tabular-nums">{Math.round(sum.kcal)} / {targets.kcal}</p>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-sm bg-zinc-100 dark:bg-zinc-800">
-          <div className={`h-full rounded-sm ${left >= 0 ? "bg-lime-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, (sum.kcal / targets.kcal) * 100)}%` }} />
+          <div className={`anim-grow h-full rounded-sm ${left >= 0 ? "bg-lime-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, (sum.kcal / targets.kcal) * 100)}%` }} />
         </div>
         <div className="mt-4 grid grid-cols-3 gap-3">
-          {macros.map((m) => (
+          {macros.map((m, mi) => (
             <div key={m.k}>
               <p className="muted flex items-center gap-1 text-xs"><Icon name={m.icon} size={16} />{m.label}</p>
               <p className="text-sm font-semibold tabular-nums">{Math.round(sum[m.k])}<span className="muted font-normal">/{targets[m.k]}{m.unit}</span></p>
               <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-zinc-100 dark:bg-zinc-800">
-                <div className={`h-full rounded-sm ${m.bar}`} style={{ width: `${Math.min(100, (sum[m.k] / targets[m.k]) * 100)}%` }} />
+                <div className={`anim-grow h-full rounded-sm ${m.bar}`} style={{ width: `${Math.min(100, (sum[m.k] / targets[m.k]) * 100)}%`, "--i": mi + 1 } as React.CSSProperties} />
               </div>
             </div>
           ))}

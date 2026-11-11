@@ -120,7 +120,7 @@ export default function GymHome() {
           <span className={`ml-auto text-sm font-semibold ${lv.text}`}>{open ? lv.label : "Closed"}</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-sm bg-zinc-100 dark:bg-zinc-800">
-          <div className={`h-full rounded-sm transition-all duration-700 ease-[var(--spring)] ${lv.bar}`} style={{ width: `${pct}%` }} />
+          <div className={`anim-grow h-full rounded-sm transition-all duration-700 ease-[var(--spring)] ${lv.bar}`} style={{ width: `${pct}%` }} />
         </div>
         {friends.length > 0 ? (
           <div className="mt-3 flex items-center gap-3 rounded-xl bg-lime-50 p-2.5 dark:bg-lime-400/10">

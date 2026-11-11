@@ -149,7 +149,7 @@ export default function ExerciseStats() {
                     <div className="flex gap-1">
                       {[0, 1, 2, 3].map((i) => (
                         <div key={i} className="h-2 flex-1 overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-800">
-                          <div className="h-full bg-lime-500" style={{ width: `${Math.min(100, Math.max(0, (lvl.pos * 4 - i) * 100))}%` }} />
+                          <div className="anim-grow h-full bg-lime-500" style={{ width: `${Math.min(100, Math.max(0, (lvl.pos * 4 - i) * 100))}%`, "--i": i * 2 } as React.CSSProperties} />
                         </div>
                       ))}
                     </div>

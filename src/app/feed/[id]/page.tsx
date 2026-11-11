@@ -92,13 +92,13 @@ export default function WorkoutDetail() {
       <section>
         <h3 className="mb-3 text-lg font-bold">Muscle split</h3>
         <div className="space-y-3">
-          {split.map(([k, n]) => {
+          {split.map(([k, n], si) => {
             const pct = Math.round((n / splitTotal) * 100);
             return (
               <div key={k}>
                 <p className="mb-1 text-sm">{k}</p>
                 <div className="flex items-center gap-3">
-                  <div className="h-3 flex-1 overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-800"><div className="h-full rounded-sm bg-lime-500" style={{ width: `${pct}%` }} /></div>
+                  <div className="h-3 flex-1 overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-800"><div className="anim-grow h-full rounded-sm bg-lime-500" style={{ width: `${pct}%`, "--i": si } as React.CSSProperties} /></div>
                   <span className="muted w-10 text-right text-sm tabular-nums">{pct}%</span>
                 </div>
               </div>
