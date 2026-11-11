@@ -33,6 +33,23 @@ function load() {
 
 const BASE = new THREE.Color("#52525b"), LIME = new THREE.Color("#84cc16");
 
+// Id-pass material that also writes a drawn-on segment number (green channel), so the outline pass can split the abs into a
+// six-pack and stripe the upper obliques. Purely visual: the model has one mesh per side for each.
+function segments(id: number, kind: string, box: THREE.Box3, cx: number) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uId: { value: id / 32 }, uTop: { value: box.max.y }, uBot: { value: box.min.y }, uCx: { value: cx } },
+    vertexShader: "varying vec3 vW; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }",
+    fragmentShader: `uniform float uId, uTop, uBot, uCx; varying vec3 vW;
+      void main() {
+        float h = uTop - uBot, f = (uTop - vW.y) / h, side = vW.x < uCx ? 0.0 : 1.0, seg;
+        ${kind === "abs"
+          ? "seg = f < 0.2 ? 1.0 : f < 0.37 ? 2.0 : f < 0.54 ? 3.0 : 4.0; seg += side * 4.0;" // 3 rows of a six-pack + lower abs, per side
+          : "seg = f < 0.55 ? 1.0 + mod(floor((vW.y - abs(vW.x - uCx)) / (h * 0.11)), 6.0) : 0.0; seg += side * 8.0;"}
+        gl_FragColor = vec4(uId, (seg + 1.0) / 32.0, 0.0, 1.0);
+      }`,
+  });
+}
+
 // Front + back view of the muscle model; worked groups glow lime, faint for a little, full for the most.
 export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -46,17 +63,25 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
     load().then((src) => {
       if (gone) return;
       const body = src.clone(true);
+      body.updateMatrixWorld(true);
       const max = Math.max(0, ...Object.values(hit));
-      const looks = new Map<THREE.Mesh, THREE.Material>(), ids = new Map<THREE.Mesh, THREE.Material>();
+      const looks = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>(), ids = new Map<THREE.Mesh, THREE.Material>();
+      const lookOf: Record<string, THREE.Material> = {}; // one lit/unlit material per group, for the torso divider
+      const groupOfMesh = (o: THREE.Mesh) => groupOf(o.name) ?? groupOf((o.material as THREE.Material).name ?? "");
+      // Bounds of abs and obliques, for the drawn-on six-pack and oblique stripes.
+      const bounds: Record<string, THREE.Box3> = { abs: new THREE.Box3(), obliques: new THREE.Box3() };
+      body.traverse((o) => { if (o instanceof THREE.Mesh) { const g = groupOfMesh(o); if (g && bounds[g]) bounds[g].expandByObject(o); } });
+      const cx = new THREE.Box3().setFromObject(body).getCenter(new THREE.Vector3()).x;
       body.traverse((o) => {
         if (!(o instanceof THREE.Mesh)) return;
-        const g = groupOf(o.name) ?? groupOf((o.material as THREE.Material).name ?? "");
+        const g = groupOfMesh(o);
         const t = g && max ? (hit[g] ?? 0) / max : 0;
         const c = t > 0 ? BASE.clone().lerp(LIME, 0.2 + 0.8 * t * t) : BASE; // squared so ½ reads clearly lighter than full
         looks.set(o, new THREE.MeshStandardMaterial({ color: c, emissive: t > 0 ? LIME : new THREE.Color(0), emissiveIntensity: 0.3 * t * t, roughness: 0.7 }));
+        if (g) lookOf[g] ??= looks.get(o) as THREE.Material;
         // flat group id (red channel) for the outline pass; 0 = background, last = muscles outside our groups
         const id = g ? MAP.findIndex(([k]) => k === g) + 1 : MAP.length + 1;
-        ids.set(o, new THREE.MeshBasicMaterial({ color: new THREE.Color(id / 32, 0, 0) }));
+        ids.set(o, g && bounds[g] ? segments(id, g, bounds[g], cx) : new THREE.MeshBasicMaterial({ color: new THREE.Color(id / 32, 0, 0) }));
         o.material = looks.get(o)!;
       });
       // Solid grey filler inside the head, so the gaps in the face muscles don't show the traps behind.
@@ -71,19 +96,25 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
         ids.set(plug, new THREE.MeshBasicMaterial({ color: new THREE.Color((MAP.length + 1) / 32, 0, 0) }));
         plug.material = looks.get(plug)!;
       }
-      // Thin grey divider down the middle of the torso, so the back doesn't show through the breastbone / abs gap (and vice versa).
-      const torso = new THREE.Box3();
-      body.traverse((o) => { if (o instanceof THREE.Mesh && /pectoralis major|rectus abdominis|gluteus maximus|latissimus/i.test(o.name.replace(/_/g, " "))) torso.expandByObject(o); });
-      if (!torso.isEmpty()) {
-        const t = torso.getSize(new THREE.Vector3()), at = torso.getCenter(new THREE.Vector3());
-        const wall = new THREE.Mesh(new THREE.BoxGeometry(t.x * 0.04, t.y * 0.95, t.z * 0.7));
-        wall.position.copy(at);
-        body.attach(wall);
-        looks.set(wall, new THREE.MeshStandardMaterial({ color: BASE.clone().multiplyScalar(0.6), roughness: 0.9 }));
-        ids.set(wall, new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) })); // reads as a gap: filled, no outline
-        wall.material = looks.get(wall)!;
+      // Thin divider down the middle of the torso, so the back doesn't show through the breastbone / abs gap (and vice versa).
+      // It sits between the inner faces of the abs and the lower back, so it never pokes out, and stops at the bottom of the abs.
+      const boxOf = (re: RegExp) => { const b = new THREE.Box3(); body.traverse((o) => { if (o instanceof THREE.Mesh && re.test(o.name.replace(/_/g, " "))) b.expandByObject(o); }); return b; };
+      const torso = boxOf(/pectoralis major|rectus abdominis/i), absBox = boxOf(/rectus abdominis/i), lowBack = boxOf(/iliocostalis/i);
+      if (!torso.isEmpty() && !absBox.isEmpty() && !lowBack.isEmpty() && lowBack.max.z < absBox.min.z) {
+        const zB = lowBack.max.z, zF = absBox.min.z, yB = absBox.min.y, yT = torso.max.y;
+        // Two slices (chest height / abs height). The front face takes the colour of the chest / abs and the back face the traps /
+        // lower back, so the gap blends into whatever is around it, lit or not.
+        const grey = new THREE.MeshStandardMaterial({ color: BASE, roughness: 0.7 });
+        for (const [y0, y1, front, back] of [[absBox.max.y, yT, "chest", "traps"], [yB, absBox.max.y, "abs", "lower back"]] as const) {
+          const wall = new THREE.Mesh(new THREE.BoxGeometry(torso.getSize(new THREE.Vector3()).x * 0.04, y1 - y0, zF - zB));
+          wall.position.set(cx, (y0 + y1) / 2, (zF + zB) / 2);
+          body.attach(wall);
+          looks.set(wall, [grey, grey, grey, grey, lookOf[front] ?? grey, lookOf[back] ?? grey]); // box faces: ±x, ±y, +z front, -z back
+          ids.set(wall, new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) })); // reads as a gap: no outline
+          wall.material = looks.get(wall)!;
+        }
       }
-      const use = (m: Map<THREE.Mesh, THREE.Material>) => m.forEach((mat, o) => { o.material = mat; });
+      const use = (m: Map<THREE.Mesh, THREE.Material | THREE.Material[]>) => m.forEach((mat, o) => { o.material = mat; });
       const box = new THREE.Box3().setFromObject(body), mid = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
       const scene = new THREE.Scene();
       scene.add(body, new THREE.HemisphereLight(0xffffff, 0x444444, 1.6));
@@ -103,30 +134,32 @@ export default function MuscleModel({ hit }: { hit: Record<string, number> }) {
         uniforms: { tId: { value: ids_rt.texture }, px: { value: new THREE.Vector2(1 / ids_rt.width, 1 / ids_rt.height) } },
         vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
         fragmentShader: `uniform sampler2D tId; uniform vec2 px; varying vec2 vUv;
-          float raw(vec2 o) { return textureLod(tId, vUv + o * px, 0.0).r; }
-          // A thin gap (e.g. down the middle of the abs): background with body close by on both sides.
+          vec2 raw(vec2 o) { return textureLod(tId, vUv + o * px, 0.0).rg; } // r = group, g = drawn-on segment
+          // A thin gap (e.g. between the two halves of the abs): background with body close by on both sides.
           bool gap(vec2 o) {
             bool l = false, r = false, u = false, d = false;
-            for (int i = 1; i <= 8; i++) {
+            for (int i = 1; i <= 4; i++) {
               float f = float(i);
-              l = l || raw(o - vec2(f, 0.0)) > 0.015; r = r || raw(o + vec2(f, 0.0)) > 0.015;
-              d = d || raw(o - vec2(0.0, f)) > 0.015; u = u || raw(o + vec2(0.0, f)) > 0.015;
+              l = l || raw(o - vec2(f, 0.0)).r > 0.015; r = r || raw(o + vec2(f, 0.0)).r > 0.015;
+              d = d || raw(o - vec2(0.0, f)).r > 0.015; u = u || raw(o + vec2(0.0, f)).r > 0.015;
             }
             return (l && r) || (u && d);
           }
-          float id(vec2 o, float c) { float v = raw(o); return v < 0.015 && gap(o) ? c : v; } // gaps count as the muscle next to them
+          vec2 id(vec2 o, vec2 c) { vec2 v = raw(o); return v.r < 0.015 && gap(o) ? c : v; } // gaps count as the muscle next to them
+          float diff(vec2 a, vec2 b) { return abs(a.r - b.r); }
           void main() {
-            float c = raw(vec2(0.0)), g = c * 32.0;
-            if (g < 0.5) {
-              if (gap(vec2(0.0))) gl_FragColor = vec4(0.22, 0.22, 0.24, 1.0); else discard; // fill gaps, leave real background
-              return;
-            }
-            float r = id(vec2(1.0, 0.0), c), l = id(vec2(-1.0, 0.0), c), u = id(vec2(0.0, 1.0), c), b = id(vec2(0.0, -1.0), c);
-            bool edgeOfBody = min(min(r, l), min(u, b)) < 0.015; // one outline around the whole figure
+            vec2 c = raw(vec2(0.0));
+            float g = c.r * 32.0;
+            if (g < 0.5) discard; // background
+            vec2 r = id(vec2(1.0, 0.0), c), l = id(vec2(-1.0, 0.0), c), u = id(vec2(0.0, 1.0), c), b = id(vec2(0.0, -1.0), c);
+            bool edgeOfBody = min(min(r.r, l.r), min(u.r, b.r)) < 0.015; // one outline around the whole figure
             bool group = g < ${MAP.length}.5; // and around the app's muscle groups (not hands, face, knees…)
-            float d = max(max(abs(r - c), abs(l - c)), max(abs(u - c), abs(b - c)));
-            if (!edgeOfBody && !(group && d > 0.015)) discard;
-            gl_FragColor = vec4(1.0, 1.0, 1.0, 0.85);
+            float d = max(max(diff(r, c), diff(l, c)), max(diff(u, c), diff(b, c)));
+            // drawn-on segments (six-pack, oblique stripes): same group, different segment → fainter line
+            float s = max(max(abs(r.g - c.g), abs(l.g - c.g)), max(abs(u.g - c.g), abs(b.g - c.g)));
+            if (edgeOfBody || (group && d > 0.015)) gl_FragColor = vec4(1.0, 1.0, 1.0, 0.85);
+            else if (group && s > 0.015) gl_FragColor = vec4(1.0, 1.0, 1.0, 0.5);
+            else discard;
           }`,
       });
       const quad = new THREE.Scene(); quad.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edge));
