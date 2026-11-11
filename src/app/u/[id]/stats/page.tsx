@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Clock, Dumbbell, Flame, Layers, MapPin, Trophy } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import Icon, { type IconName } from "@/components/Icon";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import { StatsSkeleton } from "@/components/Skeleton";
@@ -77,9 +78,9 @@ export default function GymStats() {
   visits.forEach((v) => { const h = new Date(v.in_at).getHours(); hours[h] = (hours[h] ?? 0) + 1; });
   const favHour = Object.entries(hours).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-  const Big = ({ icon: I, value, label }: { icon: typeof Clock; value: string | number; label: string }) => (
-    <div className="flex items-center gap-3 py-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-lime-400/15 text-lime-600 dark:text-lime-400"><I size={20} /></span>
+  const Big = ({ icon, value, label }: { icon: IconName; value: string | number; label: string }) => (
+    <div className="flex items-center gap-3 py-2.5">
+      <Icon name={icon} size={40} />
       <div><p className="text-xl font-bold leading-tight tabular-nums">{value}</p><p className="muted text-xs">{label}</p></div>
     </div>
   );
@@ -109,23 +110,29 @@ export default function GymStats() {
       </section>
 
       <section className={`${section} grid grid-cols-2 gap-x-4`}>
-        <Big icon={Flame} value={`${streak} wk`} label="Weekly streak" />
-        <Big icon={Dumbbell} value={total.workouts} label="Workouts" />
-        <Big icon={Clock} value={hrs(total.minutes)} label="Time trained" />
-        <Big icon={Layers} value={total.sets} label="Sets" />
-        <Big icon={Trophy} value={total.prs} label="Personal records" />
-        <Big icon={Dumbbell} value={u === "lb" ? `${Math.round(toUnit(total.volume, u) / 1000)}k lb` : `${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
+        <Big icon="flame" value={`${streak} wk`} label="Weekly streak" />
+        <Big icon="calendar" value={total.workouts} label="Workouts" />
+        <Big icon="stopwatch" value={hrs(total.minutes)} label="Time trained" />
+        <Big icon="tick-box" value={total.sets} label="Sets" />
+        <Big icon="medal" value={total.prs} label="Personal records" />
+        <Big icon="barbell" value={u === "lb" ? `${Math.round(toUnit(total.volume, u) / 1000)}k lb` : `${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
       </section>
 
       {sbd > 0 && (
         <section className={section}>
           <h2 className="mb-3 font-semibold">Best lifts</h2>
           <div className="grid grid-cols-4 text-center">
-            {[["Squat", lifts.squat], ["Bench", lifts.bench], ["Deadlift", lifts.deadlift], ["Total", sbd]].map(([k, v]) => (
-              <div key={k}><p className="text-lg font-bold tabular-nums">{wNum(v as number, u)}</p><p className="muted text-xs">{k} {u}</p></div>
+            {([["squat", "Squat", lifts.squat], ["bench", "Bench", lifts.bench], ["deadlift", "Deadlift", lifts.deadlift], ["ranks", "Total", sbd]] as const).map(([icon, k, v]) => (
+              <div key={k} className="flex flex-col items-center">
+                <Icon name={icon} size={44} />
+                <p className="mt-1.5 text-lg font-bold leading-tight tabular-nums">{wNum(v, u)}</p>
+                <p className="muted text-xs">{k} {u}</p>
+              </div>
             ))}
           </div>
-          <p className="muted mt-3 text-center text-xs"><span className="font-semibold text-lime-600 dark:text-lime-400">{dots(sbd, Number(p.bw), p.sex).toFixed(1)} DOTS</span> at {w(Number(p.bw), u)} bodyweight</p>
+          <p className="muted mt-4 flex items-center justify-center gap-2 border-t border-zinc-100 pt-3 text-xs dark:border-zinc-800/60">
+            <Icon name="p4p" size={24} /><span className="font-semibold text-lime-600 dark:text-lime-400">{dots(sbd, Number(p.bw), p.sex).toFixed(1)} DOTS</span> at {w(Number(p.bw), u)} bodyweight
+          </p>
         </section>
       )}
 
@@ -164,12 +171,16 @@ export default function GymStats() {
 
       {own && (
         <section className={section}>
-          <h2 className="mb-1 flex items-center gap-2 font-semibold"><MapPin size={16} className="text-lime-500" />Gym visits</h2>
-          <p className="muted mb-2 text-xs">From your clock-ins at the SweatZone door. Only you can see this.</p>
+          <h2 className="mb-1 font-semibold">Gym visits</h2>
+          <p className="muted mb-3 text-xs">From your clock-ins at the SweatZone door. Only you can see this.</p>
           <div className="grid grid-cols-3 text-center">
-            <div><p className="text-lg font-bold tabular-nums">{monthVisits.length}</p><p className="muted text-xs">This month</p></div>
-            <div><p className="text-lg font-bold tabular-nums">{avgVisit ? hrs(avgVisit) : "–"}</p><p className="muted text-xs">Avg visit</p></div>
-            <div><p className="text-lg font-bold tabular-nums">{favHour !== undefined ? `${favHour.padStart(2, "0")}:00` : "–"}</p><p className="muted text-xs">Usual time</p></div>
+            {([["qr", monthVisits.length, "This month"], ["stopwatch", avgVisit ? hrs(avgVisit) : "–", "Avg visit"], ["bell", favHour !== undefined ? `${favHour.padStart(2, "0")}:00` : "–", "Usual time"]] as const).map(([icon, v, k]) => (
+              <div key={k} className="flex flex-col items-center">
+                <Icon name={icon} size={40} />
+                <p className="mt-1.5 text-lg font-bold leading-tight tabular-nums">{v}</p>
+                <p className="muted text-xs">{k}</p>
+              </div>
+            ))}
           </div>
         </section>
       )}
