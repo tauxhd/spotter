@@ -31,6 +31,7 @@ export default function Train() {
   useEffect(() => setRestSecs(readRest()), []);
   const [hold, setHold] = useState<{ i: number; j: number; start: number; target: number } | null>(null); // running set timer
   const [editingStart, setEditingStart] = useState(false);
+  const [showHit, setShowHit] = useState(false);
   const [picking, setPicking] = useState(false);
   const [typing, setTyping] = useState<{ i: number; j: number } | null>(null); // set-type sheet
   const lib = new Map(s.library.map((e) => [e.name, e]));
@@ -260,16 +261,25 @@ export default function Train() {
         </div>
       </header>
 
-      <div className="flex items-center gap-3">
-        <p className="no-scrollbar flex min-w-0 flex-1 gap-3 overflow-x-auto whitespace-nowrap text-sm" aria-label="Sets per muscle this workout">
-          {ranked.length === 0 ? <span className="muted">Tick sets to see muscles hit</span> : ranked.map(([m, n], k) => (
-            <span key={m} className={k === 0 ? "text-lime-600 dark:text-lime-400" : "muted"}>
-              <span className="capitalize">{m}</span> <b className="tabular-nums">{n}</b>
-            </span>
-          ))}
-        </p>
-        <button onClick={openPost} disabled={!ranked.length} className="btn shrink-0 py-2 text-sm">Finish & share</button>
+      <div className="flex items-center justify-end gap-2">
+        <button onClick={() => setShowHit((v) => !v)} aria-expanded={showHit} aria-label="Muscles hit this workout"
+          className={`btn-ghost flex items-center gap-1.5 py-2 text-sm ${showHit ? "ring-1 ring-lime-500" : ""}`}>
+          <Icon name="stats" size={18} />Muscles
+        </button>
+        <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish & share</button>
       </div>
+      {showHit && (
+        <div className="animate-[rise_200ms_ease-out] space-y-2 rounded-xl bg-zinc-100 p-3 text-sm dark:bg-zinc-900">
+          <p className="muted text-xs">Sets per muscle this workout (others worked count ½)</p>
+          {ranked.length === 0 ? <p className="muted">Tick sets to see muscles hit.</p> : ranked.map(([m, n]) => (
+            <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">
+              <span className="truncate capitalize">{m}</span>
+              <span className="h-2 rounded-full bg-lime-500" style={{ width: `${(n / ranked[0][1]) * 100}%` }} />
+              <b className="text-right tabular-nums">{n}</b>
+            </div>
+          ))}
+        </div>
+      )}
 
       {a.exercises.length === 0 && <EmptyState art="exercises" title="Empty workout" text="Add your first exercise to start logging sets." />}
       {a.exercises.map((ex, i) => {
