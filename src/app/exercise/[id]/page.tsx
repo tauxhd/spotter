@@ -68,7 +68,8 @@ export default function ExerciseStats() {
   const best = <K extends keyof Point>(k: K) => Math.max(0, ...points.map((p) => p[k] as number));
   const bestSet = allSets.reduce<{ kg: number; reps: number } | null>((b, st) => (!b || st.kg * st.reps > b.kg * b.reps ? st : b), null);
   const repRecords = Object.entries(allSets.reduce<Record<number, number>>((r, st) => { if (st.reps > 0) r[st.reps] = Math.max(r[st.reps] ?? -Infinity, st.kg); return r; }, {}))
-    .map(([reps, kg]) => [Number(reps), kg] as const).sort((a, b) => a[0] - b[0]);
+    .map(([reps, kg]) => [Number(reps), kg, kg + body > 0 ? e1rm(kg + body, Number(reps)) - body : 0] as const)
+    .sort((a, b) => b[2] - a[2] || a[0] - b[0]); // strongest set first, by the 1RM it works out to
 
   const lvl = !timed && points.length ? strengthLevel(id, best("orm"), Number(me.bw), me.sex) : null;
 
@@ -162,11 +163,12 @@ export default function ExerciseStats() {
               {!timed && repRecords.length > 0 && (
                 <section className="-mx-4 px-4 py-4">
                   <h3 className="mb-1 font-semibold">Set records</h3>
-                  <div className="muted grid grid-cols-2 border-b border-zinc-100 py-2 text-xs font-semibold dark:border-zinc-800/60"><span>Reps</span><span>Personal best</span></div>
+                  <div className="muted grid grid-cols-[1fr_1fr_auto] border-b border-zinc-100 py-2 text-xs font-semibold dark:border-zinc-800/60"><span>Reps</span><span>Personal best</span><span>Est. 1RM</span></div>
                   <ul>
-                    {repRecords.map(([reps, kg]) => (
-                      <li key={reps} className="grid grid-cols-2 border-b border-zinc-100 py-2.5 tabular-nums last:border-0 dark:border-zinc-800/60">
+                    {repRecords.map(([reps, kg, orm], i) => (
+                      <li key={reps} className="grid grid-cols-[1fr_1fr_auto] border-b border-zinc-100 py-2.5 tabular-nums last:border-0 dark:border-zinc-800/60">
                         <span className="font-semibold">{reps}</span><span>{added && kg > 0 ? "+" : ""}{kg > 0 || !added ? w(kg, u) : "Bodyweight"}</span>
+                        <span className={i === 0 ? "font-semibold text-lime-600 dark:text-lime-400" : "muted"}>{orm > 0 ? `${added ? "+" : ""}${w(Math.round(orm * 10) / 10, u)}` : "–"}</span>
                       </li>
                     ))}
                   </ul>
