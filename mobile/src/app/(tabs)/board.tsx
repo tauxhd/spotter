@@ -11,6 +11,8 @@ import { baseOf, bests, dots, fmtResult, liftsOf, parseResult, weightClass } fro
 import Avatar from '@/components/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { Title } from '@/components/ui/kit';
+import WorkoutPill from '@/components/workout-pill';
 import { BottomTabInset, Lime, Spring } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore, type Profile } from '@/lib/store';
@@ -85,10 +87,11 @@ export default function Ranks() {
   }
 
   const card = { backgroundColor: theme.backgroundElement };
+  const flat = { marginHorizontal: -16, paddingHorizontal: 16, borderRadius: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }; // list rows, like the website's .card
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
-        <ThemedText style={styles.h1}>Ranks</ThemedText>
+        <Title icon="ranks">Ranks</Title>
         <ThemedText type="small" themeColor="textSecondary">
           {standard === 'p4p' ? (ev.p4p === 'dots' ? 'DOTS: total adjusted for bodyweight, so every size competes fairly' : 'Lift divided by bodyweight')
             : standard === 'class' ? `IPF weight classes, ${classSex === 'M' ? 'men' : 'women'}` : ev.lower ? 'Fastest time wins' : 'Best result, any bodyweight'}
@@ -186,7 +189,7 @@ export default function Ranks() {
 
         {rows.map((l, i) => (
           <Animated.View key={l.id} entering={FadeInDown.delay(Math.min(i, 8) * 30).springify().dampingRatio(1).duration(350)} layout={layout}
-            style={[styles.row, card, l.id === me.id && { backgroundColor: 'rgba(132,204,22,0.12)' }]}>
+            style={[styles.row, flat, l.id === me.id && { backgroundColor: 'rgba(132,204,22,0.12)' }]}>
             <ThemedText type="smallBold" style={{ width: 22, textAlign: 'center', color: i < 3 ? '#f59e0b' : theme.textSecondary }}>{i + 1}</ThemedText>
             <Avatar url={l.avatar_url} name={l.name} size={42} />
             <View style={{ flex: 1 }}>
@@ -200,6 +203,7 @@ export default function Ranks() {
         {rows.length === 0 && <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 20 }}>Nobody here yet. Log a result and take first place.</ThemedText>}
         <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 11 }}>Gym lifts come from logged sets; other events are self-reported.</ThemedText>
       </ScrollView>
+      <WorkoutPill />
     </SafeAreaView>
   );
 }

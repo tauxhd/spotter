@@ -19,7 +19,7 @@
       "package": "my.apu.spotter"
     },
     "web": {
-      "output": "server",
+      "output": "single",
       "favicon": "./assets/images/spotter-icon.png"
     },
     "plugins": [

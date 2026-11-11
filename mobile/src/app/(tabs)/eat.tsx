@@ -11,6 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { foods, highProtein, slug, stalls, targets } from '@shared/data';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
+import { H2, Title } from '@/components/ui/kit';
+import WorkoutPill from '@/components/workout-pill';
+import { Plus, X } from 'lucide-react-native';
 import { BottomTabInset, Lime, Red, Spring } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
@@ -79,15 +82,14 @@ export default function Eat() {
     { k: 'c', label: 'Carbs', color: '#f59e0b' },
     { k: 'f', label: 'Fat', color: '#ec4899' },
   ] as const;
-  const card = { backgroundColor: theme.backgroundElement };
+  const card = { marginHorizontal: -16, paddingHorizontal: 16, borderRadius: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }; // flat sections, like the website's .card
   const icon = (n: string) => img(`/icons/${n}.webp`);
   const menu = foods.filter((f) => (pick === ALL || (pick === HP ? highProtein(f) : f.stall === pick)) && `${f.name} ${f.stall}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
-        <ThemedText style={styles.h1}>Eat</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: -8 }}>Lean bulk · {targets.kcal} kcal target</ThemedText>
+        <Title icon="eat" sub={`Lean bulk · ${targets.kcal} kcal target`}>Eat</Title>
 
         <View style={[styles.card, card]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -138,7 +140,7 @@ export default function Eat() {
 
         {log.length > 0 && (
           <View style={{ gap: 8 }}>
-            <ThemedText type="smallBold" style={{ fontSize: 16 }}>Today</ThemedText>
+            <H2 icon="plate">Today</H2>
             <View style={[styles.card, card, { paddingVertical: 4 }]}>
               {log.map((f) => (
                 <Animated.View key={f.id} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} layout={layout} style={styles.logRow}>
@@ -148,7 +150,7 @@ export default function Eat() {
                     <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, fontVariant: ['tabular-nums'] }}>{f.kcal} kcal · P {f.p} · C {f.c} · F {f.f}</ThemedText>
                   </View>
                   <Press onPress={() => removeFood(f.id)} accessibilityLabel={`Remove ${f.name}`} style={{ padding: 6 }}>
-                    <ThemedText themeColor="textSecondary">✕</ThemedText>
+                    <X size={16} strokeWidth={1.75} color={Red} />
                   </Press>
                 </Animated.View>
               ))}
@@ -156,7 +158,7 @@ export default function Eat() {
           </View>
         )}
 
-        <ThemedText type="smallBold" style={{ fontSize: 16 }}>APU cafeteria</ThemedText>
+        <H2 icon="plate">APU cafeteria</H2>
         <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: -8, fontSize: 12 }}>Typical portions, estimated. Tap + to log.</ThemedText>
         <TextInput value={q} onChangeText={setQ} placeholder="Search food…" placeholderTextColor={theme.textSecondary}
           style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
@@ -184,7 +186,7 @@ export default function Eat() {
                   </View>
                 </View>
                 <Press onPress={() => add(f)} haptic={false} scaleTo={0.9} accessibilityLabel={`Add ${f.name}`} style={styles.plus}>
-                  <ThemedText style={{ color: '#09090b', fontSize: 20, fontWeight: '800', lineHeight: 22 }}>+</ThemedText>
+                  <Plus size={20} strokeWidth={2.5} color="#09090b" />
                 </Press>
               </View>
               <View style={{ flexDirection: 'row', gap: 4 }}>
@@ -199,6 +201,7 @@ export default function Eat() {
           </Animated.View>
         ))}
       </ScrollView>
+      <WorkoutPill />
     </SafeAreaView>
   );
 }
