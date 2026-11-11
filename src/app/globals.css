@@ -1,26 +1,83 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ---- feel native on phones (mobile-native skill) ---- */
+html {
+  -webkit-tap-highlight-color: transparent; /* no grey flash on tap; every control has its own :active */
+  -webkit-text-size-adjust: 100%;           /* no font inflation in landscape */
+  overscroll-behavior: none;                /* the app scrolls, not the page rubber-band / pull-to-refresh */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
 }
+
+/* iOS zooms into any input under 16px and never zooms back out. Element-level, so bigger sizes set by classes still win. */
+/* in @layer base so text-xl / text-2xl classes on an input still win */
+@layer base {
+  @media (pointer: coarse) {
+    input, textarea, select { font-size: max(16px, 1em); }
+  }
+}
+
+/* controls: fire instantly (no double-tap-zoom wait), no long-press text selection */
+button, a, [role="button"], label, summary {
+  touch-action: manipulation;
+}
+button, [role="button"], .chip {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* press feedback lands with the finger, not on release */
+@media (pointer: coarse) {
+  button:not(:disabled):active, a:active { opacity: 0.6; transition: opacity 0ms; }
+}
+button, a { transition: opacity 160ms ease-out; }
+
+@layer components {
+/* Flat, full-width section separated by a hairline: content sits on the page, not inside boxes. */
+.card {
+  @apply -mx-4 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800/80;
+}
+
+/* For the few things that really are tiles (side-scrolling suggestions). */
+.tile {
+  @apply rounded-2xl bg-zinc-100 p-3 dark:bg-zinc-900;
+}
+
+.muted {
+  @apply text-zinc-500 dark:text-zinc-400;
+}
+
+.h-title {
+  @apply text-2xl font-bold tracking-tight;
+}
+
+.btn {
+  @apply rounded-xl bg-lime-500 px-4 py-3 font-semibold text-zinc-950 transition active:scale-[0.97] disabled:opacity-40;
+}
+
+.btn-ghost {
+  @apply rounded-xl bg-zinc-100 px-4 py-3 font-semibold transition active:scale-[0.97] dark:bg-zinc-900;
+}
+
+.chip {
+  @apply shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold transition dark:bg-zinc-900;
+}
+.chip[aria-pressed="true"] {
+  @apply bg-zinc-900 text-white dark:bg-lime-400 dark:text-zinc-950;
+}
+
+.num {
+  @apply w-full min-w-0 rounded-lg bg-zinc-100 px-2 py-2 text-center text-base font-semibold tabular-nums outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900;
+}
+}
+
+/* swipe rows (stall tiles, events, classes): scroll by touch, no grey bar */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

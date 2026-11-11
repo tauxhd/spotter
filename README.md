@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Spotter
 
-## Getting Started
+The APU SweatZone gym, connected. Built for the APU Cloud Innovation Hackathon 2026 (Smart Campus track).
 
-First, run the development server:
+- **Clock in/out** by scanning the door QR, instead of the ID check at the counter. Gives the gym a live head count.
+- **Live crowd + best time to train**: picks the quietest free hour between *your* classes, using APU's public timetable feed (enter your intake code).
+- **Train**: log sets, rest timer, PR detection, equipment location on the gym map.
+- **Eat**: macro targets, APU cafeteria foods, meal photo → macros with Gemini.
+- **Feed**: finished workouts are shared live (with an optional video or photo, swipe for the workout); likes and comments update in real time.
+- **Exercise library**: ~100 exercises by muscle group, each with an illustrated demo image (`supabase/exercises.json` → `exercises` table, images in `public/exercises`).
+- **Ranks**: 13 events (powerlifting, strength, calisthenics, athletics), ranked open, pound for pound, or by IPF weight class.
+
+## Stack
+
+Next.js 15 (App Router) · Tailwind v4 · Supabase (Postgres, Row Level Security, anonymous auth, Realtime) · Gemini.
+
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_KEY=<publishable key>
+GEMINI_API_KEY=<optional, from Google AI Studio>
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+New Supabase project: run `supabase/schema.sql` then `supabase/exercises.sql` in the SQL editor, then turn on
+**Authentication → Sign In / Providers → Allow anonymous sign-ins**.
 
-## Learn More
+Add `?t=17:30` to any URL to demo the app at a different time of day.
 
-To learn more about Next.js, take a look at the following resources:
+Print `/poster` and stick it on the gym door: scanning its QR opens `/checkin`, which clocks the student in.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tests
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm test
+```
