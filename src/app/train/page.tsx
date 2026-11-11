@@ -118,7 +118,23 @@ export default function Train() {
 
   // Hold an exercise name: every exercise collapses to a row and the held one follows your finger; let go and they expand again.
   // i = held exercise, y = finger, dy = how far the held row is drawn from its slot (so it sits under the finger)
-  const [drag, setDrag] = useState<{ i: number; y: number; dy: number } | null>(null);
+  // dropping = released, springing into its slot before the cards expand again
+  const [drag, setDrag] = useState<{ i: number; y: number; dy: number; dropping?: boolean } | null>(null);
+  // A neighbour that just swapped: glide it from where it was drawn (its live position) to its new place on a spring.
+  const glide = useRef<{ el: HTMLElement; top: number } | null>(null);
+  const order = a?.exercises.map((e) => e.name).join("|");
+  useLayoutEffect(() => {
+    const g = glide.current;
+    glide.current = null;
+    if (!g) return;
+    const from = g.top - g.el.getBoundingClientRect().top;
+    if (!from) return;
+    g.el.style.transition = "none";
+    g.el.style.transform = `translateY(${from}px)`;
+    void g.el.offsetHeight; // commit the start position, then let it spring home
+    g.el.style.transition = "transform var(--spring-ms) var(--spring)";
+    g.el.style.transform = "";
+  }, [order]);
   const dragRef = useRef(drag); dragRef.current = drag;
   const [padTop, setPadTop] = useState(0); // room above the list so a row near the top can still reach the finger
   const rows = useRef<(HTMLElement | null)[]>([]);
@@ -147,13 +163,25 @@ export default function Train() {
   // Draw the held row under the finger; swap only when the finger passes the middle of the next/previous row.
   function place(y: number, swap: boolean) {
     const d = dragRef.current, el = d && rows.current[d.i];
-    if (!d || !el) return;
-    const midOf = (k: number) => { const b = rows.current[k]!.getBoundingClientRect(); return b.top + b.height / 2; };
+    if (!d || !el || d.dropping) return;
+    // a row's resting centre: where it's drawn minus any glide still in flight (otherwise a gliding neighbour swaps straight back)
+    const midOf = (k: number) => {
+      const n = rows.current[k]!, b = n.getBoundingClientRect(), t = getComputedStyle(n).transform;
+      return b.top + b.height / 2 - (t && t !== "none" ? new DOMMatrixReadOnly(t).m42 : 0);
+    };
     const r = el.getBoundingClientRect();
     let i = d.i, slot = r.top + r.height / 2 - d.dy; // centre of the held row's own place in the list
+    const move = (to: number) => { // swap with a neighbour; it glides into the gap
+      const nb = rows.current[to]!;
+      glide.current = { el: nb, top: nb.getBoundingClientRect().top };
+      slot = midOf(to);
+      const from = i;
+      edit((x) => { const [m] = x.splice(from, 1); x.splice(to, 0, m); });
+      i = to;
+    };
     // swap once the finger is past the halfway point to the neighbour's centre (+4px so it doesn't flicker on the line)
-    if (swap && rows.current[i + 1] && y > (slot + midOf(i + 1)) / 2 + 4) { slot = midOf(i + 1); const from = i; edit((x) => { const [m] = x.splice(from, 1); x.splice(from + 1, 0, m); }); i++; }
-    else if (swap && i > 0 && rows.current[i - 1] && y < (slot + midOf(i - 1)) / 2 - 4) { slot = midOf(i - 1); const from = i; edit((x) => { const [m] = x.splice(from, 1); x.splice(from - 1, 0, m); }); i--; }
+    if (swap && rows.current[i + 1] && y > (slot + midOf(i + 1)) / 2 + 4) move(i + 1);
+    else if (swap && i > 0 && rows.current[i - 1] && y < (slot + midOf(i - 1)) / 2 - 4) move(i - 1);
     const next = { i, y, dy: y - slot };
     dragRef.current = next; setDrag(next);
   }
@@ -172,9 +200,16 @@ export default function Train() {
     if (!sorting) return;
     const move = (e: PointerEvent) => place(e.clientY, true);
     const eatClick = (e: MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
-    const up = () => { // drop: swallow the click that follows the release, then expand
+    const up = () => { // drop: swallow the click that follows the release, spring into the slot, then expand
+      const d = dragRef.current;
+      if (!d || d.dropping) return;
       window.addEventListener("click", eatClick, { capture: true, once: true });
-      setTimeout(() => { window.removeEventListener("click", eatClick, { capture: true }); setDrag(null); }, 60);
+      setTimeout(() => window.removeEventListener("click", eatClick, { capture: true }), 60);
+      const next = { ...d, dy: 0, dropping: true };
+      dragRef.current = next; setDrag(next);
+      try { navigator.vibrate?.(8); } catch {}
+      const ms = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450; // --spring-bounce-ms
+      setTimeout(() => setDrag(null), ms);
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -385,8 +420,12 @@ export default function Train() {
         const hide = sorting ? "hidden" : "", dragging = drag?.i === i;
         return (
           <section key={ex.name} ref={(el) => { rows.current[i] = el; }}
-            style={dragging ? { transform: `translateY(${drag!.dy}px) scale(1.02)` } : undefined}
-            className={`card relative ${ex.superset !== undefined ? `border-l-4 ${sc.bar}` : ""} ${linkedNext ? "rounded-b-md" : ""} ${sorting ? "select-none py-2" : ""} ${dragging ? "z-10 rounded-xl bg-white shadow-xl ring-1 ring-lime-500 dark:bg-zinc-900" : sorting ? "transition-transform" : ""}`}>
+            style={dragging ? {
+              // held: glued 1:1 to the finger and lifted; released: springs (slight bounce, it was moving) into its slot
+              transform: `translateY(${drag!.dy}px) scale(${drag!.dropping ? 1 : 1.03})`,
+              transition: drag!.dropping ? "transform var(--spring-bounce-ms) var(--spring-bounce), box-shadow var(--spring-bounce-ms) var(--spring)" : "box-shadow 200ms ease-out",
+            } : undefined}
+            className={`card relative ${ex.superset !== undefined ? `border-l-4 ${sc.bar}` : ""} ${linkedNext ? "rounded-b-md" : ""} ${sorting ? "select-none py-2" : ""} ${dragging ? `z-10 rounded-xl bg-white ring-1 ring-lime-500 dark:bg-zinc-900 ${drag!.dropping ? "shadow-sm" : "shadow-2xl"}` : ""}`}>
             {ex.superset !== undefined && (
               <span className={`absolute -top-2 left-3 rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sc.tag} ${hide}`}>Superset {letter(ex.superset)}</span>
             )}
@@ -414,7 +453,10 @@ export default function Train() {
                 </Link>
               )}
             </div>
-            <div className={`mt-3 grid ${hide} ${isTimed(ex) ? "grid-cols-[2.25rem_1fr_1fr_2.25rem_2.5rem_1.5rem]" : "grid-cols-[2.25rem_1fr_1fr_2.75rem_2.5rem_1.5rem]"} items-center gap-2 text-xs`}>
+            {/* Sets fold away instantly on hold (so the row lands under the finger) and unfold on a spring after the drop. */}
+            <div className={`grid ${sorting ? "grid-rows-[0fr]" : "grid-rows-[1fr] transition-[grid-template-rows] duration-[var(--spring-ms)] ease-[var(--spring)]"}`}>
+            <div className={`min-h-0 overflow-y-clip transition-opacity ${sorting ? "opacity-0" : "opacity-100 duration-300"}`}>
+            <div className={`mt-3 grid ${isTimed(ex) ? "grid-cols-[2.25rem_1fr_1fr_2.25rem_2.5rem_1.5rem]" : "grid-cols-[2.25rem_1fr_1fr_2.75rem_2.5rem_1.5rem]"} items-center gap-2 text-xs`}>
               <span className="muted">Set</span><span className="muted text-center">{u}</span><span className="muted text-center">{isTimed(ex) ? "Time" : "Reps"}</span>{isTimed(ex) ? <span /> : <span className="muted text-center">1RM</span>}<span /><span />
               {ex.sets.map((st, j) => {
                 const max = countsPR(st.type) ? setMax(ex.name, st) : 0;
@@ -460,7 +502,9 @@ export default function Train() {
               })}
             </div>
             <button onClick={() => edit((x) => { const l = x[i].sets.at(-1); x[i].sets.push(l ? { kg: l.kg, reps: l.reps, ...(l.secs !== undefined ? { secs: l.secs } : {}) } : { kg: 0, reps: 10 }); })}
-              className={`muted mt-3 flex items-center gap-1.5 text-sm font-medium ${hide}`}><Icon name="plus" size={14} />Add set</button>
+              className="muted mt-3 flex items-center gap-1.5 text-sm font-medium"><Icon name="plus" size={14} />Add set</button>
+            </div>
+            </div>
           </section>
         );
       })}
