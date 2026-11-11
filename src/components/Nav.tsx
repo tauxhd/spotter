@@ -1,7 +1,40 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 import Icon from "./Icon";
+import { useStore } from "@/lib/store";
+import { hhmmss } from "@/lib/lifting";
+
+// Floating reminder above the tab bar while a workout is running and you're on another tab. Tap to go back to it.
+function OngoingWorkout({ q }: { q: string }) {
+  const { s } = useStore();
+  const a = s.active;
+  const [, tick] = useState(0);
+  useEffect(() => { if (!a) return; const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, [a]);
+  if (!a) return null;
+  const secs = Math.max(0, Math.floor((Date.now() - new Date(a.startedAt).getTime()) / 1000));
+  const done = a.exercises.reduce((n, e) => n + e.sets.filter((x) => x.done).length, 0);
+  const total = a.exercises.reduce((n, e) => n + e.sets.length, 0);
+  return (
+    <>
+    <div aria-hidden className="h-16" />{/* extra room at the page end so the card never covers the last item */}
+    <Link href={`/train${q}`} aria-label={`Workout in progress, ${hhmmss(secs)}. Go back to it`}
+      className="glass-bar anim-slide-up fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 mx-auto flex print:hidden max-w-md items-center gap-3 rounded-2xl px-3 py-2 shadow-lg ring-1 ring-black/5 active:scale-[0.98] dark:ring-white/10">
+      <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-lime-500/15">
+        <Icon name="train" size={22} />
+        <span className="absolute right-0.5 top-0.5 h-2 w-2 animate-pulse rounded-full bg-lime-500" />
+      </span>
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block truncate text-sm font-semibold">{a.title === "Workout" ? "Workout in progress" : a.title}</span>
+        <span className="muted block text-xs tabular-nums">{hhmmss(secs)} · {done}/{total} sets</span>
+      </span>
+      <ChevronRight size={18} className="muted shrink-0" />
+    </Link>
+    </>
+  );
+}
 
 const tabs = [
   { href: "/", label: "Gym", icon: "gym" },
@@ -16,6 +49,9 @@ export default function Nav() {
   const t = useSearchParams().get("t"); // keep demo time across tabs
   const q = t ? `?t=${encodeURIComponent(t)}` : "";
   return (
+    <>
+    {/* a sibling, not inside the nav: a blur nested in a blurred bar can't see the page behind it */}
+    {!path.startsWith("/train") && <OngoingWorkout q={q} />}
     <nav className="glass-bar fixed inset-x-0 print:hidden bottom-0 z-20 pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto flex max-w-md justify-around">
         {tabs.map(({ href, label, icon }) => {
@@ -37,5 +73,6 @@ export default function Nav() {
         })}
       </ul>
     </nav>
+    </>
   );
 }

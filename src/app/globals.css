@@ -162,6 +162,10 @@ button, a { transition: opacity 160ms ease-out; }
   .glass-bar { background: var(--color-zinc-950); }
 }
 
+/* Floating cards rise up from the tab bar they belong to (same path in as out, Apple's spatial consistency). */
+@keyframes slide-up { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
+.anim-slide-up { animation: slide-up var(--spring-ms) var(--spring) backwards; }
+
 /* Bars grow into their value from the left, easing in and out (set --i on a bar to stagger it). */
 @keyframes grow { from { width: 0; } }
 .anim-grow { animation: grow 700ms cubic-bezier(0.65, 0, 0.35, 1) backwards; animation-delay: calc(var(--i, 0) * 60ms + 80ms); }
