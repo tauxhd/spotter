@@ -22,6 +22,8 @@ const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: fal
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
 const readRest = () => { try { return Number(localStorage.getItem(REST_KEY)) || 90; } catch { return 90; } };
+const REST_ON_KEY = "spotter:rest-on"; // rest timer on/off, remembered on this device
+const readRestOn = () => { try { return localStorage.getItem(REST_ON_KEY) !== "0"; } catch { return true; } };
 
 let prSound: HTMLAudioElement | undefined; // record fanfare (second clip of Success Sound Effects)
 
@@ -32,7 +34,14 @@ export default function Train() {
   const [restEnd, setRestEnd] = useState<number | null>(null);
   const [beat, tick] = useState(0); // re-render every second for the clocks
   const [restSecs, setRestSecs] = useState(90);
-  useEffect(() => setRestSecs(readRest()), []);
+  const [restOn, setRestOn] = useState(true);
+  useEffect(() => { setRestSecs(readRest()); setRestOn(readRestOn()); }, []);
+  function toggleRest() {
+    const on = !restOn;
+    setRestOn(on);
+    if (!on) setRestEnd(null);
+    try { localStorage.setItem(REST_ON_KEY, on ? "1" : "0"); } catch {}
+  }
   const [hold, setHold] = useState<{ i: number; j: number; start: number; target: number } | null>(null); // running set timer
   const [editingStart, setEditingStart] = useState(false);
   const [showHit, setShowHit] = useState(false);
@@ -68,6 +77,7 @@ export default function Train() {
   const isTimed = (e: ExerciseLog) => e.timed ?? timedByDefault(lib.get(e.name)?.id);
 
   function restAfter(i: number) {
+    if (!restOn) return;
     // in a superset, go straight to the next exercise; rest only after the last one
     const g = a?.exercises[i].superset;
     if (g !== undefined && a?.exercises[i + 1]?.superset === g) return;
@@ -248,13 +258,13 @@ export default function Train() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-end justify-between gap-3">
+      <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <button onClick={() => setEditingStart(true)} aria-label={`Workout time ${hhmmss(elapsed)}. Change timers`}
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-sm bg-lime-400/15 px-2.5 py-0.5 text-sm font-bold tabular-nums text-lime-600 dark:text-lime-400">
-            <Clock size={14} />{hhmmss(elapsed)}<span className="muted font-medium">· rest {mmss(restSecs)}</span>
-          </button>
           <h1 className="h-title truncate">{a.title}</h1>
+          <button onClick={() => setEditingStart(true)} aria-label={`Workout time ${hhmmss(elapsed)}. Change timers`}
+            className="muted flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold tabular-nums">
+            <Clock size={14} />{hhmmss(elapsed)}<span className="font-medium">· rest {restOn ? mmss(restSecs) : "off"}</span>
+          </button>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {a.exercises.length > 0 && (
@@ -399,6 +409,13 @@ export default function Train() {
                 className="rounded-lg bg-zinc-100 px-2 py-1.5 font-semibold tabular-nums outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800 dark:[color-scheme:dark]" />
             </label>
             <div className="flex items-center justify-between gap-3 text-sm font-medium">
+              Rest timer
+              <button role="switch" aria-checked={restOn} aria-label="Rest timer" onClick={toggleRest}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${restOn ? "bg-lime-500" : "bg-zinc-300 dark:bg-zinc-700"}`}>
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${restOn ? "left-[1.375rem]" : "left-0.5"}`} />
+              </button>
+            </div>
+            <div className={`flex items-center justify-between gap-3 text-sm font-medium transition-opacity ${restOn ? "" : "pointer-events-none opacity-40"}`} aria-disabled={!restOn}>
               Rest between sets
               <div className="flex items-center gap-1">
                 <button aria-label="15 seconds less rest" onClick={() => changeRest(-15)} className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-100 font-bold dark:bg-zinc-800">−</button>
