@@ -11,10 +11,11 @@ import { fromUnit, w, wNum } from "@/lib/units";
 import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
-import { demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDefault, supersetColor, type Exercise, type ExerciseLog, type SetType } from "@/lib/data";
+import { addSets, demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDefault, supersetColor, type Exercise, type ExerciseLog, type SetType } from "@/lib/data";
 import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from "@/lib/lifting";
 import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "@/components/OneRM";
+import { Radar } from "@/components/MuscleDistribution";
 import dynamic from "next/dynamic";
 const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-80 w-full rounded-xl" /> });
 
@@ -34,6 +35,7 @@ export default function Train() {
   const [hold, setHold] = useState<{ i: number; j: number; start: number; target: number } | null>(null); // running set timer
   const [editingStart, setEditingStart] = useState(false);
   const [showHit, setShowHit] = useState(false);
+  const [slide, setSlide] = useState(0);
   const [picking, setPicking] = useState(false);
   const [typing, setTyping] = useState<{ i: number; j: number } | null>(null); // set-type sheet
   const lib = new Map(s.library.map((e) => [e.name, e]));
@@ -238,6 +240,8 @@ export default function Train() {
     for (const m of new Set(ex.secondary)) if (m !== ex.muscle) hit[m] = (hit[m] ?? 0) + n / 2;
   }
   const ranked = Object.entries(hit).sort((x, y) => y[1] - x[1]);
+  const areas: Record<string, number> = {}; // same sets by body area, for the spider chart
+  for (const e of a.exercises) addSets(areas, lib.get(e.name), e.sets.filter((x) => x.done && countsPR(x.type)).length);
   const q = typeof window !== "undefined" ? location.search : "";
 
   return (
@@ -264,7 +268,7 @@ export default function Train() {
       </header>
 
       <div className="flex items-center justify-end gap-2">
-        <button onClick={() => setShowHit(true)} aria-haspopup="dialog" className="btn-ghost flex items-center gap-1.5 py-2 text-sm">
+        <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" className="btn-ghost flex items-center gap-1.5 py-2 text-sm">
           <Icon name="stats" size={18} />Muscles
         </button>
         <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish & share</button>
@@ -276,7 +280,11 @@ export default function Train() {
               <h2 className="flex items-center gap-2 text-base font-bold"><Icon name="stats" size={20} />Muscles hit</h2>
               <button aria-label="Close" onClick={() => setShowHit(false)} className="muted p-1"><X size={18} /></button>
             </div>
-            <MuscleModel hit={hit} />
+            <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto" onScroll={(e) => setSlide(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
+              <div className="w-full shrink-0 snap-center px-4"><MuscleModel hit={hit} /></div>
+              <div className="w-full shrink-0 snap-center px-4"><Radar cur={areas} className="h-80 w-full" /></div>
+            </div>
+            <div className="flex justify-center gap-1.5" aria-hidden>{[0, 1].map((k) => <span key={k} className={`h-1.5 rounded-full transition-all ${slide === k ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}</div>
             <p className="muted text-xs">Sets this workout. The main muscle counts 1, others worked count ½.</p>
             {ranked.length === 0 ? <p className="muted py-4 text-center">Tick sets to see muscles hit.</p> : ranked.map(([m, n]) => (
               <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">

@@ -27,20 +27,37 @@ function sum(logs: Log[], from: number, to: number) {
   return { area, workouts, sets, reps, volume };
 }
 
-// Radar of where your sets went this period vs the one before, and the totals with their change.
-export default function MuscleDistribution({ logs, u }: { logs: Log[]; u: Unit }) {
-  const [p, setP] = useState(1);
-  const days = PERIODS[p][1], now = Date.now();
-  const cur = sum(logs, now - days * DAY, now + DAY);
-  const prev = sum(logs, now - 2 * days * DAY, now - days * DAY);
-  const max = Math.max(1, ...AREAS.flatMap((a) => [cur.area[a] ?? 0, prev.area[a] ?? 0]));
-
+// Spider chart of sets per body area; optional dashed "previous" shape behind.
+export function Radar({ cur, prev, className = "" }: { cur: Record<string, number>; prev?: Record<string, number>; className?: string }) {
+  const max = Math.max(1, ...AREAS.flatMap((a) => [cur[a] ?? 0, prev?.[a] ?? 0]));
   const R = 92, C = 130; // radius, centre
   const pt = (i: number, f: number) => {
     const a = ((i * 60 - 120) * Math.PI) / 180; // Back at top-left, then clockwise
     return [C + Math.cos(a) * R * f, C + Math.sin(a) * R * f] as const;
   };
   const poly = (vals: Record<string, number>) => AREAS.map((a, i) => pt(i, (vals[a] ?? 0) / max).join(",")).join(" ");
+  return (
+    <svg viewBox="-40 0 340 260" className={className} role="img"
+      aria-label={`Sets per muscle group: ${AREAS.map((a) => `${a} ${Math.round(cur[a] ?? 0)}`).join(", ")}`}>
+      {[0.2, 0.4, 0.6, 0.8, 1].map((f) => <polygon key={f} points={AREAS.map((_, i) => pt(i, f).join(",")).join(" ")} fill="none" className="stroke-zinc-200 dark:stroke-zinc-800" strokeWidth={1} />)}
+      {AREAS.map((_, i) => <line key={i} x1={C} y1={C} x2={pt(i, 1)[0]} y2={pt(i, 1)[1]} className="stroke-zinc-200 dark:stroke-zinc-800" strokeWidth={1} />)}
+      {prev && <polygon points={poly(prev)} className="fill-zinc-400/10 stroke-zinc-500" strokeWidth={1.5} strokeDasharray="4 3" />}
+      <polygon points={poly(cur)} className="fill-lime-500/25 stroke-lime-500" strokeWidth={2} strokeLinejoin="round" />
+      {AREAS.map((a, i) => { const [x, y] = pt(i, (cur[a] ?? 0) / max); return <circle key={a} cx={x} cy={y} r={2.5} className="fill-lime-400" />; })}
+      {AREAS.map((a, i) => {
+        const [x, y] = pt(i, 1.2);
+        return <text key={a} x={x} y={y + 4} textAnchor={x < C - 10 ? "end" : x > C + 10 ? "start" : "middle"} className="fill-zinc-500 text-[11px]">{a}</text>;
+      })}
+    </svg>
+  );
+}
+
+// Radar of where your sets went this period vs the one before, and the totals with their change.
+export default function MuscleDistribution({ logs, u }: { logs: Log[]; u: Unit }) {
+  const [p, setP] = useState(1);
+  const days = PERIODS[p][1], now = Date.now();
+  const cur = sum(logs, now - days * DAY, now + DAY);
+  const prev = sum(logs, now - 2 * days * DAY, now - days * DAY);
   const kVol = (kg: number) => { const v = toUnit(kg, u); return v >= 1000 ? `${(v / 1000).toFixed(1)}k ${u}` : `${Math.round(v)} ${u}`; };
   const cards: [string, number, number, (n: number) => string][] = [
     ["Workouts", cur.workouts, prev.workouts, String], ["Sets", cur.sets, prev.sets, String],
@@ -56,18 +73,7 @@ export default function MuscleDistribution({ logs, u }: { logs: Log[]; u: Unit }
         </div>
       </div>
 
-      <svg viewBox="-40 0 340 260" className="mx-auto mt-2 w-full max-w-[22rem]" role="img"
-        aria-label={`Sets per muscle group: ${AREAS.map((a) => `${a} ${Math.round(cur.area[a] ?? 0)}`).join(", ")}`}>
-        {[0.2, 0.4, 0.6, 0.8, 1].map((f) => <polygon key={f} points={AREAS.map((_, i) => pt(i, f).join(",")).join(" ")} fill="none" className="stroke-zinc-200 dark:stroke-zinc-800" strokeWidth={1} />)}
-        {AREAS.map((_, i) => <line key={i} x1={C} y1={C} x2={pt(i, 1)[0]} y2={pt(i, 1)[1]} className="stroke-zinc-200 dark:stroke-zinc-800" strokeWidth={1} />)}
-        <polygon points={poly(prev.area)} className="fill-zinc-400/10 stroke-zinc-500" strokeWidth={1.5} strokeDasharray="4 3" />
-        <polygon points={poly(cur.area)} className="fill-lime-500/25 stroke-lime-500" strokeWidth={2} strokeLinejoin="round" />
-        {AREAS.map((a, i) => { const [x, y] = pt(i, (cur.area[a] ?? 0) / max); return <circle key={a} cx={x} cy={y} r={2.5} className="fill-lime-400" />; })}
-        {AREAS.map((a, i) => {
-          const [x, y] = pt(i, 1.2);
-          return <text key={a} x={x} y={y + 4} textAnchor={x < C - 10 ? "end" : x > C + 10 ? "start" : "middle"} className="fill-zinc-500 text-[11px]">{a}</text>;
-        })}
-      </svg>
+      <Radar cur={cur.area} prev={prev.area} className="mx-auto mt-2 w-full max-w-[22rem]" />
       <p className="muted -mt-1 flex justify-center gap-4 text-xs">
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-lime-500" />This {days === 7 ? "week" : "period"}</span>
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-zinc-500" />Previous</span>
