@@ -6,6 +6,7 @@ import Icon from "./Icon";
 import Avatar from "./Avatar";
 import ExerciseThumb from "./ExerciseThumb";
 import FollowButton from "./FollowButton";
+import ProfileLink from "./ProfileLink";
 import { useStore } from "@/lib/store";
 import { demoNow, findExercise, lifters, timeAgo, type Exercise, type Post } from "@/lib/data";
 
@@ -72,7 +73,6 @@ export default function PostCard({ post, showFollow = true }: { post: Post; show
   const [draft, setDraft] = useState("");
   const find: Find = (id, name) => findExercise(s.library, id, name);
   const author = p.uid ?? lifters.find((l) => l.name === p.by)?.id ?? p.by;
-  const profileHref = p.uid ? (p.uid === me.id ? `/me${q()}` : `/u/${p.uid}${q()}`) : null;
   const likers = p.likers ?? [];
   const others = p.likes - (likers[0] ? 1 : 0);
 
@@ -83,7 +83,7 @@ export default function PostCard({ post, showFollow = true }: { post: Post; show
   function send() {
     const text = draft.trim();
     if (!text) return;
-    setP((x) => ({ ...x, comments: [...x.comments, { by: me.name, text }] }));
+    setP((x) => ({ ...x, comments: [...x.comments, { by: me.name, text, uid: me.id }] }));
     comment(p.id, text);
     setDraft("");
   }
@@ -109,7 +109,7 @@ export default function PostCard({ post, showFollow = true }: { post: Post; show
   return (
     <article className="card">
       <div className="flex items-center gap-3">
-        {profileHref ? <Link href={profileHref} className="flex min-w-0 flex-1 items-center gap-3">{who}</Link> : who}
+        <ProfileLink id={author} name={p.by} className="flex min-w-0 flex-1 items-center gap-3">{who}</ProfileLink>
         {showFollow && <FollowButton id={p.uid} name={p.by} />}
       </div>
 
@@ -132,11 +132,11 @@ export default function PostCard({ post, showFollow = true }: { post: Post; show
         <div className="mt-2 flex items-center gap-2 text-sm">
           {likers.length > 0 && (
             <div className="flex -space-x-2">
-              {likers.slice(0, 3).map((l) => <Avatar key={l.id} id={l.id} url={l.avatar} name={l.name} size={24} className="ring-2 ring-white dark:ring-zinc-950" />)}
+              {likers.slice(0, 3).map((l) => <ProfileLink key={l.id} id={l.id} name={l.name}><Avatar id={l.id} url={l.avatar} name={l.name} size={24} className="ring-2 ring-white dark:ring-zinc-950" /></ProfileLink>)}
             </div>
           )}
           <p>
-            {likers[0] ? <>Liked by <b>{likers[0].id === me.id ? "you" : likers[0].name}</b>{others > 0 && <> and <b>{others} other{others > 1 ? "s" : ""}</b></>}</>
+            {likers[0] ? <>Liked by <ProfileLink id={likers[0].id} name={likers[0].name} className="font-bold">{likers[0].id === me.id ? "you" : likers[0].name}</ProfileLink>{others > 0 && <> and <b>{others} other{others > 1 ? "s" : ""}</b></>}</>
               : <><b>{p.likes}</b> like{p.likes > 1 ? "s" : ""}</>}
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function PostCard({ post, showFollow = true }: { post: Post; show
 
       {open && (
         <div className="mt-3 space-y-2">
-          {p.comments.map((c, i) => <p key={i} className="text-sm"><span className="font-semibold">{c.by}</span> {c.text}</p>)}
+          {p.comments.map((c, i) => <p key={i} className="text-sm"><ProfileLink id={c.uid} name={c.by} className="font-semibold">{c.by}</ProfileLink> {c.text}</p>)}
           <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2">
             <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Add a comment…" aria-label="Comment" enterKeyHint="send"
               className="min-w-0 flex-1 rounded-xl bg-zinc-100 px-3 py-2 text-base outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900" />

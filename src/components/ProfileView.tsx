@@ -7,7 +7,7 @@ import Avatar from "./Avatar";
 import FollowButton from "./FollowButton";
 import PostCard from "./PostCard";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
-import type { Post } from "@/lib/data";
+import { lifters, type Post } from "@/lib/data";
 import { baseOf, bests, dots, liftsOf } from "@/lib/lifting";
 
 type Person = { id: string; name: string; faculty: string; avatar_url: string | null };
@@ -18,6 +18,7 @@ export default function ProfileView({ userId }: { userId: string }) {
   const { s, me } = useStore();
   const router = useRouter();
   const own = userId === me.id;
+  const demo = lifters.find((l) => l.id === userId); // built-in demo student (no account): read-only profile from seed data
   const q = typeof window !== "undefined" ? location.search : "";
 
   const [other, setOther] = useState<Profile | null | undefined>(own ? me : undefined);
@@ -28,18 +29,25 @@ export default function ProfileView({ userId }: { userId: string }) {
 
   useEffect(() => {
     if (own) return;
+    if (demo) { setOther({ ...demo, intake: null, avatar_url: null, tp: null, course: null }); return; }
     sb.from("profiles").select("*").eq("id", userId).maybeSingle().then(({ data }) => setOther(data));
-  }, [own, userId]);
+  }, [own, userId, demo]);
 
   useEffect(() => {
+    if (demo) return;
     sb.rpc("profile_stats", { uid: userId }).then(({ data }) => data?.[0] && setStats(data[0]));
-  }, [userId, s.following.length, s.followers.length, s.posts.length]);
+  }, [userId, demo, s.following.length, s.followers.length, s.posts.length]);
 
   useEffect(() => {
-    sb.from("posts").select(POST_SELECT).eq("user_id", userId).order("created_at", { ascending: false })
-      .order("created_at", { referencedTable: "comments" }).limit(30)
-      .then(({ data }) => setPosts((data ?? []).map((r) => toPost(r, me.id))));
-  }, [userId, me.id, s.posts.length]);
+    const base = sb.from("posts").select(POST_SELECT);
+    (demo ? base.is("user_id", null).eq("by", demo.name) : base.eq("user_id", userId))
+      .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).limit(30)
+      .then(({ data }) => {
+        const list = (data ?? []).map((r) => toPost(r, me.id));
+        setPosts(list);
+        if (demo) setStats({ workouts: list.length, followers: 0, following: 0 });
+      });
+  }, [userId, demo, me.id, s.posts.length]);
 
   async function openList(kind: "followers" | "following") {
     setList({ kind, people: null });
@@ -80,8 +88,8 @@ export default function ProfileView({ userId }: { userId: string }) {
           <Avatar id={p.id} url={p.avatar_url} name={p.name} size={84} className="ring-2 ring-lime-400/40" />
           <div className="grid flex-1 grid-cols-3">
             {stat(stats?.workouts, "Workouts", () => document.getElementById("workouts")?.scrollIntoView({ behavior: "smooth" }))}
-            {stat(stats?.followers, "Followers", () => openList("followers"))}
-            {stat(stats?.following, "Following", () => openList("following"))}
+            {stat(stats?.followers, "Followers", demo ? undefined : () => openList("followers"))}
+            {stat(stats?.following, "Following", demo ? undefined : () => openList("following"))}
           </div>
         </div>
 
@@ -102,7 +110,9 @@ export default function ProfileView({ userId }: { userId: string }) {
         <div className="mt-4 grid grid-cols-2 gap-2">
           {own
             ? <Link href={`/me/edit${q}`} className="btn-ghost py-2 text-center text-sm">Edit profile</Link>
-            : <div className="grid place-items-center rounded-xl bg-zinc-100 dark:bg-zinc-900 [&>button]:w-full [&>button]:justify-center [&>button]:py-2 [&>button]:text-sm"><FollowButton id={p.id} name={p.name} /></div>}
+            : demo
+              ? <p className="muted grid place-items-center rounded-xl bg-zinc-100 py-2 text-center text-xs dark:bg-zinc-900">Demo student · can&apos;t be followed</p>
+              : <div className="grid place-items-center rounded-xl bg-zinc-100 dark:bg-zinc-900 [&>button]:w-full [&>button]:justify-center [&>button]:py-2 [&>button]:text-sm"><FollowButton id={p.id} name={p.name} /></div>}
           <button onClick={share} className="btn-ghost flex items-center justify-center gap-2 py-2 text-sm"><Share2 size={15} />Share profile</button>
         </div>
       </section>

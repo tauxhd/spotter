@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
+import ProfileLink from "@/components/ProfileLink";
 import { sb, useStore, type Profile } from "@/lib/store";
 import { eventGroups, events, gymLifts, lifters, mockResults, weightClasses, type Sex } from "@/lib/data";
 import { baseOf, bests, dots, fmtResult, liftsOf, parseResult, weightClass } from "@/lib/lifting";
@@ -155,12 +156,14 @@ export default function Ranks() {
             const place = rows.indexOf(l), first = place === 0;
             return (
               <div key={l.id} className="flex flex-col items-center">
-                <div className="relative">
-                  <Avatar id={l.id} url={l.avatar_url} name={l.name} size={first ? 76 : 60}
-                    className={`ring-4 ${first ? "ring-amber-400" : place === 1 ? "ring-zinc-300" : "ring-orange-400"}`} />
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-xl">{["🥇", "🥈", "🥉"][place]}</span>
-                </div>
-                <p className="mt-3 w-full truncate text-sm font-semibold">{l.name}</p>
+                <ProfileLink id={l.id} name={l.name} className="flex w-full flex-col items-center">
+                  <div className="relative">
+                    <Avatar id={l.id} url={l.avatar_url} name={l.name} size={first ? 76 : 60}
+                      className={`ring-4 ${first ? "ring-amber-400" : place === 1 ? "ring-zinc-300" : "ring-orange-400"}`} />
+                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-xl">{["🥇", "🥈", "🥉"][place]}</span>
+                  </div>
+                  <p className="mt-3 w-full truncate text-sm font-semibold">{l.name}</p>
+                </ProfileLink>
                 <p className="text-lg font-bold leading-tight tabular-nums">{show(l.score)}</p>
                 <p className="muted text-[10px] uppercase">{unitLabel || " "}</p>
                 <div className={`mt-2 w-full rounded-t-xl ${first ? "h-14 bg-amber-400/20" : place === 1 ? "h-10 bg-zinc-400/15" : "h-7 bg-orange-400/15"}`} />
@@ -200,6 +203,7 @@ export default function Ranks() {
         {rows.map((l, i) => (
           <li key={l.id} className={`card flex items-center gap-3 py-3 ${l.id === me.id ? "bg-lime-400/10" : ""}`}>
             <span className={`w-5 text-center text-sm font-bold tabular-nums ${i < 3 ? "text-amber-500" : "muted"}`}>{i + 1}</span>
+            <ProfileLink id={l.id} name={l.name} className="flex min-w-0 flex-1 items-center gap-3">
             <Avatar id={l.id} url={l.avatar_url} name={l.name} size={44} />
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1 font-semibold"><span className="truncate">{l.name}</span>{l.verified && <Icon name="verified" size={16} />}</p>
@@ -209,6 +213,7 @@ export default function Ranks() {
                 {standard === "p4p" && <Stat icon={ev.icon as IconName}>{fmtResult(l.value!, ev.unit)}</Stat>}
               </div>
             </div>
+            </ProfileLink>
             <div className="flex flex-col items-end gap-1">
               <span className="text-lg font-bold leading-none tabular-nums">{show(l.score)}</span>
               {isReal(l.id) && <FollowButton id={l.id} name={l.name} />}

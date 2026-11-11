@@ -6,6 +6,7 @@ import { ArrowLeft, Heart, MessageCircle, SendHorizontal, Share2 } from "lucide-
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
+import ProfileLink from "@/components/ProfileLink";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import { useStore } from "@/lib/store";
 import { bodyArea, findExercise, lifters, oldNames, setTypes } from "@/lib/data";
@@ -55,13 +56,15 @@ export default function WorkoutDetail() {
 
       <section className="space-y-3">
         <div className="flex items-center gap-3">
-          <Avatar id={author} url={p.avatar} name={p.by} size={52} />
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold">{p.mine ? `${p.by} (you)` : p.by}</p>
-            <p className="muted text-xs">
-              {when.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })} · {when.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()}
-            </p>
-          </div>
+          <ProfileLink id={author} name={p.by} className="flex min-w-0 flex-1 items-center gap-3">
+            <Avatar id={author} url={p.avatar} name={p.by} size={52} />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">{p.mine ? `${p.by} (you)` : p.by}</p>
+              <p className="muted text-xs">
+                {when.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })} · {when.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()}
+              </p>
+            </div>
+          </ProfileLink>
           <FollowButton id={p.uid} name={p.by} />
         </div>
         <h2 className="text-2xl font-bold">{p.title}</h2>
@@ -143,7 +146,7 @@ export default function WorkoutDetail() {
       <section id="comments" className="space-y-2">
         <h3 className="text-lg font-bold">Comments</h3>
         {p.comments.length === 0 && <p className="muted text-sm">No comments yet. Hype them up 💪</p>}
-        {p.comments.map((c, i) => <p key={i} className="text-sm"><span className="font-semibold">{c.by}</span> {c.text}</p>)}
+        {p.comments.map((c, i) => <p key={i} className="text-sm"><ProfileLink id={c.uid} name={c.by} className="font-semibold">{c.by}</ProfileLink> {c.text}</p>)}
         <form onSubmit={(ev) => { ev.preventDefault(); if (draft.trim()) { comment(p.id, draft.trim()); setDraft(""); } }} className="flex gap-2">
           <input value={draft} onChange={(ev) => setDraft(ev.target.value)} placeholder={`Comment as ${me.name}…`} aria-label="Comment"
             className="min-w-0 flex-1 rounded-xl bg-white px-3 py-2 text-base outline-none ring-1 ring-zinc-200 focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900 dark:ring-zinc-800" />

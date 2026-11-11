@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronRight, Dumbbell, LogIn, LogOut, QrCode } from "lucide-react";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
+import ProfileLink from "@/components/ProfileLink";
 import { useClasses, useNow } from "@/lib/useNow";
 import { sb, useStore } from "@/lib/store";
 import { classes as sample, crowdAt, crowdByHour, fmt, gym, minsOf, toMin } from "@/lib/data";
@@ -124,11 +125,11 @@ export default function GymHome() {
           <div className="mt-3 flex items-center gap-3 rounded-xl bg-lime-50 p-2.5 dark:bg-lime-400/10">
             <div className="flex -space-x-2">
               {friends.slice(0, 4).map((f) => (
-                <Avatar key={f.id} id={f.id} url={f.avatar_url} name={f.name} size={32} className="ring-2 ring-lime-50 dark:ring-zinc-900" />
+                <ProfileLink key={f.id} id={f.id} name={f.name}><Avatar id={f.id} url={f.avatar_url} name={f.name} size={32} className="ring-2 ring-lime-50 dark:ring-zinc-900" /></ProfileLink>
               ))}
             </div>
             <p className="min-w-0 flex-1 text-sm leading-snug">
-              <span className="font-semibold">{friends.length <= 2 ? friends.map((f) => f.name).join(" & ") : `${friends[0].name}, ${friends[1].name} +${friends.length - 2}`}</span>
+              <span className="font-semibold">{friends.slice(0, 2).map((f, i) => <span key={f.id}>{i > 0 && (friends.length === 2 ? " & " : ", ")}<ProfileLink id={f.id} name={f.name}>{f.name}</ProfileLink></span>)}{friends.length > 2 && ` +${friends.length - 2}`}</span>
               <span className="muted"> {friends.length > 1 ? "are" : "is"} here · since {new Date(friends[0].in_at).toLocaleTimeString("en-MY", { hour: "numeric", minute: "2-digit" })}</span>
             </p>
           </div>
@@ -145,7 +146,7 @@ export default function GymHome() {
                 {isNow && open && friends.length > 0 && (
                   // friends who are in right now sit on top of the current hour's bar
                   <div className="absolute left-1/2 z-10 flex -translate-x-1/2 -space-x-2" style={{ bottom: `${Math.max(p, 4) * 0.5 + 18}px` }} aria-label={`Friends here now: ${friends.map((f) => f.name).join(", ")}`}>
-                    {friends.slice(0, 3).map((f) => <Avatar key={f.id} id={f.id} url={f.avatar_url} name={f.name} size={26} className="ring-2 ring-lime-400" />)}
+                    {friends.slice(0, 3).map((f) => <ProfileLink key={f.id} id={f.id} name={f.name}><Avatar id={f.id} url={f.avatar_url} name={f.name} size={26} className="ring-2 ring-lime-400" /></ProfileLink>)}
                     {friends.length > 3 && <span className="grid h-[26px] w-[26px] place-items-center rounded-full bg-lime-400 text-[10px] font-bold text-zinc-950 ring-2 ring-lime-400">+{friends.length - 3}</span>}
                   </div>
                 )}

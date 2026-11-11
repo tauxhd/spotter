@@ -37,14 +37,14 @@ const ACTIVE = "spotter:active"; // the in-progress workout stays on the device 
 
 export type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 // What a post row joins to, and how it becomes a Post. Shared by the feed and profile pages.
-export const POST_SELECT = "*, profiles!posts_user_id_fkey(name, faculty, avatar_url), comments(by, text, created_at, profiles(name)), likes(user_id, profiles(name, avatar_url))";
+export const POST_SELECT = "*, profiles!posts_user_id_fkey(name, faculty, avatar_url), comments(by, text, created_at, user_id, profiles(name)), likes(user_id, profiles(name, avatar_url))";
 export const toPost = (r: Row, uid: string): Post => ({
   id: r.id, by: r.profiles?.name ?? r.by, faculty: r.profiles?.faculty ?? r.faculty, at: r.created_at, title: r.title,
   note: r.note ?? undefined, exercises: r.exercises, volume: Number(r.volume), prs: r.prs,
   likes: r.base_likes + r.likes.length, liked: r.likes.some((l: Row) => l.user_id === uid), mine: r.user_id === uid, uid: r.user_id, avatar: r.profiles?.avatar_url,
   duration: r.duration_min, visibility: r.visibility, media: r.media_url ? { url: r.media_url, type: r.media_type } : null,
   likers: r.likes.map((l: Row) => ({ id: l.user_id, name: l.profiles?.name ?? "Someone", avatar: l.profiles?.avatar_url })),
-  comments: r.comments.map((c: Row) => ({ by: c.profiles?.name ?? c.by, text: c.text })),
+  comments: r.comments.map((c: Row) => ({ by: c.profiles?.name ?? c.by, text: c.text, uid: c.user_id })),
 });
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
@@ -179,7 +179,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       else await sb.from("likes").insert({ post_id: id });
     },
     async comment(id, text) {
-      setS((x) => ({ ...x, posts: x.posts.map((q) => (q.id === id ? { ...q, comments: [...q.comments, { by: me.name, text }] } : q)) }));
+      setS((x) => ({ ...x, posts: x.posts.map((q) => (q.id === id ? { ...q, comments: [...q.comments, { by: me.name, text, uid: me.id }] } : q)) }));
       await sb.from("comments").insert({ post_id: id, text });
     },
     async follow(id) {

@@ -166,7 +166,7 @@ export const mockResults: Record<string, Record<string, number>> = {
   u10: { ohp: 60, clean: 80, pullups: 25, pushups: 70, plank: 210, vjump: 70, broadjump: 270, sprint100: 12.2, run2400: 560 },
 };
 
-export type Comment = { by: string; text: string };
+export type Comment = { by: string; text: string; uid?: string | null };
 // One entry of the exercise library (Supabase "exercises" table).
 export type Exercise = { id: string; name: string; muscle: string; equipment: string; secondary: string[]; lift: Lift | null; image: string };
 export type Visibility = "everyone" | "friends" | "private";

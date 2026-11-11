@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Dumbbell, Flame, Layers, MapPin, Trophy } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
-import { bodyArea, findExercise, type Post } from "@/lib/data";
+import { bodyArea, findExercise, lifters, type Post } from "@/lib/data";
 import { baseOf, bests, dots, liftsOf } from "@/lib/lifting";
 
 const WEEKS = 8;
@@ -18,16 +18,19 @@ export default function GymStats() {
   const { s, me } = useStore();
   const router = useRouter();
   const own = id === me.id;
+  const demo = lifters.find((l) => l.id === id);
   const [p, setP] = useState<Profile | null | undefined>(own ? me : undefined);
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [visits, setVisits] = useState<{ in_at: string; out_at: string | null }[]>([]);
 
   useEffect(() => {
-    if (!own) sb.from("profiles").select("*").eq("id", id).maybeSingle().then(({ data }) => setP(data));
-    sb.from("posts").select(POST_SELECT).eq("user_id", id).order("created_at", { ascending: false }).limit(200)
+    if (demo) setP({ ...demo, intake: null, avatar_url: null });
+    else if (!own) sb.from("profiles").select("*").eq("id", id).maybeSingle().then(({ data }) => setP(data));
+    const base = sb.from("posts").select(POST_SELECT);
+    (demo ? base.is("user_id", null).eq("by", demo.name) : base.eq("user_id", id)).order("created_at", { ascending: false }).limit(200)
       .then(({ data }) => setPosts((data ?? []).map((r) => toPost(r, me.id))));
     if (own) sb.from("visits").select("in_at, out_at").order("in_at", { ascending: false }).limit(500).then(({ data }) => setVisits(data ?? []));
-  }, [id, own, me.id]);
+  }, [id, own, demo, me.id]);
 
   if (p === undefined || posts === null) return <p className="muted mt-20 text-center text-sm">Loading…</p>;
   if (p === null) return <p className="muted mt-20 text-center text-sm">This profile doesn&apos;t exist.</p>;
