@@ -15,6 +15,8 @@ import { demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDef
 import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from "@/lib/lifting";
 import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "@/components/OneRM";
+import dynamic from "next/dynamic";
+const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-80 w-full rounded-xl" /> });
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
 const readRest = () => { try { return Number(localStorage.getItem(REST_KEY)) || 90; } catch { return 90; } };
@@ -274,6 +276,7 @@ export default function Train() {
               <h2 className="flex items-center gap-2 text-base font-bold"><Icon name="stats" size={20} />Muscles hit</h2>
               <button aria-label="Close" onClick={() => setShowHit(false)} className="muted p-1"><X size={18} /></button>
             </div>
+            <MuscleModel hit={hit} />
             <p className="muted text-xs">Sets this workout. The main muscle counts 1, others worked count ½.</p>
             {ranked.length === 0 ? <p className="muted py-4 text-center">Tick sets to see muscles hit.</p> : ranked.map(([m, n]) => (
               <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">
