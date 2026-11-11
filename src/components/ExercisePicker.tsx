@@ -13,11 +13,11 @@ import OneRM from "./OneRM";
 // Muscle filter, pictured by an anatomy figure with that group glowing (public/muscles). The library only tags "back" / "abs" /
 // "shoulders", so the finer groups are picked out by exercise id.
 const LATS = /pull-up|chin-up|pulldown|pullover|muscle-up|lever|skin-the-cat|dead-hang/;
-const LOWER_BACK = /^deadlift$|deadlift-dumbbell|deficit-deadlift|paused-deadlift|snatch-grip-deadlift|rack-pull|block-pull|jefferson|back-extension|good-morning|superman|reverse-hyper|kettlebell-deadlift/;
+const LOWER_BACK = /^deadlift$|deadlift-dumbbell|deficit-deadlift|paused-deadlift|snatch-grip-deadlift|rack-pull|block-pull|jefferson|back-extension|good-morning|superman|reverse-hyper|kettlebell-deadlift|pull-through/;
 const TRAPS = /shrug|upright-row|high-pull/;
-const REAR_DELTS = /rear-delt|reverse-pec-deck|face-pull|y-raise|t-raise|pull-apart/;
+const REAR_DELTS = /rear-delt|reverse-pec-deck|face-pull|y-raise|t-raise|pull-apart|snow-angel|face-pull/;
 const OBLIQUES = /twist|side-bend|side-plank|woodchop|windshield|landmine-180|bicycle|anti-rotation|copenhagen|human-flag|pallof|oblique|torso-rotation|windmill/;
-const ADDUCTORS = /adduction|copenhagen|cossack|lateral-lunge|sumo-squat|sumo-deadlift/;
+const ADDUCTORS = /adduction|adductor|copenhagen|cossack|lateral-lunge|sumo-squat|sumo-deadlift/;
 const ABDUCTORS = /hip-abduction|clamshell|side-lying-leg-raise|lateral-walk|fire-hydrant|curtsy-lunge|lateral-step-up|lateral-shuffle/;
 const groups: [string, (e: Exercise) => boolean][] = [
   ["all", () => true],

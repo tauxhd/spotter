@@ -445,7 +445,25 @@ insert into exercises (id, name, muscle, equipment, secondary, lift, image, sort
   ('cable-hip-abduction', 'Hip Abduction (Cable)', 'glutes', 'cable', array[]::text[], null, '/exercises/cable-hip-abduction.webp', 428),
   ('side-lying-leg-raise', 'Side Lying Leg Raise', 'glutes', 'bodyweight', array[]::text[], null, '/exercises/side-lying-leg-raise.webp', 429),
   ('clamshell', 'Clamshell', 'glutes', 'bodyweight', array[]::text[], null, '/exercises/clamshell.webp', 430),
-  ('banded-lateral-walk', 'Banded Lateral Walk', 'glutes', 'other', array['quads']::text[], null, '/exercises/banded-lateral-walk.webp', 431)
+  ('banded-lateral-walk', 'Banded Lateral Walk', 'glutes', 'other', array['quads']::text[], null, '/exercises/banded-lateral-walk.webp', 431),
+  ('reverse-snow-angel', 'Reverse Snow Angel', 'shoulders', 'bodyweight', array['back']::text[], null, '/exercises/reverse-snow-angel.webp', 432),
+  ('ring-face-pull', 'Face Pull (Rings)', 'shoulders', 'rings', array['back']::text[], null, '/exercises/ring-face-pull.webp', 433),
+  ('machine-rear-delt-row', 'Rear Delt Row (Machine)', 'shoulders', 'machine', array['back']::text[], null, '/exercises/machine-rear-delt-row.webp', 434),
+  ('bar-hang-shrug', 'Hanging Shrug', 'back', 'bodyweight', array['forearms']::text[], null, '/exercises/bar-hang-shrug.webp', 435),
+  ('dip-shrug', 'Dip Shrug', 'back', 'bodyweight', array['triceps']::text[], null, '/exercises/dip-shrug.webp', 436),
+  ('kettlebell-shrug', 'Shrug (Kettlebell)', 'back', 'kettlebell', array['forearms']::text[], null, '/exercises/kettlebell-shrug.webp', 437),
+  ('band-shrug', 'Shrug (Band)', 'back', 'other', array['forearms']::text[], null, '/exercises/band-shrug.webp', 438),
+  ('cable-pull-through', 'Cable Pull Through', 'glutes', 'cable', array['hamstrings', 'back']::text[], null, '/exercises/cable-pull-through.webp', 439),
+  ('cable-good-morning', 'Good Morning (Cable)', 'hamstrings', 'cable', array['back', 'glutes']::text[], null, '/exercises/cable-good-morning.webp', 440),
+  ('adductor-ball-squeeze', 'Adductor Ball Squeeze', 'quads', 'other', array[]::text[], null, '/exercises/adductor-ball-squeeze.webp', 441),
+  ('band-hip-adduction', 'Hip Adduction (Band)', 'quads', 'other', array[]::text[], null, '/exercises/band-hip-adduction.webp', 442),
+  ('kettlebell-sumo-squat', 'Sumo Squat (Kettlebell)', 'quads', 'kettlebell', array['glutes']::text[], null, '/exercises/kettlebell-sumo-squat.webp', 443),
+  ('curtsy-lunge-barbell', 'Curtsy Lunge (Barbell)', 'glutes', 'barbell', array['quads']::text[], null, '/exercises/curtsy-lunge-barbell.webp', 444),
+  ('lateral-step-up-barbell', 'Lateral Step Up (Barbell)', 'glutes', 'barbell', array['quads']::text[], null, '/exercises/lateral-step-up-barbell.webp', 445),
+  ('band-hip-abduction', 'Hip Abduction (Band)', 'glutes', 'other', array[]::text[], null, '/exercises/band-hip-abduction.webp', 446),
+  ('hip-thrust-machine', 'Hip Thrust (Machine)', 'glutes', 'machine', array['hamstrings']::text[], null, '/exercises/hip-thrust-machine.webp', 447),
+  ('smith-hip-thrust', 'Hip Thrust (Smith Machine)', 'glutes', 'smith', array['hamstrings']::text[], null, '/exercises/smith-hip-thrust.webp', 448),
+  ('glute-kickback-machine', 'Glute Kickback (Machine)', 'glutes', 'machine', array['hamstrings']::text[], null, '/exercises/glute-kickback-machine.webp', 449)
 on conflict (id) do update set name = excluded.name, muscle = excluded.muscle, equipment = excluded.equipment,
   secondary = excluded.secondary, lift = excluded.lift, image = excluded.image, sort = excluded.sort;
 
