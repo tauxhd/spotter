@@ -1,6 +1,6 @@
 "use client";
 import Icon from "@/components/Icon";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookmarkCheck, BookmarkPlus, Check, Clock, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
@@ -117,51 +117,72 @@ export default function Train() {
   }
 
   // Hold an exercise name: every exercise collapses to a row and the held one follows your finger; let go and they expand again.
+  // i = held exercise, y = finger, dy = how far the held row is drawn from its slot (so it sits under the finger)
   const [drag, setDrag] = useState<{ i: number; y: number; dy: number } | null>(null);
   const dragRef = useRef(drag); dragRef.current = drag;
-  const rows = useRef<(HTMLDivElement | null)[]>([]);
-  const pressTimer = useRef<number | undefined>(undefined);
+  const [padTop, setPadTop] = useState(0); // room above the list so a row near the top can still reach the finger
+  const rows = useRef<(HTMLElement | null)[]>([]);
+  const pressTimer = useRef<number | undefined>(undefined), pressAt = useRef({ x: 0, y: 0 }), finger = useRef(0);
+  const cancelPress = () => clearTimeout(pressTimer.current);
   const longPress = (i: number) => ({
     onPointerDown: (e: React.PointerEvent) => {
-      const y = e.clientY;
-      pressTimer.current = window.setTimeout(() => { setDrag({ i, y, dy: 0 }); try { navigator.vibrate?.(15); } catch {} }, 450);
+      pressAt.current = { x: e.clientX, y: e.clientY }; finger.current = e.clientY;
+      pressTimer.current = window.setTimeout(() => { setDrag({ i, y: finger.current, dy: 0 }); try { navigator.vibrate?.(15); } catch {} }, 450);
     },
-    onPointerUp: () => clearTimeout(pressTimer.current),
-    onPointerLeave: () => clearTimeout(pressTimer.current),
-    onPointerCancel: () => clearTimeout(pressTimer.current), // fires when the finger starts scrolling instead
+    onPointerMove: (e: React.PointerEvent) => { // moved before the hold finished → it's a scroll, not a drag
+      finger.current = e.clientY;
+      if (Math.hypot(e.clientX - pressAt.current.x, e.clientY - pressAt.current.y) > 10) cancelPress();
+    },
+    onPointerUp: cancelPress,
+    onPointerCancel: cancelPress, // fires when the browser starts scrolling
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
   });
   const sorting = drag !== null;
+  // Block page scroll while a drag is live. Registered once, non-passive, so it is already in place when the hold kicks in.
+  useEffect(() => {
+    const noScroll = (e: TouchEvent) => { if (dragRef.current) e.preventDefault(); };
+    window.addEventListener("touchmove", noScroll, { passive: false });
+    return () => window.removeEventListener("touchmove", noScroll);
+  }, []);
+  // Draw the held row under the finger; swap only when the finger passes the middle of the next/previous row.
+  function place(y: number, swap: boolean) {
+    const d = dragRef.current, el = d && rows.current[d.i];
+    if (!d || !el) return;
+    const midOf = (k: number) => { const b = rows.current[k]!.getBoundingClientRect(); return b.top + b.height / 2; };
+    const r = el.getBoundingClientRect();
+    let i = d.i, slot = r.top + r.height / 2 - d.dy; // centre of the held row's own place in the list
+    // swap once the finger is past the halfway point to the neighbour's centre (+4px so it doesn't flicker on the line)
+    if (swap && rows.current[i + 1] && y > (slot + midOf(i + 1)) / 2 + 4) { slot = midOf(i + 1); const from = i; edit((x) => { const [m] = x.splice(from, 1); x.splice(from + 1, 0, m); }); i++; }
+    else if (swap && i > 0 && rows.current[i - 1] && y < (slot + midOf(i - 1)) / 2 - 4) { slot = midOf(i - 1); const from = i; edit((x) => { const [m] = x.splice(from, 1); x.splice(from - 1, 0, m); }); i--; }
+    const next = { i, y, dy: y - slot };
+    dragRef.current = next; setDrag(next);
+  }
+  // When the cards collapse, scroll (or pad the top) so the held row lines up with the finger.
+  useLayoutEffect(() => {
+    const d = dragRef.current, el = d && rows.current[d.i];
+    if (!sorting) { setPadTop(0); return; }
+    if (!d || !el) return;
+    const r = el.getBoundingClientRect();
+    window.scrollBy(0, r.top + r.height / 2 - d.y);
+    const short = d.y - (el.getBoundingClientRect().top + r.height / 2); // > 0: page is at the top, row still above the finger
+    if (short > 1) setPadTop(short); else place(d.y, false);
+  }, [sorting]); // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => { if (padTop && dragRef.current) place(dragRef.current.y, false); }, [padTop]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!sorting) return;
-    const move = (e: PointerEvent) => {
-      const d = dragRef.current;
-      if (!d) return;
-      const dy = e.clientY - d.y, swapWith = dy > 0 ? d.i + 1 : d.i - 1, other = rows.current[swapWith];
-      const step = other ? other.offsetHeight + 8 : 0; // row height + gap
-      let next = { ...d, dy };
-      if (other && Math.abs(dy) > step / 2) { // passed the middle of the neighbour → swap and keep following the finger
-        const from = d.i;
-        edit((x) => { const [m] = x.splice(from, 1); x.splice(swapWith, 0, m); });
-        next = { i: swapWith, y: d.y + Math.sign(dy) * step, dy: dy - Math.sign(dy) * step };
-      }
-      dragRef.current = next; setDrag(next);
-    };
+    const move = (e: PointerEvent) => place(e.clientY, true);
     const eatClick = (e: MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
     const up = () => { // drop: swallow the click that follows the release, then expand
       window.addEventListener("click", eatClick, { capture: true, once: true });
       setTimeout(() => { window.removeEventListener("click", eatClick, { capture: true }); setDrag(null); }, 60);
     };
-    const noScroll = (e: TouchEvent) => e.preventDefault(); // the page stays put while you drag
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
-    window.addEventListener("touchmove", noScroll, { passive: false });
     return () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
-      window.removeEventListener("touchmove", noScroll);
     };
   }, [sorting]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -353,56 +374,47 @@ export default function Train() {
       )}
 
       {a.exercises.length === 0 && <EmptyState art="exercises" title="Empty workout" text="Add your first exercise to start logging sets." />}
-      {sorting ? (
-        <div className="space-y-2">
-          {a.exercises.map((ex, i) => {
-            const dragging = drag?.i === i;
-            return (
-              <div key={ex.name} ref={(el) => { rows.current[i] = el; }}
-                style={dragging ? { transform: `translateY(${drag!.dy}px) scale(1.02)` } : undefined}
-                className={`card flex cursor-grab touch-none select-none items-center gap-3 py-2 ${ex.superset !== undefined ? `border-l-4 ${color(ex.superset).bar}` : ""} ${dragging ? "relative z-10 shadow-xl ring-1 ring-lime-500" : "transition-transform"}`}>
-                <GripVertical size={18} className="muted shrink-0" />
-                <ExerciseThumb ex={lib.get(ex.name)} size={36} />
-                <span className="min-w-0 flex-1 truncate font-semibold">{ex.name}</span>
-                <span className="muted shrink-0 text-xs">{ex.sets.length} {ex.sets.length === 1 ? "set" : "sets"}</span>
-              </div>
-            );
-          })}
-        </div>
-      ) : a.exercises.map((ex, i) => {
+      {sorting && padTop > 0 && <div aria-hidden style={{ height: Math.max(0, padTop - 16) }} />}
+      {a.exercises.map((ex, i) => {
         const eq = equipment.find((e) => e.id === exercises[ex.name]?.equip);
         const best = prev[ex.name];
         const labels = setLabels(ex.sets, setTypes);
         const linkedNext = ex.superset !== undefined && a.exercises[i + 1]?.superset === ex.superset;
         const sc = color(ex.superset);
+        // While dragging, every card shrinks to its name row (same elements, contents hidden) so the held name stays under the finger.
+        const hide = sorting ? "hidden" : "", dragging = drag?.i === i;
         return (
-          <section key={ex.name} className={`card relative ${ex.superset !== undefined ? `border-l-4 ${sc.bar}` : ""} ${linkedNext ? "rounded-b-md" : ""}`}>
+          <section key={ex.name} ref={(el) => { rows.current[i] = el; }}
+            style={dragging ? { transform: `translateY(${drag!.dy}px) scale(1.02)` } : undefined}
+            className={`card relative ${ex.superset !== undefined ? `border-l-4 ${sc.bar}` : ""} ${linkedNext ? "rounded-b-md" : ""} ${sorting ? "select-none py-2" : ""} ${dragging ? "z-10 rounded-xl bg-white shadow-xl ring-1 ring-lime-500 dark:bg-zinc-900" : sorting ? "transition-transform" : ""}`}>
             {ex.superset !== undefined && (
-              <span className={`absolute -top-2 left-3 rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sc.tag}`}>Superset {letter(ex.superset)}</span>
+              <span className={`absolute -top-2 left-3 rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sc.tag} ${hide}`}>Superset {letter(ex.superset)}</span>
             )}
-            <div className="flex items-start gap-3">
-              <ExerciseThumb ex={lib.get(ex.name)} size={48} />
+            <div className={`flex gap-3 ${sorting ? "items-center" : "items-start"}`}>
+              {sorting && <GripVertical size={18} className="muted shrink-0" />}
+              <ExerciseThumb ex={lib.get(ex.name)} size={sorting ? 36 : 48} />
               <div className="min-w-0 flex-1">
-                <h2 {...longPress(i)} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} className="underline-offset-2 hover:underline">{ex.name}</Link> : ex.name}</h2>
-                {!isTimed(ex) && <OneRM kg={Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
-                {(a.exercises[i + 1] || ex.superset !== undefined) && (
+                <h2 {...longPress(i)} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} draggable={false} className="underline-offset-2 hover:underline">{ex.name}</Link> : ex.name}</h2>
+                {!isTimed(ex) && !sorting && <OneRM kg={Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
+                {!sorting && (a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
                     className={`mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
                     <Link2 size={13} />{ex.superset !== undefined ? "Unlink superset" : "Superset"}
                   </button>
                 )}
-                {(ex.timed || timedByDefault(lib.get(ex.name)?.id)) && <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
+                {!sorting && (ex.timed || timedByDefault(lib.get(ex.name)?.id)) && <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
                   className="muted mt-1 flex items-center gap-1 text-xs font-semibold">
                   {isTimed(ex) ? <><Hash size={13} />Log reps instead</> : <><Clock size={13} />Log time instead</>}
                 </button>}
               </div>
-              {eq && (
+              {sorting && <span className="muted shrink-0 text-xs">{ex.sets.length} {ex.sets.length === 1 ? "set" : "sets"}</span>}
+              {eq && !sorting && (
                 <Link href={`/map${q ? q + "&" : "?"}e=${eq.id}`} className="flex shrink-0 items-center gap-1 rounded-sm bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800">
                   <MapPin size={12} />{eq.name}
                 </Link>
               )}
             </div>
-            <div className={`mt-3 grid ${isTimed(ex) ? "grid-cols-[2.25rem_1fr_1fr_2.25rem_2.5rem_1.5rem]" : "grid-cols-[2.25rem_1fr_1fr_2.75rem_2.5rem_1.5rem]"} items-center gap-2 text-xs`}>
+            <div className={`mt-3 grid ${hide} ${isTimed(ex) ? "grid-cols-[2.25rem_1fr_1fr_2.25rem_2.5rem_1.5rem]" : "grid-cols-[2.25rem_1fr_1fr_2.75rem_2.5rem_1.5rem]"} items-center gap-2 text-xs`}>
               <span className="muted">Set</span><span className="muted text-center">{u}</span><span className="muted text-center">{isTimed(ex) ? "Time" : "Reps"}</span>{isTimed(ex) ? <span /> : <span className="muted text-center">1RM</span>}<span /><span />
               {ex.sets.map((st, j) => {
                 const max = countsPR(st.type) ? setMax(ex.name, st) : 0;
@@ -448,11 +460,12 @@ export default function Train() {
               })}
             </div>
             <button onClick={() => edit((x) => { const l = x[i].sets.at(-1); x[i].sets.push(l ? { kg: l.kg, reps: l.reps, ...(l.secs !== undefined ? { secs: l.secs } : {}) } : { kg: 0, reps: 10 }); })}
-              className="muted mt-3 flex items-center gap-1.5 text-sm font-medium"><Icon name="plus" size={14} />Add set</button>
+              className={`muted mt-3 flex items-center gap-1.5 text-sm font-medium ${hide}`}><Icon name="plus" size={14} />Add set</button>
           </section>
         );
       })}
 
+      {sorting && <div aria-hidden className="h-screen" />}{/* room below so the page can scroll the held row under the finger */}
       <button onClick={() => setPicking(true)} className="btn-ghost flex w-full items-center justify-center gap-2"><Icon name="plus-circle" size={20} />Add exercise</button>
       <button onClick={() => confirm("Discard this workout?") && setActive(() => null)} className="w-full py-2 text-sm font-medium text-red-500">Discard workout</button>
       {editingStart && (
