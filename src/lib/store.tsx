@@ -68,7 +68,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const loadMine = useCallback(async (id: string) => {
     const [v, w, f, fo, ro] = await Promise.all([
       sb.from("visits").select("in_at").is("out_at", null).order("in_at", { ascending: false }).limit(1),
-      sb.from("workouts").select("*").order("created_at", { ascending: false }).limit(50),
+      sb.from("workouts").select("*").order("created_at", { ascending: false }).limit(400), // ~a year of training, for exercise history
       sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(200),
       sb.from("follows").select("follower, followee"), // RLS: only rows that involve me
       sb.from("routines").select("id, name, exercises").order("updated_at", { ascending: false }),

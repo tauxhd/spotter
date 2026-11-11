@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Icon, { type IconName } from "@/components/Icon";
@@ -161,7 +162,7 @@ export default function GymStats() {
             {favourites.map(([name, n]) => (
               <li key={name} className="flex items-center gap-3 py-2">
                 <ExerciseThumb ex={findExercise(s.library, undefined, name)} size={40} />
-                <span className="min-w-0 flex-1 truncate font-medium">{name}</span>
+                {(() => { const fx = findExercise(s.library, undefined, name); return fx && own ? <Link href={`/exercise/${fx.id}`} className="min-w-0 flex-1 truncate font-medium">{name}</Link> : <span className="min-w-0 flex-1 truncate font-medium">{name}</span>; })()}
                 <span className="muted text-sm tabular-nums">{n} sets</span>
               </li>
             ))}

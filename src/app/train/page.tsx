@@ -256,7 +256,7 @@ export default function Train() {
             <div className="flex items-start gap-3">
               <ExerciseThumb ex={lib.get(ex.name)} size={48} />
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold">{ex.name}</h2>
+                <h2 className="font-semibold">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} className="underline-offset-2 hover:underline">{ex.name}</Link> : ex.name}</h2>
                 {!isTimed(ex) && <OneRM kg={Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
                 {(a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}

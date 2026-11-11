@@ -118,7 +118,7 @@ export default function WorkoutDetail() {
               <ExerciseThumb ex={ex} size={48} />
               <div className="min-w-0">
                 {e.superset && <span className={`mb-0.5 inline-block rounded-sm px-2 text-[10px] font-bold uppercase tracking-wide ${supersetColor(e.superset.charCodeAt(0) - 65).tag}`}>Superset {e.superset}</span>}
-                <p className="font-semibold text-lime-600 dark:text-lime-400">{ex?.name ?? e.name}</p>
+                {ex ? <Link href={`/exercise/${ex.id}`} className="block font-semibold text-lime-600 dark:text-lime-400">{ex.name}</Link> : <p className="font-semibold text-lime-600 dark:text-lime-400">{e.name}</p>}
                 {ex && <p className="muted text-xs capitalize">{ex.muscle} · {ex.equipment}</p>}
               </div>
             </div>
