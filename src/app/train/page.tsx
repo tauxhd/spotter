@@ -107,7 +107,7 @@ export default function Train() {
     if (!wasDone && ex && st && !isTimed(ex) && countsPR(st.type)) {
       const today = ex.sets.filter((x, k) => k !== j && x.done && countsPR(x.type)).map((x) => setMax(ex.name, x));
       if (setMax(ex.name, st) > Math.max(prev[ex.name] ?? 0, ...today)) {
-        try { prSound ??= new Audio("/sounds/pr.mp3"); prSound.currentTime = 0; prSound.play().catch(() => {}); navigator.vibrate?.([60, 40, 120]); } catch {}
+        try { prSound ??= new Audio("/sounds/record.mp3"); prSound.currentTime = 0; prSound.play().catch(() => {}); navigator.vibrate?.([60, 40, 120]); } catch {}
       }
     }
     edit((ex) => { ex[i].sets[j].done = !ex[i].sets[j].done; });
