@@ -93,6 +93,7 @@ button, a { transition: opacity 160ms ease-out; }
 }
 .tab[aria-pressed="true"] {
   @apply border-lime-500 text-zinc-900 dark:text-zinc-100;
+  box-shadow: 0 6px 10px -6px rgb(132 204 22 / 0.9); /* soft lime glow under the line */
 }
 
 .num {

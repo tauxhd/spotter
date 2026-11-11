@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import ExerciseThumb from "./ExerciseThumb";
+import Icon from "./Icon";
 import EmptyState from "./EmptyState";
 import { useStore } from "@/lib/store";
 import type { Exercise } from "@/lib/data";
@@ -9,7 +10,12 @@ import { baseOf, bests } from "@/lib/lifting";
 import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "./OneRM";
 
-const groups = ["all", "chest", "back", "shoulders", "biceps", "triceps", "forearms", "quads", "hamstrings", "glutes", "calves", "abs", "full body", "cardio"];
+// Muscle filter: each group pictured by a signature exercise from the library.
+const groups: [string, string | null][] = [
+  ["all", null], ["chest", "barbell-bench-press"], ["back", "pull-up"], ["shoulders", "overhead-press"], ["biceps", "barbell-curl"],
+  ["triceps", "rope-pushdown"], ["forearms", "wrist-curl-barbell"], ["quads", "back-squat"], ["hamstrings", "romanian-deadlift"],
+  ["glutes", "hip-thrust"], ["calves", "standing-calf-raise"], ["abs", "crunch"], ["full body", "power-clean"], ["cardio", "treadmill-run"],
+];
 const kit = [["any", "Any equipment"], ["dumbbell", "Dumbbell"], ["barbell", "Barbell"], ["bodyweight", "Bodyweight"], ["cable", "Cable"], ["machine", "Machine"], ["other", "Other"]] as const;
 // barbell family = barbell + EZ bar + Smith; bodyweight family = bodyweight + rings; other = kettlebell, cardio, misc
 const family = (e: string) => (["barbell", "ez-bar", "smith"].includes(e) ? "barbell" : ["bodyweight", "rings"].includes(e) ? "bodyweight" : ["dumbbell", "cable", "machine"].includes(e) ? e : "other");
@@ -37,11 +43,21 @@ export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (e:
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search exercises…" aria-label="Search exercises"
             className="w-full rounded-xl bg-white py-2.5 pl-9 pr-3 text-base outline-none ring-1 ring-zinc-200 focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900 dark:ring-zinc-800" />
         </div>
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-          {groups.map((x) => <button key={x} aria-pressed={g === x} onClick={() => setG(x)} className="chip">{cap(x)}</button>)}
+        <div className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 pt-1" role="group" aria-label="Muscle">
+          {groups.map(([x, id]) => {
+            const on = g === x;
+            return (
+              <button key={x} aria-pressed={on} onClick={() => setG(x)} className="flex w-[4.25rem] shrink-0 flex-col items-center gap-1.5">
+                <span className={`rounded-full transition ${on ? "ring-2 ring-lime-500 shadow-[0_0_14px_rgb(132_204_22/0.55)]" : "opacity-70"}`}>
+                  {id ? <ExerciseThumb ex={s.library.find((e) => e.id === id)} size={48} /> : <span className="grid h-12 w-12 place-items-center rounded-full bg-zinc-900 ring-1 ring-zinc-700/60"><Icon name="all" size={30} /></span>}
+                </span>
+                <span className={`text-[11px] font-semibold ${on ? "text-lime-600 dark:text-lime-400" : "muted"}`}>{cap(x)}</span>
+              </button>
+            );
+          })}
         </div>
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-          {kit.map(([x, label]) => <button key={x} aria-pressed={k === x} onClick={() => setK(x)} className="chip">{label}</button>)}
+        <div className="no-scrollbar -mx-4 flex gap-5 overflow-x-auto border-b border-zinc-200 px-4 dark:border-zinc-800" role="group" aria-label="Equipment">
+          {kit.map(([x, label]) => <button key={x} aria-pressed={k === x} onClick={() => setK(x)} className="tab">{label}</button>)}
         </div>
         <p className="muted text-xs">{list.length} exercise{list.length === 1 ? "" : "s"}</p>
         <ul className="card divide-y divide-zinc-100 p-0 dark:divide-zinc-800">
