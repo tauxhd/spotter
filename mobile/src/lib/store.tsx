@@ -33,6 +33,7 @@ type Ctx = {
   saveRoutine: (r: { name: string; exercises: ExerciseLog[] }) => Promise<void>;
   clockIn: () => Promise<void>;
   clockOut: () => Promise<void>;
+  updateProfile: (p: Partial<Omit<Profile, "id">>) => Promise<void>;
   addFood: (f: Omit<FoodEntry, "id" | "at">) => Promise<void>;
   removeFood: (id: string) => Promise<void>;
 };
@@ -150,6 +151,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     async clockOut() {
       await sb.from("visits").update({ out_at: new Date().toISOString() }).is("out_at", null);
       setS((x) => ({ ...x, clockedIn: null }));
+    },
+    async updateProfile(p) {
+      const { data, error } = await sb.from("profiles").update(p).eq("id", me.id).select().single();
+      if (error) throw error;
+      setMe(data);
     },
     async addFood(f) {
       const { data } = await sb.from("food_logs").insert({ ...f, created_at: new Date().toISOString() }).select().single();

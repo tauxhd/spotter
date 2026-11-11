@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { classes as sample, crowdAt, crowdByHour, fmt, gym, minsOf, toMin } from '@shared/data';
 import { gaps } from '@shared/lifting';
 import Avatar from '@/components/avatar';
+import ProfileSheet from '@/components/profile-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
 import { BottomTabInset, Lime } from '@/constants/theme';
@@ -56,6 +57,7 @@ export default function GymHome() {
   const theme = useTheme();
   const [now, setNow] = useState(() => new Date());
   const [scanning, setScanning] = useState(false);
+  const [profile, setProfile] = useState(false);
   const [inside, setInside] = useState(0);
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 5000); return () => clearInterval(id); }, []);
   useEffect(() => {
@@ -104,8 +106,9 @@ export default function GymHome() {
           <View style={[styles.pill, { backgroundColor: open ? 'rgba(132,204,22,0.15)' : theme.backgroundSelected }]}>
             <ThemedText type="smallBold" style={{ fontSize: 12, color: open ? Lime : theme.textSecondary }}>{open ? `Open until ${gym.close}` : `Opens ${gym.open}`}</ThemedText>
           </View>
-          <Avatar url={me.avatar_url} name={me.name} size={38} />
+          <Press onPress={() => setProfile(true)} accessibilityLabel="Your profile" scaleTo={0.92}><Avatar url={me.avatar_url} name={me.name} size={38} ring="rgba(132,204,22,0.4)" /></Press>
         </View>
+        <ProfileSheet open={profile} onClose={() => setProfile(false)} />
 
         {clockedIn ? (
           <Animated.View entering={FadeIn.duration(250)} style={[styles.clock, { backgroundColor: Lime }]}>
@@ -184,7 +187,7 @@ export default function GymHome() {
             </View>
           )}
           <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, marginTop: 6 }}>
-            {tt === null ? 'Sample timetable · add your intake code on the website' : tt === undefined ? ' ' : !tt.known ? `Intake ${me.intake} not found in the APU timetable` : `${me.intake} · ${classes.length ? `${classes.length} class${classes.length > 1 ? 'es' : ''} today` : 'no classes today'} · APU timetable`}
+            {tt === null ? 'Sample timetable · tap your picture to add your intake code' : tt === undefined ? ' ' : !tt.known ? `Intake ${me.intake} not found in the APU timetable` : `${me.intake} · ${classes.length ? `${classes.length} class${classes.length > 1 ? 'es' : ''} today` : 'no classes today'} · APU timetable`}
           </ThemedText>
         </View>
       </ScrollView>

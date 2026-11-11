@@ -12,6 +12,7 @@ import { baseOf, bests, countsPR, e1rm, hhmmss, liftsOf } from '@shared/lifting'
 import { bodyFor } from '@shared/strength';
 import { summarize } from '@shared/workout';
 import ExercisePicker from '@/components/exercise-picker';
+import MusclesSheet, { musclesHit } from '@/components/muscles-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
 import { webUrl } from '@/lib/web';
@@ -76,6 +77,8 @@ function Workout() {
   const [saving, setSaving] = useState(false);
   const [picking, setPicking] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showHit, setShowHit] = useState(false);
+  const ranked = useMemo(() => musclesHit(a.exercises, s.library), [a.exercises, s.library]);
   // Rest timer: starts when you tick a set; length and on/off are remembered on the phone (same keys as the website).
   const [restSecs, setRestSecs] = useState(() => Number(store?.getItem(REST_KEY)) || 90);
   const [restOn] = useState(() => store?.getItem(REST_ON_KEY) !== '0');
@@ -163,6 +166,15 @@ function Workout() {
         </View>
       </View>
 
+      {a.exercises.length > 0 && (
+        <Press onPress={() => setShowHit(true)} style={[styles.hitBtn, { backgroundColor: theme.backgroundElement }]} accessibilityLabel="Muscles hit">
+          <ThemedText type="smallBold" style={{ color: Lime }}>Muscles</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ flex: 1, textTransform: 'capitalize' }}>
+            {ranked.length ? ranked.slice(0, 3).map(([m, n]) => `${m} ${n}`).join(' · ') : 'Tick sets to see muscles hit'}
+          </ThemedText>
+          <ThemedText themeColor="textSecondary">›</ThemedText>
+        </Press>
+      )}
       {a.exercises.length === 0 && (
         <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', marginVertical: 30 }}>Add your first exercise to start logging sets.</ThemedText>
       )}
@@ -227,6 +239,7 @@ function Workout() {
     </ScrollView>
     {rest > 0 && <RestBar left={rest} onChange={changeRest} onSkip={() => setRestEnd(null)} />}
     <ExercisePicker open={picking} onPick={pick} onClose={() => setPicking(false)} taken={a.exercises.map((e) => e.name)} />
+    <MusclesSheet open={showHit} onClose={() => setShowHit(false)} ranked={ranked} />
     </View>
   );
 }
@@ -267,6 +280,7 @@ const styles = StyleSheet.create({
   cTick: { width: 44 },
   cX: { width: 22 },
   xBtn: { alignItems: 'center', justifyContent: 'center', padding: 4 },
+  hitBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
   iconBtn: { width: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   restBar: { position: 'absolute', left: 16, right: 16, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
   restBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
