@@ -12,7 +12,7 @@ import FollowButton from "@/components/FollowButton";
 import ProfileLink from "@/components/ProfileLink";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import { useStore } from "@/lib/store";
-import { bodyArea, findExercise, lifters, oldNames, setTypes, supersetColor } from "@/lib/data";
+import { addSets, findExercise, lifters, oldNames, setTypes, supersetColor } from "@/lib/data";
 import { countsPR, e1rm, mmss, setLabels } from "@/lib/lifting";
 
 const dur = (m?: number | null) => (!m ? "—" : m < 60 ? `${m}min` : `${Math.floor(m / 60)}h ${m % 60}min`);
@@ -38,11 +38,8 @@ export default function WorkoutDetail() {
     return { e, ex, log, sets, pr, top, labels: setLabels(log, setTypes) };
   });
   const totalSets = rows.reduce((n, r) => n + r.sets, 0);
-  const split = Object.entries(rows.reduce<Record<string, number>>((m, r) => {
-    const k = bodyArea(r.ex?.muscle);
-    m[k] = (m[k] ?? 0) + r.sets;
-    return m;
-  }, {})).sort((a, b) => b[1] - a[1]);
+  const split = Object.entries(rows.reduce<Record<string, number>>((m, r) => addSets(m, r.ex, r.sets), {})).sort((a, b) => b[1] - a[1]);
+  const splitTotal = split.reduce((n, [, v]) => n + v, 0) || 1;
   const when = new Date(p.at);
   const author = p.uid ?? lifters.find((l) => l.name === p.by)?.id ?? p.by;
 
@@ -96,7 +93,7 @@ export default function WorkoutDetail() {
         <h3 className="mb-3 text-lg font-bold">Muscle split</h3>
         <div className="space-y-3">
           {split.map(([k, n]) => {
-            const pct = Math.round((n / totalSets) * 100);
+            const pct = Math.round((n / splitTotal) * 100);
             return (
               <div key={k}>
                 <p className="mb-1 text-sm">{k}</p>

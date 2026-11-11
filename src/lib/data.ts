@@ -256,3 +256,11 @@ const BUCKETS: Record<string, string> = {
   quads: "Legs", hamstrings: "Legs", glutes: "Legs", calves: "Legs", abs: "Core",
 };
 export const bodyArea = (muscle?: string) => BUCKETS[muscle ?? ""] ?? "Full body";
+
+// Fractional sets: the main muscle's area gets the full sets, every other area the exercise works gets half.
+export function addSets(m: Record<string, number>, ex: { muscle: string; secondary: string[] } | undefined, n: number) {
+  const main = bodyArea(ex?.muscle);
+  m[main] = (m[main] ?? 0) + n;
+  for (const a of new Set((ex?.secondary ?? []).map((x) => BUCKETS[x]).filter(Boolean))) if (a !== main) m[a] = (m[a] ?? 0) + n / 2;
+  return m;
+}

@@ -9,7 +9,7 @@ import EmptyState from "@/components/EmptyState";
 import { StatsSkeleton } from "@/components/Skeleton";
 import { toUnit, w, wNum, wTotal } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
-import { bodyArea, findExercise, lifters, type Post } from "@/lib/data";
+import { addSets, findExercise, lifters, type Post } from "@/lib/data";
 import { baseOf, bests, dots, liftsOf } from "@/lib/lifting";
 
 const WEEKS = 8;
@@ -60,7 +60,7 @@ export default function GymStats() {
   for (const x of posts) for (const e of x.exercises) {
     const ex = findExercise(s.library, e.id, e.name);
     const n = e.log?.length || e.sets || 1;
-    areaSets[bodyArea(ex?.muscle)] = (areaSets[bodyArea(ex?.muscle)] ?? 0) + n;
+    addSets(areaSets, ex, n);
     const name = ex?.name ?? e.name;
     exSets[name] = (exSets[name] ?? 0) + n;
   }
