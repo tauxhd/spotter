@@ -268,7 +268,7 @@ export default function Train() {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" aria-label="Muscles hit"
-            className="btn-ghost h-12 w-14 overflow-hidden p-0.5">
+            className="h-16 w-20 transition active:scale-[0.97]">
             <MuscleModel hit={hit} compact />
           </button>
           {a.exercises.length > 0 && (
@@ -279,7 +279,7 @@ export default function Train() {
               setSavedAs(true);
             }} className="btn-ghost p-2 text-lime-600 dark:text-lime-400">{savedAs ? <BookmarkCheck size={20} /> : <BookmarkPlus size={20} />}</button>
           )}
-          <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish & share</button>
+          <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish<span className="hidden sm:inline"> & share</span></button>
         </div>
       </header>
       {showHit && (
