@@ -1,6 +1,23 @@
 import { timedByDefault, type Exercise, type ExerciseLog, type PostExercise } from "./data";
 import { countsPR, countsVolume, e1rm, mmss } from "./lifting";
 
+export type RankedLift = { kg: number; reps: number; at: number; orm: number };
+
+// Every full-effort set of one exercise, each weight × reps once (the first time you did it), strongest 1RM first.
+// body = bodyweight for pull-ups / dips, where kg is added weight.
+export function rankedLifts(sessions: { at: string; exercises: ExerciseLog[] }[], name: string, body = 0): RankedLift[] {
+  const seen = new Map<string, RankedLift>();
+  for (const x of [...sessions].sort((a, b) => a.at.localeCompare(b.at)))
+    for (const e of x.exercises) if (e.name === name)
+      for (const st of e.sets)
+        if (st.done && countsPR(st.type) && st.reps > 0 && st.kg + body > 0 && !seen.has(`${st.kg}x${st.reps}`))
+          seen.set(`${st.kg}x${st.reps}`, { kg: st.kg, reps: st.reps, at: new Date(x.at).getTime(), orm: e1rm(st.kg + body, st.reps) - body });
+  return [...seen.values()].sort((a, b) => b.orm - a.orm || a.reps - b.reps);
+}
+
+// Best set for each rep count (heaviest weight done for exactly that many reps), strongest 1RM first.
+export const repRecords = (lifts: RankedLift[]) => lifts.filter((l, i) => lifts.findIndex((x) => x.reps === l.reps) === i);
+
 // Turn the sets ticked in a workout into what gets saved: done exercises, PRs, the post's exercise list, volume and set count.
 export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<string, number>, body: (name: string) => number = () => 0) {
   const lib = new Map(library.map((e) => [e.name, e]));

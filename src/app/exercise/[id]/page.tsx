@@ -1,20 +1,24 @@
 "use client";
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Icon from "@/components/Icon";
 import EmptyState from "@/components/EmptyState";
+import LiftTable from "@/components/LiftTable";
 import { useStore } from "@/lib/store";
 import { setTypes, timedByDefault } from "@/lib/data";
 import { countsPR, countsVolume, e1rm, mmss, setLabels } from "@/lib/lifting";
 import { LEVELS, bodyFor, isLoadedBodyweight, strengthLevel } from "@/lib/strength";
 import { w, wNum } from "@/lib/units";
+import { rankedLifts, repRecords } from "@/lib/workout";
 
 type Point = { at: number; heaviest: number; orm: number; setVol: number; vol: number; reps: number; hold: number };
 type Metric = { key: keyof Point; label: string; kind: "kg" | "reps" | "time" };
 const RANGES = [["3M", 91], ["1Y", 365], ["All", Infinity]] as const;
 const DAY = 864e5;
+const TOP = 5; // set records shown here; the rest on /exercise/[id]/lifts
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 // One exercise, your history with it: progress plot, personal records, best weight for each rep count, past sessions.
@@ -67,9 +71,8 @@ export default function ExerciseStats() {
   const allSets = sessions.flatMap((x) => x.sets.filter((st) => countsPR(st.type)));
   const best = <K extends keyof Point>(k: K) => Math.max(0, ...points.map((p) => p[k] as number));
   const bestSet = allSets.reduce<{ kg: number; reps: number } | null>((b, st) => (!b || st.kg * st.reps > b.kg * b.reps ? st : b), null);
-  const repRecords = Object.entries(allSets.reduce<Record<number, number>>((r, st) => { if (st.reps > 0) r[st.reps] = Math.max(r[st.reps] ?? -Infinity, st.kg); return r; }, {}))
-    .map(([reps, kg]) => [Number(reps), kg, kg + body > 0 ? e1rm(kg + body, Number(reps)) - body : 0] as const)
-    .sort((a, b) => b[2] - a[2] || a[0] - b[0]); // strongest set first, by the 1RM it works out to
+  const lifts = rankedLifts(s.sessions, ex?.name ?? "", body);
+  const repBest = repRecords(lifts);
 
   const lvl = !timed && points.length ? strengthLevel(id, best("orm"), Number(me.bw), me.sex) : null;
 
@@ -160,20 +163,16 @@ export default function ExerciseStats() {
                 </section>
               )}
 
-              {!timed && repRecords.length > 0 && (
+              {!timed && repBest.length > 0 && (
                 <section className="-mx-4 px-4 py-4">
-                  <h3 className="mb-1 font-semibold">Set records</h3>
-                  <div className="muted grid grid-cols-[1fr_1fr_auto] border-b border-zinc-100 py-2 text-xs font-semibold dark:border-zinc-800/60"><span>Reps</span><span>Personal best</span><span>Est. 1RM</span></div>
-                  <ul>
-                    {repRecords.map(([reps, kg, orm], i) => (
-                      <li key={reps} className="grid grid-cols-[1fr_1fr_auto] border-b border-zinc-100 py-2.5 tabular-nums last:border-0 dark:border-zinc-800/60">
-                        <span className="font-semibold">{reps}</span><span>{added && kg > 0 ? "+" : ""}{kg > 0 || !added ? w(kg, u) : "Bodyweight"}</span>
-                        <span className={i === 0 ? "font-semibold text-lime-600 dark:text-lime-400" : "muted"}>{orm > 0 ? `${added ? "+" : ""}${w(Math.round(orm * 10) / 10, u)}` : "–"}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="mb-1 flex items-baseline justify-between">
+                    <h3 className="font-semibold">Set records</h3>
+                    {lifts.length > TOP && <Link href={`/exercise/${id}/lifts`} className="text-sm font-semibold text-lime-600 dark:text-lime-400">See all {lifts.length}</Link>}
+                  </div>
+                  <LiftTable lifts={repBest.slice(0, TOP)} u={u} added={added} />
                 </section>
               )}
+
             </>
           )}
         </>
