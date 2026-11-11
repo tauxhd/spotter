@@ -6,6 +6,7 @@ import { ArrowLeft, Heart, MessageCircle, SendHorizontal, Share2 } from "lucide-
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import EmptyState from "@/components/EmptyState";
+import { PostSkeleton } from "@/components/Skeleton";
 import { w, wTotal } from "@/lib/units";
 import FollowButton from "@/components/FollowButton";
 import ProfileLink from "@/components/ProfileLink";
@@ -25,7 +26,7 @@ export default function WorkoutDetail() {
 
   if (!p) return s.posts.length
     ? <EmptyState art="not-found" title="This workout isn't available" text="It may be private, friends-only, or deleted." className="mt-16" />
-    : <p className="muted mt-20 text-center text-sm">Loading…</p>;
+    : <PostSkeleton />;
 
   const rows = p.exercises.map((e) => {
     const ex = findExercise(s.library, e.id, e.name);

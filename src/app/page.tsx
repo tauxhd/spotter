@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Dumbbell, LogIn, LogOut, QrCode } from "lucide-react";
 import Icon from "@/components/Icon";
+import { Bone } from "@/components/Skeleton";
 import Avatar from "@/components/Avatar";
 import ProfileLink from "@/components/ProfileLink";
 import { useClasses, useNow } from "@/lib/useNow";
@@ -165,7 +166,9 @@ export default function GymHome() {
           <Icon name="calendar" size={32} />
           <h2 className="font-semibold">Best time to train today</h2>
         </div>
-        {best ? (
+        {tt === undefined ? (
+          <div role="status" aria-label="Loading your timetable" className="mt-3 space-y-2"><Bone className="h-7 w-36" /><Bone className="h-3.5 w-52" /></div>
+        ) : best ? (
           <>
             <p className="mt-3 text-2xl font-bold tabular-nums">{fmt(best.start)}–{fmt(best.start + 60)}</p>
             <p className="muted text-sm">
@@ -175,7 +178,7 @@ export default function GymHome() {
         ) : (
           <p className="muted mt-2 text-sm">No free hour left today. Rest day? 😴</p>
         )}
-        {classes.length > 0 && (
+        {tt !== undefined && classes.length > 0 && (
           <ul className="mt-3 space-y-1 border-t border-zinc-100 pt-3 text-xs dark:border-zinc-800">
             {classes.map((c) => (
               <li key={c.start + c.name} className="flex gap-2">
@@ -188,7 +191,7 @@ export default function GymHome() {
         )}
         <p className="muted mt-2 text-xs">
           {tt === null ? <>Sample timetable · <Link href={"/me" + location.search} className="font-semibold text-lime-600 underline dark:text-lime-400">add your intake code</Link></>
-            : tt === undefined ? "Loading your timetable…"
+            : tt === undefined ? null
             : !tt.known ? <>Intake {me.intake} not found in the APU timetable · <Link href={"/me" + location.search} className="font-semibold underline">fix it</Link></>
             : `${me.intake} · ${classes.length ? `${classes.length} class${classes.length > 1 ? "es" : ""} today` : "no classes today"} · from the APU timetable`}
         </p>

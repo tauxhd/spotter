@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Share2, X } from "lucide-react";
 import Avatar from "./Avatar";
 import EmptyState from "./EmptyState";
+import { PeopleSkeleton, PostSkeleton, ProfileSkeleton } from "./Skeleton";
 import Icon from "./Icon";
 import FollowButton from "./FollowButton";
 import PostCard from "./PostCard";
@@ -61,7 +62,7 @@ export default function ProfileView({ userId }: { userId: string }) {
     try { if (navigator.share) await navigator.share({ title: `${p?.name} on Spotter`, url }); else await navigator.clipboard.writeText(url); } catch {}
   }
 
-  if (p === undefined) return <p className="muted mt-20 text-center text-sm">Loading…</p>;
+  if (p === undefined) return <ProfileSkeleton />;
   if (p === null) return <EmptyState art="not-found" title="This profile doesn't exist" text="The link may be old, or the student deleted their account." className="mt-16" />;
 
   const stat = (n: number | undefined, label: string, onClick?: () => void) => (
@@ -112,7 +113,7 @@ export default function ProfileView({ userId }: { userId: string }) {
       </section>
 
       <h3 id="workouts" className="scroll-mt-4 pt-4 font-semibold">Workouts</h3>
-      {posts === null && <p className="muted py-6 text-center text-sm">Loading…</p>}
+      {posts === null && <PostSkeleton />}
       {posts?.length === 0 && (
         <EmptyState art="workouts" title={own ? "No workouts posted yet" : "Nothing to show yet"}
           text={own ? "Finish a workout and it shows up here." : "Their workouts appear here once they post (or follow each other to see friends-only ones)."}>
@@ -129,7 +130,7 @@ export default function ProfileView({ userId }: { userId: string }) {
               <button aria-label="Close" onClick={() => setList(null)} className="muted p-1"><X size={18} /></button>
             </div>
             <ul className="overflow-y-auto overscroll-contain px-4">
-              {list.people === null && <li className="muted py-6 text-center text-sm">Loading…</li>}
+              {list.people === null && <PeopleSkeleton />}
               {list.people?.length === 0 && <li><EmptyState art="followers" size={96} title={list.kind === "followers" ? "No followers yet" : "Not following anyone yet"} text={list.kind === "followers" ? "Post workouts and people will find you." : "Follow students from the feed to see their workouts."} /></li>}
               {list.people?.map((u) => (
                 <li key={u.id} className="flex items-center gap-3 border-b border-zinc-100 py-3 last:border-0 dark:border-zinc-800/80">

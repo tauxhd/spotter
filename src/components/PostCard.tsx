@@ -122,7 +122,7 @@ export default function PostCard({ post, showFollow = true }: { post: Post; show
 
       <div className="mt-3 flex items-center gap-5 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
         <button onClick={toggleLike} aria-pressed={!!p.liked} aria-label={`Like, ${p.likes} likes`} className={`flex items-center gap-1.5 font-medium ${p.liked ? "text-red-500" : "muted"}`}>
-          <Heart size={22} fill={p.liked ? "currentColor" : "none"} />{p.likes}
+          <Heart key={String(!!p.liked)} size={22} fill={p.liked ? "currentColor" : "none"} className={p.liked ? "anim-pop" : ""} />{p.likes}
         </button>
         <button onClick={() => { setOpen((o) => !o); setDraft(""); }} aria-expanded={open} aria-label={`Comments, ${p.comments.length}`} className="muted flex items-center gap-1.5 font-medium">
           <MessageCircle size={22} />{p.comments.length}

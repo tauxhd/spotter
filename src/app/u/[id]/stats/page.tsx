@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Dumbbell, Flame, Layers, MapPin, Trophy } from "lucide-react";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
+import { StatsSkeleton } from "@/components/Skeleton";
 import { toUnit, w, wNum, wTotal } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
 import { bodyArea, findExercise, lifters, type Post } from "@/lib/data";
@@ -34,7 +35,7 @@ export default function GymStats() {
     if (own) sb.from("visits").select("in_at, out_at").order("in_at", { ascending: false }).limit(500).then(({ data }) => setVisits(data ?? []));
   }, [id, own, demo, me.id]);
 
-  if (p === undefined || posts === null) return <p className="muted mt-20 text-center text-sm">Loading…</p>;
+  if (p === undefined || posts === null) return <StatsSkeleton />;
   if (p === null) return <EmptyState art="not-found" title="This profile doesn't exist" className="mt-16" />;
 
   // ---- numbers ----

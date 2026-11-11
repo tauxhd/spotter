@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { demoNow, oldNames, type Exercise, type ExerciseLog, type Post, type Sex } from "./data";
+import Splash from "@/components/Splash";
 import Onboarding from "@/components/Onboarding";
 import type { Unit } from "./units";
 
@@ -116,7 +117,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [uid, loadPosts]);
 
   if (err) return <p className="card mt-10 text-sm">Couldn&apos;t connect: {err}</p>;
-  if (me === undefined) return <p className="muted mt-20 text-center text-sm">Loading…</p>;
+  if (me === undefined) return <Splash />;
 
   const saveProfile: Ctx["saveProfile"] = async (p) => {
     const { data, error } = await sb.from("profiles").upsert({ id: uid, ...p }).select().single();

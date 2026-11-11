@@ -43,7 +43,7 @@ export default function Feed() {
         </section>
       )}
 
-      {s.posts.map((p) => <PostCard key={p.id} post={p} />)}
+      <div className="stagger">{s.posts.map((p) => <PostCard key={p.id} post={p} />)}</div>
     </div>
   );
 }
