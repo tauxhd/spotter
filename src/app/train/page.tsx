@@ -116,32 +116,54 @@ export default function Train() {
     });
   }
 
-  // Hold an exercise name → reorder mode: every exercise collapses to a row you drag up or down.
-  const [sorting, setSorting] = useState(false);
+  // Hold an exercise name: every exercise collapses to a row and the held one follows your finger; let go and they expand again.
   const [drag, setDrag] = useState<{ i: number; y: number; dy: number } | null>(null);
+  const dragRef = useRef(drag); dragRef.current = drag;
   const rows = useRef<(HTMLDivElement | null)[]>([]);
-  const pressTimer = useRef<number | undefined>(undefined), pressed = useRef(false);
-  const longPress = {
-    onPointerDown: () => {
-      pressed.current = false;
-      pressTimer.current = window.setTimeout(() => { pressed.current = true; setSorting(true); try { navigator.vibrate?.(15); } catch {} }, 450);
+  const pressTimer = useRef<number | undefined>(undefined);
+  const longPress = (i: number) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      const y = e.clientY;
+      pressTimer.current = window.setTimeout(() => { setDrag({ i, y, dy: 0 }); try { navigator.vibrate?.(15); } catch {} }, 450);
     },
     onPointerUp: () => clearTimeout(pressTimer.current),
     onPointerLeave: () => clearTimeout(pressTimer.current),
     onPointerCancel: () => clearTimeout(pressTimer.current), // fires when the finger starts scrolling instead
-    onClickCapture: (e: React.MouseEvent) => { if (pressed.current) { e.preventDefault(); e.stopPropagation(); pressed.current = false; } }, // no link after a hold
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
-  };
-  function dragMove(e: React.PointerEvent) {
-    if (!drag) return;
-    const dy = e.clientY - drag.y, i = drag.i;
-    const swapWith = dy > 0 ? i + 1 : i - 1, other = rows.current[swapWith];
-    const step = other ? other.offsetHeight + 8 : 0; // row height + gap
-    if (other && Math.abs(dy) > step / 2) { // passed the middle of the neighbour → swap and keep following the finger
-      edit((x) => { const [m] = x.splice(i, 1); x.splice(swapWith, 0, m); });
-      setDrag({ i: swapWith, y: drag.y + Math.sign(dy) * step, dy: dy - Math.sign(dy) * step });
-    } else setDrag({ ...drag, dy });
-  }
+  });
+  const sorting = drag !== null;
+  useEffect(() => {
+    if (!sorting) return;
+    const move = (e: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      const dy = e.clientY - d.y, swapWith = dy > 0 ? d.i + 1 : d.i - 1, other = rows.current[swapWith];
+      const step = other ? other.offsetHeight + 8 : 0; // row height + gap
+      let next = { ...d, dy };
+      if (other && Math.abs(dy) > step / 2) { // passed the middle of the neighbour → swap and keep following the finger
+        const from = d.i;
+        edit((x) => { const [m] = x.splice(from, 1); x.splice(swapWith, 0, m); });
+        next = { i: swapWith, y: d.y + Math.sign(dy) * step, dy: dy - Math.sign(dy) * step };
+      }
+      dragRef.current = next; setDrag(next);
+    };
+    const eatClick = (e: MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
+    const up = () => { // drop: swallow the click that follows the release, then expand
+      window.addEventListener("click", eatClick, { capture: true, once: true });
+      setTimeout(() => { window.removeEventListener("click", eatClick, { capture: true }); setDrag(null); }, 60);
+    };
+    const noScroll = (e: TouchEvent) => e.preventDefault(); // the page stays put while you drag
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    window.addEventListener("touchmove", noScroll, { passive: false });
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      window.removeEventListener("touchmove", noScroll);
+    };
+  }, [sorting]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggle(i: number, j: number) {
     const wasDone = a?.exercises[i].sets[j].done;
@@ -333,16 +355,10 @@ export default function Train() {
       {a.exercises.length === 0 && <EmptyState art="exercises" title="Empty workout" text="Add your first exercise to start logging sets." />}
       {sorting ? (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="muted text-sm">Drag to reorder</p>
-            <button onClick={() => { setSorting(false); setDrag(null); }} className="btn py-1.5 text-sm">Done</button>
-          </div>
           {a.exercises.map((ex, i) => {
             const dragging = drag?.i === i;
             return (
               <div key={ex.name} ref={(el) => { rows.current[i] = el; }}
-                onPointerDown={(e) => { try { e.currentTarget.setPointerCapture(e.pointerId); } catch {} setDrag({ i, y: e.clientY, dy: 0 }); }}
-                onPointerMove={dragMove} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)}
                 style={dragging ? { transform: `translateY(${drag!.dy}px) scale(1.02)` } : undefined}
                 className={`card flex cursor-grab touch-none select-none items-center gap-3 py-2 ${ex.superset !== undefined ? `border-l-4 ${color(ex.superset).bar}` : ""} ${dragging ? "relative z-10 shadow-xl ring-1 ring-lime-500" : "transition-transform"}`}>
                 <GripVertical size={18} className="muted shrink-0" />
@@ -367,7 +383,7 @@ export default function Train() {
             <div className="flex items-start gap-3">
               <ExerciseThumb ex={lib.get(ex.name)} size={48} />
               <div className="min-w-0 flex-1">
-                <h2 {...longPress} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} className="underline-offset-2 hover:underline">{ex.name}</Link> : ex.name}</h2>
+                <h2 {...longPress(i)} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} className="underline-offset-2 hover:underline">{ex.name}</Link> : ex.name}</h2>
                 {!isTimed(ex) && <OneRM kg={Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
                 {(a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
