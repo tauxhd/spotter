@@ -805,6 +805,8 @@ export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
 /** each scene's big moments (clicks and flashes) in its own time 0..1, so a video can land them on the beat */
 /** every stretch of typing per scene (its own time 0..1): the headline typing itself, then whatever the screen types */
 export const heroTyping = () => scenes.map((s) => [[0, 0.12] as [number, number], ...(s.typing ?? [])]);
+/** every cursor click per scene (its own time 0..1), for the video's click sound */
+export const heroClicks = () => scenes.map((s) => s.play(0.5, true).clicks);
 export const heroMoments = () => scenes.map((s) => { const pl = s.play(0.5, true); return [...new Set([...pl.clicks, ...pl.flashes])].sort((a, b) => a - b); });
 /** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
 const cut = (x: number) => `polygon(${x}% 0, 140% 0, 140% 100%, ${x - 40}% 100%)`;

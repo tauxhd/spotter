@@ -6,7 +6,7 @@
 // just spreads the hero evenly over its length.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import HeroScroll, { HANDOFF, HERO, heroMoments, heroTyping } from "@/components/HeroScroll";
+import HeroScroll, { HANDOFF, HERO, heroClicks, heroMoments, heroTyping } from "@/components/HeroScroll";
 import { BEATS } from "./beats";
 
 const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
@@ -101,6 +101,9 @@ const TYPING = heroTyping().flatMap((spans, k) => spans.map(([a, b]) => {
   return [timeAt(p0 + HERO.scene * a, SONG_CUES), timeAt(p0 + HERO.scene * b, SONG_CUES)] as const;
 }));
 
+// Clicks: the opening cursor's two (the logo on the drop, the home phone) and every click of the cursor inside the phone.
+const CLICK_AT = [...CLICKS, ...heroClicks().flatMap((cs, k) => cs.map((c) => timeAt(HERO.intro + HERO.scene * (k + c), SONG_CUES)))].sort((a, b) => a - b);
+
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 export default function Video() {
@@ -166,14 +169,16 @@ export default function Video() {
   const own = song?.url === SONG.url, cues = own ? SONG_CUES : evenCues(len);
 
   // the typing sound loops while anything types (Web Audio, started on the first play, which counts as a user gesture)
-  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode }>({});
+  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number }>({});
   const typing = own && playing && TYPING.some(([a, b]) => t >= a && t < b);
   useEffect(() => {
     const x = sfx.current;
     if (playing && !x.ctx) {
       x.ctx = new AudioContext();
       x.gain = x.ctx.createGain(); x.gain.gain.value = 1; x.gain.connect(x.ctx.destination); // the clip is already mastered loud (ffmpeg)
-      void fetch("/video/sfx/typing.mp3").then((r) => r.arrayBuffer()).then((b) => x.ctx!.decodeAudioData(b)).then((buf) => { x.typing = buf; });
+      const load = (url: string) => fetch(url).then((r) => r.arrayBuffer()).then((b) => x.ctx!.decodeAudioData(b));
+      void load("/video/sfx/typing.mp3").then((buf) => { x.typing = buf; });
+      void load("/video/sfx/click.mp3").then((buf) => { x.click = buf; });
     }
     if (playing && x.ctx?.state === "suspended") void x.ctx.resume();
     if (typing && !x.src && x.ctx && x.typing) {
@@ -184,7 +189,16 @@ export default function Video() {
     } else if (!typing && x.src) {
       x.src.stop(); x.src = undefined;
     }
-  }, [typing, playing, t]);
+    // a click for every click time passed since the last frame (not across a seek or a pause)
+    const prev = x.last;
+    x.last = playing ? t : undefined;
+    if (own && playing && prev !== undefined && t > prev && t - prev < 0.3 && x.ctx && x.click) {
+      for (const c of CLICK_AT) if (c > prev && c <= t) {
+        const one = x.ctx.createBufferSource();
+        one.buffer = x.click; one.connect(x.gain!); one.start();
+      }
+    }
+  }, [typing, playing, t, own]);
   // the Blender shot sits behind our phone: ours fades in exactly on top of its phone, then the set around it fades to black
   const inClip = own && t < PLAN.clip + 0.7, clipFade = 1 - Math.max(0, Math.min(1, (t - PLAN.clip - 0.1) / 0.6));
   const phoneIn = own ? Math.max(0, Math.min(1, (t - PLAN.clip) / 0.15)) : 1;
