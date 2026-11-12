@@ -7,8 +7,10 @@ import { apuStudent, isTp, type ApuStudent } from "@/lib/apu";
 import type { Sex } from "@/lib/data";
 import type { Unit } from "@/lib/units";
 import WeightInput from "./WeightInput";
+import { activities, goals, nutrition, type Goal } from "@/lib/nutrition";
 
-type P = { name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit };
+type P = { name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit;
+  goal?: string | null; activity?: number | null; height?: number | null; age?: number | null; goal_bw?: number | null };
 const field = "mt-1 w-full rounded-xl bg-zinc-100 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800";
 
 // Sign in with your TP number: name, course, faculty, intake and category come from APU records.
@@ -78,6 +80,8 @@ export default function Onboarding({ initial, onSave }: { initial?: P; onSave: (
   const [p, setP] = useState<P | null>(initial ?? null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [height, setHeight] = useState("");
+  const [age, setAge] = useState("");
 
   if (!p) return (
     <div className="space-y-5 pt-6">
@@ -95,12 +99,17 @@ export default function Onboarding({ initial, onSave }: { initial?: P; onSave: (
   );
 
   const unit = p.unit ?? "kg";
+  // new users must set a nutrition plan: it drives their calorie and macro targets in Eat
+  const h = Number(height), a = Number(age), g = p.goal_bw ?? 0;
+  const planOk = !!p.goal && !!p.activity && h >= 120 && h <= 230 && Number.isInteger(a) && a >= 13 && a <= 90 && g >= 30 && g <= 250;
+  const preview = planOk && p.bw >= 30 ? nutrition({ ...p, height: h, age: a }, [], []).targets : null;
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr("");
     const r = (n: number) => Math.round(n * 100) / 100;
-    try { await onSave({ ...p!, bw: r(p!.bw), squat: r(p!.squat), bench: r(p!.bench), deadlift: r(p!.deadlift), bio: p!.bio?.trim() || null }); } catch (x) { setErr((x as Error).message); }
+    const plan = initial ? {} : { height: Number(height), age: Number(age), goal_bw: r(p!.goal_bw ?? 0) };
+    try { await onSave({ ...p!, ...plan, bw: r(p!.bw), squat: r(p!.squat), bench: r(p!.bench), deadlift: r(p!.deadlift), bio: p!.bio?.trim() || null }); } catch (x) { setErr((x as Error).message); }
     setBusy(false);
   }
 
@@ -109,7 +118,7 @@ export default function Onboarding({ initial, onSave }: { initial?: P; onSave: (
       {!initial && (
         <header>
           <h1 className="h-title">Hi, {p.name.split(" ")[0]} 👋</h1>
-          <p className="muted text-sm">We found you. Add your bodyweight and you&apos;re in.</p>
+          <p className="muted text-sm">We found you. Add your bodyweight and nutrition plan and you&apos;re in.</p>
         </header>
       )}
       <Records p={p} />
@@ -156,8 +165,42 @@ export default function Onboarding({ initial, onSave }: { initial?: P; onSave: (
         </div>
       </section>
 
+      {!initial && (
+        <section className="card">
+          <p className="flex items-center gap-2 font-semibold"><Icon name="target" size={22} />Nutrition plan</p>
+          <p className="muted text-xs">Sets your daily calorie and macro targets in Eat. You can change it any time.</p>
+          <p className="muted mt-4 text-xs font-semibold">Goal</p>
+          <div role="radiogroup" aria-label="Goal" className="mt-1.5 flex flex-wrap gap-1.5">
+            {(Object.keys(goals) as Goal[]).map((k) => (
+              <button type="button" key={k} role="radio" aria-checked={p.goal === k} onClick={() => setP({ ...p, goal: k })}
+                className={`rounded-sm px-3 py-1.5 text-sm font-semibold transition active:scale-95 ${p.goal === k ? "bg-lime-500 text-zinc-950" : "bg-zinc-100 dark:bg-zinc-900"}`}>{goals[k].label}</button>
+            ))}
+          </div>
+          {p.goal && <p className="muted mt-1.5 text-xs">{goals[p.goal as Goal].hint}</p>}
+          <p className="muted mt-4 text-xs font-semibold">Activity</p>
+          <div role="radiogroup" aria-label="Activity" className="mt-1.5 grid grid-cols-3 gap-1.5">
+            {activities.map((x) => (
+              <button type="button" key={x.v} role="radio" aria-checked={p.activity === x.v} onClick={() => setP({ ...p, activity: x.v })}
+                className={`rounded-sm px-2 py-1.5 text-left transition active:scale-95 ${p.activity === x.v ? "bg-lime-500 text-zinc-950" : "bg-zinc-100 dark:bg-zinc-900"}`}>
+                <span className="block text-sm font-semibold">{x.label}</span>
+                <span className={`block text-[11px] leading-tight ${p.activity === x.v ? "text-zinc-800" : "muted"}`}>{x.hint}</span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <label className="text-xs"><span className="muted font-semibold">Height (cm)</span>
+              <input required value={height} onChange={(e) => setHeight(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))} inputMode="numeric" placeholder="172" className={`${field} tabular-nums`} /></label>
+            <label className="text-xs"><span className="muted font-semibold">Age</span>
+              <input required value={age} onChange={(e) => setAge(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} inputMode="numeric" placeholder="21" className={`${field} tabular-nums`} /></label>
+            <label className="text-xs"><span className="muted font-semibold">Goal weight ({unit})</span>
+              <WeightInput key={"goal" + unit} required kg={p.goal_bw ?? 0} unit={unit} onKg={(v) => setP((x) => x && { ...x, goal_bw: v })} placeholder="0" aria-label={`Goal weight ${unit}`} className="num mt-1 w-full" /></label>
+          </div>
+          {preview && <p className="mt-3 text-sm"><span className="font-bold tabular-nums">{preview.kcal.toLocaleString("en-MY")}</span> <span className="muted">kcal a day ·</span> <span className="font-semibold tabular-nums">P {preview.p}g · C {preview.c}g · F {preview.f}g</span></p>}
+        </section>
+      )}
+
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <button disabled={busy || p.bw < 30 || p.bw > 250} className="btn w-full">{busy ? "Saving…" : initial ? "Save" : "Let's go"}</button>
+      <button disabled={busy || p.bw < 30 || p.bw > 250 || (!initial && !planOk)} className="btn w-full">{busy ? "Saving…" : initial ? "Save" : "Let's go"}</button>
     </form>
   );
 }

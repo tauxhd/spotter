@@ -1,5 +1,5 @@
-// First launch (the website's Onboarding): sign in with your APU TP number, we pull your records, then bodyweight and
-// (optional) lifts.
+// First launch (the website's Onboarding): sign in with your APU TP number, we pull your records, then bodyweight,
+// (optional) lifts and a nutrition plan (goal, activity, height, age, goal weight) for the Eat targets.
 import { Image } from 'expo-image';
 import { LogIn } from 'lucide-react-native';
 import { useState } from 'react';
@@ -7,6 +7,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, useW
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { apuStudent, isTp } from '@shared/apu';
+import { activities, goals, nutrition, type Goal } from '@shared/nutrition';
 import type { Profile } from '@/lib/store';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,9 @@ export default function Onboarding({ onSave }: { onSave: (p: P) => Promise<void>
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const [p, setP] = useState<P | null>(null);
-  const [nums, setNums] = useState<Record<string, string>>({ bw: '70', squat: '', bench: '', deadlift: '' });
+  const [nums, setNums] = useState<Record<string, string>>({ bw: '70', squat: '', bench: '', deadlift: '', height: '', age: '', goal_bw: '' });
+  const [goal, setGoal] = useState<Goal | null>(null);
+  const [activity, setActivity] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -90,10 +93,15 @@ export default function Onboarding({ onSave }: { onSave: (p: P) => Promise<void>
     if (!p) return;
     const n = (k: string) => Math.round((Number(nums[k].replace(',', '.')) || 0) * 100) / 100;
     setBusy(true); setErr('');
-    try { await onSave({ ...p, bw: n('bw'), squat: n('squat'), bench: n('bench'), deadlift: n('deadlift') }); }
+    try { await onSave({ ...p, bw: n('bw'), squat: n('squat'), bench: n('bench'), deadlift: n('deadlift'), goal, activity, height: n('height'), age: n('age'), goal_bw: n('goal_bw') }); }
     catch (x) { setErr(x instanceof Error ? x.message : 'Couldn’t save'); setBusy(false); }
   }
-  const bw = Number(nums.bw.replace(',', '.'));
+  const num = (k: string) => Number(nums[k].replace(',', '.'));
+  const bw = num('bw'), h = num('height'), a = num('age'), g = num('goal_bw');
+  // new users must set a nutrition plan: it drives their calorie and macro targets in Eat
+  const planOk = !!goal && !!activity && h >= 120 && h <= 230 && Number.isInteger(a) && a >= 13 && a <= 90 && g >= 30 && g <= 250;
+  const preview = planOk && p && bw >= 30 ? nutrition({ ...p, bw, goal, activity, height: h, age: a }, [], []).targets : null;
+  const chip = (on: boolean) => [styles.chip, { backgroundColor: on ? Lime : theme.backgroundElement }];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -114,7 +122,7 @@ export default function Onboarding({ onSave }: { onSave: (p: P) => Promise<void>
             <View style={{ gap: 19 }}>
               <View>
                 <ThemedText style={styles.title}>Hi, {p.name.split(' ')[0]} 👋</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">We found you. Add your bodyweight and you&apos;re in.</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">We found you. Add your bodyweight and nutrition plan and you&apos;re in.</ThemedText>
               </View>
               <Records p={p} />
               <View style={[styles.section, { borderBottomColor: theme.border }]}>
@@ -131,8 +139,45 @@ export default function Onboarding({ onSave }: { onSave: (p: P) => Promise<void>
                   ))}
                 </View>
               </View>
+              <View style={[styles.section, { borderBottomColor: theme.border }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="target" size={22} /><ThemedText style={{ fontWeight: '600' }}>Nutrition plan</ThemedText></View>
+                <ThemedText themeColor="textSecondary" style={{ fontSize: 12, lineHeight: 17 }}>Sets your daily calorie and macro targets in Eat. You can change it any time.</ThemedText>
+                <ThemedText themeColor="textSecondary" style={[styles.label, { marginTop: 15 }]}>Goal</ThemedText>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }} accessibilityRole="radiogroup">
+                  {(Object.keys(goals) as Goal[]).map((k) => (
+                    <Pressable key={k} onPress={() => setGoal(k)} accessibilityRole="radio" accessibilityState={{ checked: goal === k }} style={chip(goal === k)}>
+                      <ThemedText type="smallBold" style={goal === k ? { color: '#09090b' } : undefined}>{goals[k].label}</ThemedText>
+                    </Pressable>
+                  ))}
+                </View>
+                {goal && <ThemedText themeColor="textSecondary" style={{ fontSize: 12, marginTop: 6 }}>{goals[goal].hint}</ThemedText>}
+                <ThemedText themeColor="textSecondary" style={[styles.label, { marginTop: 15 }]}>Activity</ThemedText>
+                <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }} accessibilityRole="radiogroup">
+                  {activities.map((x) => (
+                    <Pressable key={x.v} onPress={() => setActivity(x.v)} accessibilityRole="radio" accessibilityState={{ checked: activity === x.v }} style={[chip(activity === x.v), { flex: 1 }]}>
+                      <ThemedText type="smallBold" style={activity === x.v ? { color: '#09090b' } : undefined}>{x.label}</ThemedText>
+                      <ThemedText style={{ fontSize: 11, lineHeight: 14, color: activity === x.v ? '#27272a' : theme.textSecondary }}>{x.hint}</ThemedText>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 15 }}>
+                  {([['height', 'Height (cm)', '172', 'number-pad'], ['age', 'Age', '21', 'number-pad'], ['goal_bw', 'Goal weight (kg)', '0', 'decimal-pad']] as const).map(([k, label, ph, kb]) => (
+                    <View key={k} style={{ flex: 1 }}>
+                      <ThemedText themeColor="textSecondary" style={styles.label}>{label}</ThemedText>
+                      <Input value={nums[k]} onChangeText={(v) => setNums((x) => ({ ...x, [k]: v }))} keyboardType={kb} placeholder={ph} placeholderTextColor={theme.textSecondary}
+                        style={[styles.field, { backgroundColor: theme.backgroundElement, color: theme.text, fontVariant: ['tabular-nums'] }]} />
+                    </View>
+                  ))}
+                </View>
+                {preview && (
+                  <ThemedText type="small" style={{ marginTop: 12 }}>
+                    <ThemedText type="smallBold">{preview.kcal.toLocaleString('en-MY')}</ThemedText><ThemedText type="small" themeColor="textSecondary"> kcal a day · </ThemedText>
+                    <ThemedText type="smallBold">P {preview.p}g · C {preview.c}g · F {preview.f}g</ThemedText>
+                  </ThemedText>
+                )}
+              </View>
               {!!err && <ThemedText type="small" style={{ color: Red }}>{err}</ThemedText>}
-              <Button onPress={save} disabled={busy || !(bw >= 30 && bw <= 250)}>{busy ? 'Saving…' : 'Let’s go'}</Button>
+              <Button onPress={save} disabled={busy || !(bw >= 30 && bw <= 250) || !planOk}>{busy ? 'Saving…' : 'Let’s go'}</Button>
               <Pressable onPress={() => setP(null)} style={{ alignSelf: 'center' }}><ThemedText type="small" themeColor="textSecondary">Not you? Sign in again</ThemedText></Pressable>
             </View>
           )}
@@ -148,5 +193,6 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
   field: { marginTop: 4, borderRadius: 5, paddingHorizontal: 11, paddingVertical: 9, fontSize: 16 },
   section: { marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 15, borderBottomWidth: StyleSheet.hairlineWidth },
+  chip: { borderRadius: 2, paddingHorizontal: 12, paddingVertical: 7 },
   num: { alignSelf: 'stretch', borderRadius: 4, paddingVertical: 8, fontSize: 16, fontWeight: '600', textAlign: 'center', fontVariant: ['tabular-nums'] },
 });
