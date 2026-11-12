@@ -74,12 +74,13 @@ export default function ProfileView({ userId }: { userId: string }) {
 
   return (
     <div>
-      <header className="-mx-4 grid grid-cols-[4.5rem_1fr_4.5rem] items-center px-4 pb-2">
+      <header className="-mx-4 grid grid-cols-[6.75rem_1fr_6.75rem] items-center px-4 pb-2">
         {own ? <span /> : <button onClick={() => router.back()} aria-label="Back" className="grid h-9 w-9 place-items-center"><ArrowLeft size={20} /></button>}
         <h1 className="truncate text-center text-base font-semibold">{own ? "Profile" : p.name}</h1>
         <div className="flex justify-end">
           <Link href={`/u/${p.id}/stats${q}`} aria-label="Gym stats" className="grid h-9 w-9 place-items-center"><Icon name="stats" size={26} /></Link>
           {own && <Link href={`/me/edit${q}`} aria-label="Edit profile" className="grid h-9 w-9 place-items-center"><Icon name="edit" size={26} /></Link>}
+          {own && <Link href={`/settings${q}`} aria-label="Settings" className="grid h-9 w-9 place-items-center"><Icon name="settings" size={26} /></Link>}
         </div>
       </header>
 

@@ -20,7 +20,7 @@ import { POST_SELECT, sb, toPost, useStore, type Profile } from '@/lib/store';
 type Person = { id: string; name: string; faculty: string; avatar_url: string | null };
 type Stats = { workouts: number; followers: number; following: number };
 
-export default function ProfileView({ userId }: { userId: string }) {
+export default function ProfileView({ userId, startEditing = false }: { userId: string; startEditing?: boolean }) {
   const { s, me } = useStore();
   const theme = useTheme();
   const own = userId === me.id;
@@ -29,7 +29,7 @@ export default function ProfileView({ userId }: { userId: string }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [list, setList] = useState<{ kind: 'followers' | 'following'; people: Person[] | null } | null>(null);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const p = own ? me : other;
 
   useEffect(() => {
@@ -75,6 +75,7 @@ export default function ProfileView({ userId }: { userId: string }) {
           <View style={{ flexDirection: 'row', gap: 4 }}>
             <Pressable onPress={() => router.push({ pathname: '/stats/[id]', params: { id: p.id } })} hitSlop={6} accessibilityLabel="Gym stats" style={styles.headBtn}><Icon name="stats" size={26} /></Pressable>
             {own && <Pressable onPress={() => setEditing(true)} hitSlop={6} accessibilityLabel="Edit profile" style={styles.headBtn}><Icon name="edit" size={26} /></Pressable>}
+            {own && <Pressable onPress={() => router.push('/settings')} hitSlop={6} accessibilityLabel="Settings" style={styles.headBtn}><Icon name="settings" size={26} /></Pressable>}
           </View>
         ),
       }} />

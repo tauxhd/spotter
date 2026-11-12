@@ -34,6 +34,7 @@ type Ctx = {
   comment: (id: string, text: string) => Promise<void>;
   follow: (id: string) => Promise<void>;
   unfollow: (id: string) => Promise<void>;
+  signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   saveRoutine: (r: { id?: string; name: string; exercises: ExerciseLog[] }) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
@@ -106,24 +107,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  // Sign in (anonymously if there's no session yet), then load the profile and everything that hangs off it.
+  const boot = useCallback(async () => {
+    let { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      const r = await sb.auth.signInAnonymously();
+      if (r.error) return setErr(r.error.message);
+      session = r.data.session;
+    }
+    const id = session!.user.id;
+    setUid(id);
+    const { data, error } = await sb.from("profiles").select("*").eq("id", id).maybeSingle();
+    if (error) return setErr(error.message);
+    setMe(data);
+    await Promise.all([loadPosts(id), data && loadMine(id)]);
+  }, [loadPosts, loadMine]);
+
   useEffect(() => {
     sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort")
       .then(({ data }) => data && setS((x) => ({ ...x, library: data })));
-    (async () => {
-      let { data: { session } } = await sb.auth.getSession();
-      if (!session) {
-        const r = await sb.auth.signInAnonymously();
-        if (r.error) return setErr(r.error.message);
-        session = r.data.session;
-      }
-      const id = session!.user.id;
-      setUid(id);
-      const { data, error } = await sb.from("profiles").select("*").eq("id", id).maybeSingle();
-      if (error) return setErr(error.message);
-      setMe(data);
-      await Promise.all([loadPosts(id), data && loadMine(id)]);
-    })();
-  }, [loadPosts, loadMine]);
+    Promise.resolve().then(boot); // async: the state it sets lands after the first render
+  }, [boot]);
 
   // feed stays live: any post / comment / like change refetches (same channel as the website)
   useEffect(() => {
@@ -189,6 +193,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     async unfollow(id) {
       setS((x) => ({ ...x, following: x.following.filter((y) => y !== id) }));
       await sb.from("follows").delete().match({ follower: me.id, followee: id });
+    },
+    async signOut() {
+      try { localStorage.removeItem(ACTIVE); } catch {}
+      await sb.auth.signOut();
+      setMe(undefined); setUid(null);
+      setS((x) => ({ ...x, sessions: [], posts: [], routines: [], active: null, clockedIn: null, food: [], weights: [], following: [], followers: [] }));
+      await boot(); // a fresh session with no profile -> the sign-in quest
     },
     refresh: () => loadPosts(me.id),
     async saveRoutine(r) {

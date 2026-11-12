@@ -36,6 +36,7 @@ type Ctx = {
   saveRoutine: (r: { id?: string; name: string; exercises: ExerciseLog[] }) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
   unfollow: (id: string) => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -235,6 +236,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     async unfollow(id) {
       setS((x) => ({ ...x, following: x.following.filter((y) => y !== id) }));
       await sb.from("follows").delete().match({ follower: me.id, followee: id });
+    },
+    async signOut() {
+      try { localStorage.removeItem(ACTIVE); } catch {}
+      await sb.auth.signOut();
+      location.href = "/" + location.search; // starts a fresh session, which opens the sign-in quest
     },
   };
 
