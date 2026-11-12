@@ -271,30 +271,49 @@ join(walls, "walls")
 tabs = [box((x + w / 2) * S, -(y + h / 2) * S, 0, w * S, h * S, 0.75, "table") for x, y, w, h in data["floor"]["tables"]]
 join(tabs, "tables")
 
+def wall_turn(cx, cy):
+    """turn (deg) that points a machine's local -X at the nearest wall (plan pixels in, Blender angle out)"""
+    best = None
+    for (ax, ay), (bx, by) in zip(pts, pts[1:] + pts[:1]):
+        t = max(0, min(1, ((cx - ax) * (bx - ax) + (cy - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2)))
+        qx, qy = ax + t * (bx - ax), ay + t * (by - ay)
+        d = math.hypot(cx - qx, cy - qy)
+        if best is None or d < best[0]: best = (d, qx - cx, -(qy - cy))  # plan y down = Blender -Y
+    _, wx, wy = best
+    wx, wy = (math.copysign(1, wx), 0) if abs(wx) > abs(wy) else (0, math.copysign(1, wy))
+    return math.degrees(math.atan2(-wy, -wx))
+
 for e in data["equipment"]:
     x, y, w, h = e["x"], e["y"], e["w"], e["h"]
     L, D = max(w, h) * S, min(w, h) * S
     id = e["id"]
+    # machines are built with their back (weight stack) at local -X; cardio is turned so its front is at -X: either way
+    # -X goes to the nearest wall, so you face the wall on cardio and have your back to it on a machine
+    walled = True
     if id.startswith("tm"):
-        parts = [fitted("9hYy4Zmk67.glb", L, D, rot=90 if id in ("tm1", "tm2", "tm3") else 0, fill=0.95)]
+        parts = [fitted("9hYy4Zmk67.glb", L, L, rot=90, fill=0.95)]  # console end -> -X
     elif id.startswith("bike"):
-        parts = [fitted("9DwoznfSPHY.glb", L, D, rot=0, fill=0.8, maxh=1.2)]
+        parts = [fitted("9DwoznfSPHY.glb", L, L, rot=180, fill=0.8, maxh=1.2)]  # handlebars -> -X
         dec = parts[0].modifiers.new("d", "DECIMATE"); dec.ratio = 0.35
-    elif id.startswith("bench"):
-        parts = [fitted("e9qDJpbSTxf.glb", L, D, rot=90, fill=0.85)]
-    elif id == "dbs": parts = db_rack(L, D)
-    elif id.startswith("dbseat"): parts = db_bench(L, D)
-    elif id == "rack": parts = power_rack(L, D)
-    elif id == "rig": parts = rig(L, D)
+    elif id.startswith("bench"): parts = [fitted("e9qDJpbSTxf.glb", L, D, rot=90, fill=0.85)]; walled = False
+    elif id == "dbs": parts = db_rack(L, D); walled = False
+    elif id.startswith("dbseat"): parts = db_bench(L, D); walled = False
+    elif id == "rack": parts = power_rack(L, D); walled = False
+    elif id == "rig": parts = rig(L, D); walled = False
+    elif id == "cable": parts = crossover(L, D); walled = False
     elif id == "tower": parts = tower(L, D)
-    elif id == "cable": parts = crossover(L, D)
     else: parts = selectorized(L, D, "".join(c for c in id if not c.isdigit()))
     o = join(parts, id)
-    # turn the local frame (X = long side) to the plan box; machines along the east wall face west
-    turn = 0 if w >= h else 90
-    if x > 500 and id not in ("dbs",) and not id.startswith("tm"): turn += 180
-    o.rotation_euler = (0, 0, math.radians(turn))
-    o.location = ((x + w / 2) * S, -(y + h / 2) * S, 0)
+    cx, cy = x + w / 2, y + h / 2
+    turn = 0 if id.startswith("bike") else wall_turn(cx, cy) if walled else (0 if w >= h else 90)  # the bike row has no wall: all face west
+    o.data.transform(Matrix.Rotation(math.radians(turn), 4, "Z"))
+    # then grow (or shrink) it to fill its box on the plan, so it reads at map scale
+    vs = [v.co for v in o.data.vertices]
+    lo = Vector((min(v.x for v in vs), min(v.y for v in vs), 0)); hi = Vector((max(v.x for v in vs), max(v.y for v in vs), 0))
+    k = min(w * S * 0.98 / (hi.x - lo.x), h * S * 0.98 / (hi.y - lo.y), 2.2)
+    o.data.transform(Matrix.Scale(k, 4) @ Matrix.Translation(-(lo + hi) / 2))
+    o.location = (cx * S, -cy * S, 0)
+    print("PLACED", id, round(turn), round(k, 2))
 
 for s, _ in _src.values(): bpy.data.objects.remove(s)
 

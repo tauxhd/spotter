@@ -1,6 +1,7 @@
 // Gym map (the website's /map): the SweatZone in isometric 3D (components/gym-3d) or as the flat floor plan; tap a machine to highlight it (it pulses) and see what it's for.
 // Opens on a machine when called with ?e=<equipment id> (from a workout's location chip). Plain dashed boxes are tables.
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedProps, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
@@ -48,7 +49,11 @@ export default function GymMap() {
 
   return (
     <ScrollView scrollEnabled={scroll} style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60, gap: 16 }}>
-      <Stack.Screen options={{ title: 'Gym map' }} />
+      <Stack.Screen options={{ title: 'Gym map', headerLeft: () => ( // always there, even when the map was opened from a link
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={10} accessibilityLabel="Back" style={{ marginRight: 16 }}>
+          <ArrowLeft size={22} color={Lime} />
+        </Pressable>
+      ) }} />
       <ThemedText type="small" themeColor="textSecondary">{picked ? `${picked.name} · ${picked.zone}` : 'Tap any equipment'}</ThemedText>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {(['3D', 'Floor plan'] as const).map((m) => {

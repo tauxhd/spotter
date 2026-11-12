@@ -8,7 +8,7 @@ import * as THREE from "three";
 
 const LIME = new THREE.Color("#84cc16");
 const DIR = new THREE.Vector3(0.45, 0.95, 1).normalize(); // from the south-east, steep enough to see over the low walls
-const DOOR = new THREE.Box3(new THREE.Vector3(15, 0, 33), new THREE.Vector3(24.5, 1, 45)); // inside the entrance (floor.door, plan x 375-610, y 825-1106)
+const DOOR = new THREE.Box3(new THREE.Vector3(18, 0, 35), new THREE.Vector3(24.5, 1, 43)); // inside the entrance (floor.door, plan x 450-610, y 875-1075)
 
 type View = { c: THREE.Vector3; half: number };
 export type Gym = {
@@ -74,7 +74,7 @@ export function focus(g: Gym, id: string | undefined, aspect: number, jump = fal
     });
     const b = new THREE.Box3().setFromObject(part);
     g.pin.position.set((b.min.x + b.max.x) / 2, b.max.y + 1.1, (b.min.z + b.max.z) / 2);
-    box = b.clone().expandByVector(new THREE.Vector3(5, 0, 5)); // the machine plus what's around it
+    box = b.clone().expandByVector(new THREE.Vector3(3, 0, 3)); // the machine plus what's around it
   } else {
     box = DOOR;
   }
