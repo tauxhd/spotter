@@ -9,7 +9,8 @@ import { baseOf, estimated, heaviest, liftsOf } from '@shared/lifting';
 import MuscleDistribution, { type Log } from '@/components/muscle-distribution';
 import { ExerciseThumb } from '@/components/post-card';
 import { ThemedText } from '@/components/themed-text';
-import { Bone, EmptyState, Icon, Section } from '@/components/ui/kit';
+import { EmptyState, Icon, Section } from '@/components/ui/kit';
+import { StatsSkeleton } from '@/components/skeleton';
 import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { POST_SELECT, sb, toPost, useStore, type Profile } from '@/lib/store';
@@ -49,7 +50,7 @@ export default function GymStats() {
     if (own) sb.from('visits').select('in_at, out_at').order('in_at', { ascending: false }).limit(500).then(({ data }) => setVisits(data ?? []));
   }, [id, own, demo, me.id]);
 
-  if (p === undefined || posts === null) return <View style={{ padding: 16, gap: 14, backgroundColor: theme.background, flex: 1 }}><Bone w={120} h={14} /><Bone w={200} h={30} /><Bone w="100%" h={96} /><Bone w="100%" h={160} /></View>;
+  if (p === undefined || posts === null) return <View style={{ padding: 16, backgroundColor: theme.background, flex: 1 }}><StatsSkeleton /></View>;
   if (p === null) return <EmptyState art="not-found" title="This profile doesn't exist" />;
 
   const thisWeek = weekStart(now);

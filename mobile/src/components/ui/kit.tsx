@@ -93,13 +93,7 @@ export function Splash() {
 }
 
 // Shimmering placeholder block for skeleton screens.
-export function Bone({ w, h, r = 6, style }: { w: number | `${number}%`; h: number; r?: number; style?: StyleProp<ViewStyle> }) {
-  const theme = useTheme();
-  const o = useSharedValue(0.5);
-  useEffect(() => { o.set(withRepeat(withSequence(withTiming(1, { duration: 700 }), withTiming(0.5, { duration: 700 })), -1)); }, [o]);
-  const anim = useAnimatedStyle(() => ({ opacity: o.value }));
-  return <Animated.View style={[{ width: w, height: h, borderRadius: r, backgroundColor: theme.backgroundSelected }, anim, style]} />;
-}
+export { Bone } from '@/components/skeleton'; // shimmering placeholder, shared with the skeleton layouts
 
 const styles = StyleSheet.create({
   title: { fontSize: 26, lineHeight: 32, fontWeight: '700', letterSpacing: -0.5 },

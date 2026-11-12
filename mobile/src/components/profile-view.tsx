@@ -12,7 +12,8 @@ import PostCard, { FollowButton } from '@/components/post-card';
 import ProfileSheet from '@/components/profile-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
-import { Bone, EmptyState, Icon } from '@/components/ui/kit';
+import { EmptyState, Icon } from '@/components/ui/kit';
+import { PeopleSkeleton, PostSkeleton, ProfileSkeleton } from '@/components/skeleton';
 import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { POST_SELECT, sb, toPost, useStore, type Profile } from '@/lib/store';
@@ -57,7 +58,7 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
     setList({ kind, people: data ?? [] });
   }
 
-  if (p === undefined) return <View style={{ padding: 16, gap: 12 }}><View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}><Bone w={84} h={84} r={42} /><Bone w={180} h={20} /></View><Bone w="60%" h={16} /><Bone w="100%" h={180} /></View>;
+  if (p === undefined) return <ProfileSkeleton />;
   if (p === null) return <EmptyState art="not-found" title="This profile doesn't exist" text="The link may be old, or the student deleted their account." />;
 
   const stat = (n: number | undefined, label: string, onPress?: () => void) => (
@@ -106,7 +107,7 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
       </View>
 
       <ThemedText type="smallBold" style={{ fontSize: 16, paddingTop: 16 }}>Workouts</ThemedText>
-      {posts === null && <View style={{ gap: 10, marginTop: 12 }}><Bone w="70%" h={18} /><Bone w="100%" h={120} /></View>}
+      {posts === null && <PostSkeleton />}
       {posts?.length === 0 && (
         <EmptyState art="workouts" title={own ? 'No workouts posted yet' : 'Nothing to show yet'} text={own ? 'Finish a workout and it shows up here.' : 'Their workouts appear here once they post (or follow each other to see friends-only ones).'}>
           {own && <Button style={{ marginTop: 16, paddingVertical: 10 }} onPress={() => router.navigate('/train')}>Start a workout</Button>}
@@ -121,7 +122,7 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
             <Pressable onPress={() => setList(null)} hitSlop={8} accessibilityLabel="Close" style={{ padding: 4 }}><X size={18} color={theme.textSecondary} /></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ paddingHorizontal: 16 }}>
-            {list?.people === null && <View style={{ gap: 12 }}>{[0, 1, 2].map((i) => <Bone key={i} w="100%" h={44} />)}</View>}
+            {list?.people === null && <PeopleSkeleton />}
             {list?.people?.length === 0 && <EmptyState art="followers" size={96} title={list.kind === 'followers' ? 'No followers yet' : 'Not following anyone yet'} text={list.kind === 'followers' ? 'Post workouts and people will find you.' : 'Follow students from the feed to see their workouts.'} />}
             {list?.people?.map((u) => (
               <View key={u.id} style={[styles.person, { borderBottomColor: theme.border }]}>

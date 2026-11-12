@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withDelay, withTiming, Easing } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,6 +14,7 @@ import { ChevronRight, Dumbbell, LogIn, LogOut, QrCode } from 'lucide-react-nati
 import Avatar from '@/components/avatar';
 import { Icon, Section } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
+import { Bone } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
 import { BottomTabInset, Lime } from '@/constants/theme';
@@ -194,7 +195,7 @@ export default function GymHome() {
             {icon('calendar') && <Image source={icon('calendar')} style={{ width: 28, height: 28 }} />}
             <ThemedText type="smallBold" style={{ fontSize: 16 }}>Best time to train today</ThemedText>
           </View>
-          {tt === undefined ? <ActivityIndicator color={Lime} style={{ marginVertical: 12, alignSelf: 'flex-start' }} />
+          {tt === undefined ? <View accessibilityLabel="Loading your timetable" style={{ marginTop: 12, gap: 8 }}><Bone w={144} h={28} /><Bone w={208} h={14} /></View>
             : best ? (
               <>
                 <ThemedText style={[styles.big2, { marginTop: 8 }]}>{fmt(best.start)}–{fmt(best.start + 60)}</ThemedText>

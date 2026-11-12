@@ -13,7 +13,8 @@ import Avatar from '@/components/avatar';
 import { ExerciseThumb, FollowButton } from '@/components/post-card';
 import { ThemedText } from '@/components/themed-text';
 import { Press } from '@/components/ui/button';
-import { Bone, EmptyState, Icon } from '@/components/ui/kit';
+import { EmptyState, Icon } from '@/components/ui/kit';
+import { PostSkeleton } from '@/components/skeleton';
 import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
@@ -43,7 +44,7 @@ export default function PostPage() {
   if (!p) return (
     <View style={{ flex: 1, padding: 16, gap: 12, backgroundColor: theme.background }}>
       {s.posts.length ? <EmptyState art="not-found" title="This workout isn't available" text="It may be private, friends-only, or deleted." />
-        : <><Bone w={180} h={20} /><Bone w="100%" h={120} /><Bone w="70%" h={14} /></>}
+        : <PostSkeleton />}
     </View>
   );
 
