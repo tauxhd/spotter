@@ -58,7 +58,7 @@ export default function Welcome() {
       <section id="demo" className="scroll-mt-16 border-t border-white/5 bg-gradient-to-b from-lime-400/[0.06] to-transparent">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-[auto_1fr] md:gap-16">
           {/* the real web app, signed in to a demo account with made-up data */}
-          <div className="mx-auto w-[min(390px,calc(100vw-2rem))]">
+          <div className="mx-auto w-[min(390px,calc(100vw-2rem),calc((100dvh-10rem)*0.462))]">
             <div className="relative aspect-[390/844] rounded-[3.2rem] bg-zinc-800 p-[10px] shadow-2xl shadow-lime-400/10 ring-1 ring-white/15">
               <div className="absolute -left-[3px] top-28 h-8 w-[3px] rounded-l bg-zinc-700" aria-hidden />
               <div className="absolute -left-[3px] top-40 h-14 w-[3px] rounded-l bg-zinc-700" aria-hidden />
