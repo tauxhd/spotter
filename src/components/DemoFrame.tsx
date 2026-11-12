@@ -21,6 +21,10 @@ export default function DemoFrame({ src }: { src: string }) {
     <div className="relative h-full w-full pt-9" onMouseLeave={() => setOn(false)}>
       <div ref={box} className="relative h-full w-full overflow-hidden">
         <iframe src={src} title="Spotter demo" className="absolute left-0 top-0 origin-top-left border-0" loading="lazy"
+          onLoad={(e) => { // a phone shows no scrollbar: hide the desktop one inside the frame (same origin)
+            const d = e.currentTarget.contentDocument;
+            if (d) d.head.appendChild(Object.assign(d.createElement("style"), { textContent: "html{scrollbar-width:none}html::-webkit-scrollbar{display:none}" }));
+          }}
           style={{ width: W, height: size.h, transform: `scale(${size.k})`, pointerEvents: on ? "auto" : "none" }} />
       </div>
       {!on && (

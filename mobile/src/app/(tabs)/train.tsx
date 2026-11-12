@@ -99,7 +99,7 @@ function Routines() {
       {s.sessions.length > 0 && (
         <View>
           <ThemedText type="smallBold" style={{ fontSize: 16 }}>History</ThemedText>
-          {s.sessions.slice(0, 30).map((x) => (
+          {s.sessions.slice(0, 2).map((x) => ( // just the last two
             <Section key={x.id} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 }}>
               <ThemedText type="smallBold">{x.title}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">{x.exercises.length} exercises · {timeAgo(x.at)}</ThemedText>

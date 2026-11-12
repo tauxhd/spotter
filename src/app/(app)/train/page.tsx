@@ -346,7 +346,7 @@ export default function Train() {
         {s.sessions.length > 0 && (
           <section className="space-y-2">
             <h2 className="font-semibold">History</h2>
-            {s.sessions.map((x) => (
+            {s.sessions.slice(0, 2).map((x) => ( // just the last two
               <div key={x.id} className="card flex items-center justify-between text-sm">
                 <span className="font-medium">{x.title}</span>
                 <span className="muted">{x.exercises.length} exercises · {timeAgo(x.at, demoNow())}</span>
