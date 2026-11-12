@@ -794,8 +794,9 @@ function PhoneMock({ k, t, style }: { k: number; t: number; style?: CSSPropertie
 // The video's hand-off (0..1): phones slide out from behind the main one (EMERGE), the row whips left and eases onto the
 // home-screen phone (SWIPE), which becomes the main phone again and snaps right (SNAP).
 // ROW: [scene or -1 for the logo screen, its time], slot 0 = the main phone; the last slot (home) is where it lands.
-const ROW: [number, number][] = [[3, 0.6], [5, 0.8], [-1, 0], [1, 0.4], [2, 0.62], [3, 0.6], [4, 0.7], [5, 0.8], [0, 0]];
-const ROW0 = 2, EMERGE = [0.03, 0.25], SWIPE = [0.27, 0.62], SNAP = [0.64, 0.92];
+// LAND is the home phone it lands on; the ones after it are just there so the row runs on past the middle.
+const ROW: [number, number][] = [[3, 0.6], [5, 0.8], [-1, 0], [1, 0.4], [2, 0.62], [3, 0.6], [4, 0.7], [5, 0.8], [0, 0], [1, 0.4], [4, 0.7], [2, 0.62]];
+const ROW0 = 2, LAND = 8, LEAVE = 0.22, EMERGE = [0.03, 0.25], SWIPE = [0.27, 0.62], SNAP = [0.64, 0.92];
 /** the hero's timeline in scroll units, for driving it from a clock (the /video page) */
 export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
 /** each scene's big moments (clicks and flashes) in its own time 0..1, so a video can land them on the beat */
@@ -870,20 +871,22 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           style={{ opacity: 0.08, backgroundImage: `linear-gradient(${th.fg} 1px,transparent 1px),linear-gradient(90deg,${th.fg} 1px,transparent 1px)` }} />
 
         {backdrop}
-        {video && wide && p > EMERGE[0] && p < SWIPE[1] && (() => {
+        {video && wide && p > EMERGE[0] && p < SWIPE[1] + LEAVE && (() => {
           const H = 0.7 * vh, W = (H * 390) / 844, gap = W * 1.12; // phone size and slot spacing, px
           const spread = io(clamp((p - EMERGE[0]) / (EMERGE[1] - EMERGE[0])));
-          const x = clamp((p - SWIPE[0]) / (SWIPE[1] - SWIPE[0])), shift = (1 - Math.pow(1 - x, 4)) * (ROW.length - 1 - ROW0); // fast, then easing in
-          const speed = 4 * Math.pow(1 - x, 3) * (x > 0 ? 1 : 0);
+          const x = clamp((p - SWIPE[0]) / (SWIPE[1] - SWIPE[0])), shift = (1 - Math.pow(1 - Math.pow(x, 1.4), 4)) * (LAND - ROW0); // a soft start, fast, then a long ease out
+          const leave = io(clamp((p - SWIPE[1]) / LEAVE)); // after landing the others ease out sideways and fade
+          const speed = 4 * Math.pow(1 - x, 3) * (x > 0 && x < 1 ? Math.min(1, x * 8) : 0);
           return (
             <div className="pointer-events-none absolute inset-0 z-[9]" style={{ filter: speed > 0.05 ? `blur(${(speed * 1.2).toFixed(2)}px)` : undefined }}>
               {ROW.map(([k, at], i) => {
-                const slot = (i - ROW0) * spread - shift, d = Math.min(1, Math.abs(slot));
+                const base = (i - ROW0) * spread - shift, slot = base + Math.sign(base) * leave * 1.6, d = Math.min(1, Math.abs(slot));
+                if (i === LAND && p >= SWIPE[1]) return null; // the main phone has taken over
                 return (
                   <PhoneMock key={i} k={k} t={at} style={{
                     height: H, width: W, left: `calc(50% - ${W / 2}px)`, top: `calc(50% - ${H / 2}px)`,
                     zIndex: 30 - Math.round(Math.abs(i - ROW0 - shift) * 2), // the one nearest the middle on top, so the rest come out from behind it
-                    transform: `translateX(${slot * gap}px) scale(${1 - 0.14 * d})`, opacity: 0.6 + 0.4 * (1 - d),
+                    transform: `translateX(${slot * gap}px) scale(${1 - 0.14 * d})`, opacity: (0.6 + 0.4 * (1 - d)) * (1 - leave),
                   }} />
                 );
               })}
