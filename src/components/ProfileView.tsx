@@ -17,7 +17,7 @@ type Stats = { workouts: number; followers: number; following: number };
 
 // Social-style profile: photo, Workouts / Followers / Following, then every workout they've posted (that you're allowed to see).
 export default function ProfileView({ userId }: { userId: string }) {
-  const { s, me } = useStore();
+  const { s, me, demo: isDemo } = useStore();
   const router = useRouter();
   const own = userId === me.id;
   const demo = lifters.find((l) => l.id === userId); // built-in demo student (no account): read-only profile from seed data
@@ -36,11 +36,17 @@ export default function ProfileView({ userId }: { userId: string }) {
   }, [own, userId, demo]);
 
   useEffect(() => {
-    if (demo) return;
+    if (demo || (own && isDemo)) return;
     sb.rpc("profile_stats", { uid: userId }).then(({ data }) => data?.[0] && setStats(data[0]));
-  }, [userId, demo, s.following.length, s.followers.length, s.posts.length]);
+  }, [userId, demo, own, isDemo, s.following.length, s.followers.length, s.posts.length]);
 
   useEffect(() => {
+    if (own && isDemo) { // the demo account isn't in the database: its posts are the ones made in this tab
+      const mine = s.posts.filter((x) => x.mine);
+      setPosts(mine);
+      setStats({ workouts: s.sessions.length, followers: 0, following: s.following.length });
+      return;
+    }
     const base = sb.from("posts").select(POST_SELECT);
     (demo ? base.is("user_id", null).eq("by", demo.name) : base.eq("user_id", userId))
       .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).limit(30)
@@ -49,7 +55,7 @@ export default function ProfileView({ userId }: { userId: string }) {
         setPosts(list);
         if (demo) setStats({ workouts: list.length, followers: 0, following: 0 });
       });
-  }, [userId, demo, me.id, s.posts.length]);
+  }, [userId, demo, me.id, s.posts, own, isDemo, s.sessions.length, s.following.length]);
 
   async function openList(kind: "followers" | "following") {
     setList({ kind, people: null });

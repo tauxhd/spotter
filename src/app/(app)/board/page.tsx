@@ -27,7 +27,7 @@ function Stat({ icon, children }: { icon: IconName; children: React.ReactNode })
 }
 
 export default function Ranks() {
-  const { s, me, u } = useStore();
+  const { s, me, u, demo: isDemo } = useStore();
   const [others, setOthers] = useState<Omit<Profile, "intake">[]>([]);
   const [group, setGroup] = useState<string>("Powerlifting");
   const [eventId, setEventId] = useState("total");
@@ -97,7 +97,7 @@ export default function Ranks() {
     const better = !myValue || (ev.lower ? v < myValue : v > myValue);
     if (!better) return setDraft("");
     setSaving(true);
-    const { error } = await sb.from("results").upsert({ user_id: me.id, event: ev.id, value: v, updated_at: new Date().toISOString() });
+    const { error } = isDemo ? { error: null } : await sb.from("results").upsert({ user_id: me.id, event: ev.id, value: v, updated_at: new Date().toISOString() });
     setSaving(false);
     if (!error) { setResults((r) => ({ ...r, [me.id]: v })); setDraft(""); }
   }

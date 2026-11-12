@@ -5,6 +5,7 @@ import { demoNow, oldNames, type Exercise, type ExerciseLog, type Post, type Sex
 import Splash from "@/components/Splash";
 import Quest from "@/components/Quest";
 import type { Unit } from "./units";
+import { demoAccount } from "./demo";
 
 export const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_KEY!);
 
@@ -20,6 +21,7 @@ type Ctx = {
   s: State & { active: Active };
   me: Profile;
   u: Unit; // viewer's preferred weight unit
+  demo: boolean; // the landing page's demo account (/?demo=1): made-up data, nothing is saved
   setActive: (fn: (a: Active) => Active) => void;
   saveProfile: (p: Omit<Profile, "id">) => Promise<void>;
   updateProfile: (p: Partial<Omit<Profile, "id">>) => Promise<void>;
@@ -61,6 +63,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<State>({ clockedIn: null, sessions: [], food: [], weights: [], posts: [], following: [], followers: [], library: [], routines: [] });
   const [active, setActiveRaw] = useState<Active>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [demo, setDemo] = useState(false);
 
   const loadPosts = useCallback(async (id: string) => {
     const { data, error } = await sb.from("posts")
@@ -92,6 +95,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let isDemo = false;
+    try { isDemo = new URLSearchParams(location.search).has("demo") || !!sessionStorage.getItem("spotter:demo"); if (isDemo) sessionStorage.setItem("spotter:demo", "1"); } catch {}
+    if (isDemo) { // made-up account; still signs in (anonymously) so the public feed, ranks and people can be read
+      const d = demoAccount();
+      setDemo(true);
+      setMe(d.me);
+      setS((x) => ({ ...x, sessions: d.sessions, food: d.food, weights: d.weights, routines: d.routines }));
+      sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort").then(({ data }) => data && setS((x) => ({ ...x, library: data })));
+      (async () => {
+        let { data: { session } } = await sb.auth.getSession();
+        if (!session) session = (await sb.auth.signInAnonymously()).data.session;
+        if (session) loadPosts(d.me.id);
+      })();
+      return;
+    }
     try { const a = localStorage.getItem(ACTIVE); if (a) setActiveRaw(JSON.parse(a)); } catch {}
     // open straight into what was on screen last time (then refresh below)
     let cachedUid: string | undefined;
@@ -141,13 +159,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Keep a copy of your profile and data on the device (a moment after each change), so next time the app opens straight
   // into it while fresh data loads behind. Temporary rows (still saving) and the exercise library (cached on its own) stay out.
   useEffect(() => {
-    if (!me) return;
+    if (!me || demo) return;
     const t = setTimeout(() => {
       const keep = <T extends { id: string }>(l: T[]) => l.filter((x) => !x.id.startsWith("tmp-"));
       try { localStorage.setItem(CACHE, JSON.stringify({ uid: me.id, me, s: { ...s, active: undefined, library: [], posts: keep(s.posts).slice(0, 30), sessions: keep(s.sessions), food: keep(s.food), weights: keep(s.weights) } })); } catch {}
     }, 800);
     return () => clearTimeout(t);
-  }, [me, s]);
+  }, [me, s, demo]);
 
   if (err) return <p className="card mt-10 text-sm">Couldn&apos;t connect: {err}</p>;
   if (me === undefined) return <Splash />;
@@ -162,12 +180,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const setActive: Ctx["setActive"] = (fn) => setActiveRaw((a) => {
     const n = fn(a);
-    try { if (n) localStorage.setItem(ACTIVE, JSON.stringify(n)); else localStorage.removeItem(ACTIVE); } catch {}
+    if (!demo) try { if (n) localStorage.setItem(ACTIVE, JSON.stringify(n)); else localStorage.removeItem(ACTIVE); } catch {}
     return n;
   });
 
   const ctx: Ctx = {
-    s: { ...s, active }, me, u: me.unit ?? "kg", setActive, saveProfile,
+    s: { ...s, active }, me, u: me.unit ?? "kg", demo, setActive, saveProfile,
     async clockIn() { // shows you as in straight away; undone if the server refuses
       const at = demoNow().toISOString();
       setS((x) => ({ ...x, clockedIn: at }));
@@ -293,6 +311,40 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       location.href = "/" + location.search; // starts a fresh session, which opens the sign-in quest
     },
   };
+
+  if (demo) { // the same actions, on screen only: the demo never writes to the database
+    const id = () => `demo-${Date.now()}`, now = () => demoNow().toISOString();
+    Object.assign(ctx, {
+      async clockIn() { setS((x) => ({ ...x, clockedIn: now() })); },
+      async clockOut() { setS((x) => ({ ...x, clockedIn: null })); },
+      async addFood(f) { setS((x) => ({ ...x, food: [...x.food, { ...f, id: id(), at: now() }] })); },
+      async removeFood(fid) { setS((x) => ({ ...x, food: x.food.filter((y) => y.id !== fid) })); },
+      async addWeight(kg) { setS((x) => ({ ...x, weights: [...x.weights, { id: id(), kg, at: now() }] })); },
+      async updateProfile(p) { setMe({ ...me, ...p }); },
+      async finishWorkout(w, post, lifts, media) {
+        const at = post.at ?? now(), wid = id();
+        setMe({ ...me, ...lifts });
+        setS((x) => ({
+          ...x, sessions: [{ id: wid, at, ...w }, ...x.sessions],
+          posts: [{ id: wid, by: me.name, faculty: me.faculty, at, title: post.title, note: post.note, exercises: post.exercises, volume: post.volume, prs: post.prs,
+            duration: post.duration, visibility: post.visibility, media: media ? { url: URL.createObjectURL(media), type: media.type.startsWith("video") ? "video" : "image" } : null,
+            likes: 0, liked: false, mine: true, uid: me.id, avatar: me.avatar_url, likers: [], comments: [] }, ...x.posts],
+        }));
+        setActiveRaw(null);
+      },
+      async like(pid, wasLiked) {
+        const liked = wasLiked ?? s.posts.find((x) => x.id === pid)?.liked ?? false;
+        setS((x) => ({ ...x, posts: x.posts.map((q) => (q.id === pid ? { ...q, liked: !liked, likes: q.likes + (liked ? -1 : 1) } : q)) }));
+      },
+      async comment(pid, text) { setS((x) => ({ ...x, posts: x.posts.map((q) => (q.id === pid ? { ...q, comments: [...q.comments, { by: me.name, text, uid: me.id }] } : q)) })); },
+      async follow(uid2) { setS((x) => ({ ...x, following: [...new Set([...x.following, uid2])] })); },
+      async unfollow(uid2) { setS((x) => ({ ...x, following: x.following.filter((y) => y !== uid2) })); },
+      async setAvatar(file) { setMe({ ...me, avatar_url: URL.createObjectURL(file) }); },
+      async saveRoutine(rt) { const row = { id: rt.id ?? id(), name: rt.name.trim() || "My routine", exercises: rt.exercises }; setS((x) => ({ ...x, routines: [row, ...x.routines.filter((y) => y.id !== row.id)] })); },
+      async deleteRoutine(rid) { setS((x) => ({ ...x, routines: x.routines.filter((y) => y.id !== rid) })); },
+      async signOut() { location.href = "/?demo=1"; }, // a fresh demo
+    } satisfies Partial<Ctx>);
+  }
 
   return <C.Provider value={ctx}>{children}</C.Provider>;
 }

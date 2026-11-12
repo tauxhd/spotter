@@ -1,0 +1,112 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+
+// The landing page: what Spotter is, a live demo of the web app in a phone frame (a made-up account, /?demo=1, nothing is
+// saved), and the Android download. Outside the (app) group, so it has no store, sign-in or bottom nav.
+
+export const metadata: Metadata = {
+  title: "Spotter · the APU gym, in your pocket",
+  description: "Clock in with a QR, log every set, track macros from the APU cafeteria, climb the ranks and find any machine on a 3D map of the SweatZone.",
+};
+
+// The Android build, attached to the repo's latest GitHub release (set NEXT_PUBLIC_APK_URL to host it elsewhere).
+const APK = process.env.NEXT_PUBLIC_APK_URL ?? "https://github.com/tauxhd/spotter/releases/latest/download/spotter.apk";
+
+const features: [icon: string, title: string, text: string][] = [
+  ["qr", "Clock in with a scan", "Skip the ID check at the counter: scan the QR at the door and you're in."],
+  ["crowd", "Know how busy it is", "Live headcount and the quietest hour to train around your classes."],
+  ["barbell", "Log every set", "Routines, supersets, rest timers, PRs and a 3D body showing what you worked."],
+  ["eat", "Eat smart on campus", "Macros for every dish in the APU cafeteria, tuned to your goal."],
+  ["ranks", "Climb the ranks", "Leaderboards by lift, faculty and bodyweight class. Heaviest lift wins, not reps."],
+  ["map", "Find any machine", "A 3D map of the SweatZone. Every exercise points to the machine you need."],
+];
+
+export default function Welcome() {
+  return (
+    <div className="min-h-dvh bg-zinc-950 text-zinc-100 [color-scheme:dark]">
+      <nav className="sticky top-0 z-10 border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+          <Image src="/icon-192.png" alt="" width={32} height={32} className="rounded-lg" />
+          <span className="text-lg font-bold tracking-tight">Spotter</span>
+          <div className="ml-auto flex items-center gap-1 text-sm sm:gap-4">
+            <a href="#features" className="hidden px-2 py-1 text-zinc-400 hover:text-white sm:block">Features</a>
+            <a href="#demo" className="px-2 py-1 text-zinc-400 hover:text-white">Demo</a>
+            <a href={APK} className="rounded-lg bg-lime-400 px-3 py-1.5 font-semibold text-zinc-950 transition active:scale-[0.97]">Get the app</a>
+          </div>
+        </div>
+      </nav>
+
+      <header className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-12 md:grid-cols-2 md:pt-20">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wider text-lime-400">Built for the APU SweatZone</p>
+          <h1 className="mt-3 text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">Your gym,<br />in your pocket.</h1>
+          <p className="mt-5 max-w-md text-lg text-zinc-400">
+            Clock in with a scan, log every set, eat right from the campus cafeteria and see who&apos;s lifting the most. All in one app made for APU students.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href="#demo" className="rounded-xl bg-lime-400 px-5 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">Try the live demo</a>
+            <a href={APK} className="rounded-xl bg-white/10 px-5 py-3 font-semibold ring-1 ring-white/10 transition hover:bg-white/15 active:scale-[0.97]">Download for Android</a>
+          </div>
+        </div>
+        <Image src="/welcome.webp" alt="Students training in the APU gym" width={1200} height={800} priority className="w-full rounded-3xl ring-1 ring-white/10" />
+      </header>
+
+      <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
+        <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Everything between the door and your last set</h2>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map(([icon, title, text]) => (
+            <div key={title} className="rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10">
+              <Image src={`/icons/${icon}.webp`} alt="" width={44} height={44} />
+              <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+              <p className="mt-1 text-zinc-400">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="demo" className="scroll-mt-16 border-t border-white/5 bg-gradient-to-b from-lime-400/[0.06] to-transparent">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-[auto_1fr] md:gap-16">
+          {/* the real web app, signed in to a demo account with made-up data */}
+          <div className="mx-auto w-[min(390px,calc(100vw-2rem))]">
+            <div className="relative aspect-[390/844] rounded-[3.2rem] bg-zinc-800 p-[10px] shadow-2xl shadow-lime-400/10 ring-1 ring-white/15">
+              <div className="absolute -left-[3px] top-28 h-8 w-[3px] rounded-l bg-zinc-700" aria-hidden />
+              <div className="absolute -left-[3px] top-40 h-14 w-[3px] rounded-l bg-zinc-700" aria-hidden />
+              <div className="absolute -right-[3px] top-36 h-20 w-[3px] rounded-r bg-zinc-700" aria-hidden />
+              <div className="relative h-full overflow-hidden rounded-[2.6rem] bg-zinc-950">
+                <div className="pointer-events-none absolute left-1/2 top-2.5 z-10 h-7 w-24 -translate-x-1/2 rounded-full bg-black" aria-hidden />
+                <iframe src="/?demo=1&t=18:00" title="Spotter demo" className="h-full w-full border-0 pt-9" loading="lazy" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wider text-lime-400">Live demo</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Take it for a spin</h2>
+            <p className="mt-4 max-w-md text-lg text-zinc-400">
+              This is the real app, signed in to a demo student with eight weeks of training. Log a workout, add a meal, check the ranks or find a machine on the 3D map. Nothing you do here is saved.
+            </p>
+
+            <div id="download" className="mt-10 max-w-md scroll-mt-20 rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10">
+              <h3 className="text-xl font-semibold">Try it yourself on Android</h3>
+              <p className="mt-1 text-zinc-400">Your own account, your own data, plus clock-in with your camera and haptics.</p>
+              <a href={APK} className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-5 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
+                Download the APK
+              </a>
+              <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
+                <li>Open the downloaded file on your phone.</li>
+                <li>Allow installs from your browser if Android asks.</li>
+                <li>Open Spotter and start the quest.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-white/5 px-4 py-8 text-center text-sm text-zinc-500">
+        Spotter · made for APU students · <Link href="/" className="hover:text-zinc-300">Open the web app</Link>
+      </footer>
+    </div>
+  );
+}

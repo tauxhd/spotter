@@ -1,8 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { Geist } from "next/font/google";
-import Nav from "@/components/Nav";
-import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -26,14 +23,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={geist.variable}>
-        <StoreProvider>
-          <main className="mx-auto min-h-dvh max-w-md px-4 pb-28 pt-[max(1.5rem,env(safe-area-inset-top))]">{children}</main>
-          <Suspense>
-            <Nav />
-          </Suspense>
-        </StoreProvider>
-      </body>
+      <body className={geist.variable}>{children}</body>
     </html>
   );
 }
