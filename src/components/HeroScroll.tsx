@@ -402,7 +402,11 @@ const THEME: Record<Theme, { bg: string; fg: string; sub: string; flash: string 
   lime: { bg: LIME, fg: "#09090b", sub: "#1a2e05", flash: "#fafafa" },
   white: { bg: "#f4f4f5", fg: "#09090b", sub: "#52525b", flash: LIME },
 };
-type Scene = { word: [string, string]; theme: Theme; text: string; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
+/** a dataset we built ourselves: how many, what it is, a strip of its art */
+type Data = { n: number; what: string; imgs: string[] };
+const EX = ["barbell-bench-press", "pull-up", "dumbbell-curl", "kettlebell-swing", "goblet-squat", "lat-pulldown", "push-up", "romanian-deadlift", "cable-crossover", "leg-press", "hip-thrust", "dumbbell-shoulder-press", "plank", "burpee"].map((x) => `/exercises/${x}.webp`);
+const FOOD = ["nasi-lemak-fried-chicken", "chicken-briyani", "roti-canai-dhal", "char-kuey-teow", "chicken-mandi", "chicken-katsu-don", "teh-tarik", "mee-goreng-mamak", "tandoori-chicken-naan", "kaya-toast-2-half-boiled-eggs", "fish-chips", "ayam-penyet"].map((x) => `/food/${x}.webp`);
+type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
 
 const scenes: Scene[] = [
   {
@@ -439,7 +443,8 @@ const scenes: Scene[] = [
     }),
   },
   {
-    word: ["Lift", "more."], theme: "lime", text: "Routines, rest timers and every set logged. PRs land with a bang and your progress keeps climbing.",
+    word: ["Lift", "more."], theme: "lime",
+    data: { n: 450, what: "exercises in our own dataset, built from scratch: every move written up and illustrated for Spotter.", imgs: EX }, text: "Routines, rest timers and every set logged. PRs land with a bang and your progress keeps climbing.",
     floats: [["/hero/props/dumbbell.webp", 90, 16, 24, 1.5, -20], ["/hero/props/plate.webp", 52, 82, 17, 0.8, 25], ["/icons/flame.webp", 97, 64, 9, 1.2, 10], ["/icons/stopwatch.webp", 57, 12, 8, 0.6, -10]],
     Screen: Train,
     play: (t, wide) => {
@@ -484,7 +489,8 @@ const scenes: Scene[] = [
     },
   },
   {
-    word: ["Eat", "smart."], theme: "dark", text: "Every dish in the APU cafeteria with its macros, counted against a target tuned to your goal.",
+    word: ["Eat", "smart."], theme: "dark",
+    data: { n: 43, what: "dishes from the 9 APU cafeteria stalls: our own food dataset, with macros and art made for the real menu.", imgs: FOOD }, text: "Every dish in the APU cafeteria with its macros, counted against a target tuned to your goal.",
     floats: [["/hero/props/nasi-lemak-fried-chicken.webp", 92, 19, 19, 1.4, 8], ["/hero/props/teh-tarik.webp", 52, 83, 12, 0.8, -10], ["/hero/props/roti-canai-dhal.webp", 97, 74, 14, 1.2, 12], ["/icons/protein.webp", 57, 13, 8, 0.6, 0]],
     Screen: Eat,
     play: (t, wide) => ({
@@ -618,7 +624,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
   const press = live ? Math.max(0, ...live.clicks.map((c) => bump(t, c, 0.015))) : 0;
   const flash = Math.max(0, ...plays.flatMap((pl, k) => (pl ? pl.flashes.map((c) => bump(tk(k), c, 0.02)) : [])), ...scenes.map((_, k) => (k ? bump(tk(k), 0, 0.012) : 0)));
   // the camera: push in on the phone around what the cursor is doing
-  const z = live?.cam ? tr(t, ...live.cam.z) : 1;
+  const z = 1 + ((live?.cam ? tr(t, ...live.cam.z) : 1) - 1) * (wide ? 1 : 0.25); // gentler on a phone, where the copy sits right above
   const [ox, oy] = at(live?.cam ? tr(t, ...live.cam.x) : 240, live?.cam ? tr(t, ...live.cam.y) : 500);
   const centre = clamp((z - 1) / 0.5) * 0.9;
   const kick = live ? Math.max(0, ...live.clicks.map((c) => bump(t, c, 0.03))) : 0;
@@ -671,7 +677,34 @@ export default function HeroScroll({ apk }: { apk: string }) {
                 {w1.slice(0, n)}{n > w1.length && " "}{n > w1.length + 1 && <span style={accent}>{w2.slice(0, n - w1.length - 1)}</span>}
                 <span className="ml-1 inline-block w-[0.06em] animate-pulse" style={{ height: "0.8em", background: s.theme === "dark" ? LIME : "#09090b" }} />
               </h2>
-              <p className="mx-auto mt-1 max-w-md text-base md:mx-0 md:mt-4 md:text-xl" style={{ color: c.sub, opacity: smooth(0.08, 0.16, t) }}>{s.text}</p>
+              <div className="grid">
+                <p className="mx-auto mt-1 max-w-md text-base [grid-area:1/1] md:mx-0 md:mt-4 md:text-xl" style={{ color: c.sub, opacity: smooth(0.08, 0.16, t) * (s.data && !wide ? 1 - smooth(0.14, 0.2, t) : 1) }}>{s.text}</p>
+                {s.data && !wide && ( // on a phone the dataset line takes the paragraph's place
+                  <p className="mx-auto mt-1 max-w-md text-base [grid-area:1/1]" style={{ opacity: smooth(0.16, 0.22, t) }}>
+                    <b className="text-2xl tabular-nums" style={{ color: s.theme === "dark" ? LIME : c.fg }}>{Math.round(s.data.n * smooth(0.16, 0.4, t))}</b> {s.data.what}
+                  </p>
+                )}
+              </div>
+              {s.data && wide && (() => {
+                const v = smooth(0.14, 0.22, t);
+                return (
+                  <div className="mt-8" style={{ opacity: v, transform: `translateY(${(1 - v) * 20}px)` }}>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-6xl font-bold tabular-nums tracking-[-0.04em]" style={{ color: s.theme === "dark" ? LIME : c.fg }}>{Math.round(s.data.n * smooth(0.16, 0.4, t))}</span>
+                      <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.15em]" style={{ background: c.fg, color: c.bg }}>Our own dataset</span>
+                    </div>
+                    <p className="mt-2 max-w-sm" style={{ color: c.fg }}>{s.data.what}</p>
+                    <div className="mt-5 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_10%,#000_90%,transparent)]">
+                      <div className="flex gap-2" style={{ transform: `translateX(${-t * 520}px)` }}>
+                        {[...s.data.imgs, ...s.data.imgs].map((src, i) => (
+                          <img key={i} src={src} alt="" className="h-16 w-16 shrink-0 rounded-xl bg-zinc-900 object-cover ring-1 ring-black/10"
+                            style={{ opacity: smooth(0.16 + i * 0.008, 0.22 + i * 0.008, t), transform: `translateY(${(1 - smooth(0.16 + i * 0.008, 0.22 + i * 0.008, t)) * 16}px)` }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
