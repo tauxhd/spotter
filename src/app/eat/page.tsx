@@ -164,13 +164,13 @@ export default function Eat() {
                   </div>
                   <button aria-label={`Add ${f.name}`} onClick={() => add(f)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-lime-500 text-zinc-950 shadow-sm shadow-lime-500/30 active:scale-95"><Plus size={18} strokeWidth={2.5} /></button>
                 </div>
-                <div className="mt-2 grid grid-cols-4 gap-1">
+                <div className="mt-2 grid grid-cols-2 gap-y-0.5">
                   {([["kcal", f.kcal, "kcal"], ["protein", f.p, "prot"], ["carbs", f.c, "carb"], ["fat", f.f, "fat"]] as const).map(([icon, v, unit]) => (
-                    <div key={icon} className="flex flex-col items-center rounded-lg bg-zinc-100 py-1 dark:bg-zinc-800/70">
-                      <Icon name={icon} size={16} />
-                      <span className="text-xs font-bold tabular-nums">{v}{icon === "kcal" ? "" : "g"}</span>
-                      <span className="muted text-[9px] uppercase">{unit}</span>
-                    </div>
+                    <span key={icon} className="flex items-center gap-1 text-xs">
+                      <Icon name={icon} size={14} />
+                      <span className="font-bold tabular-nums">{v}{icon === "kcal" ? "" : "g"}</span>
+                      <span className="muted text-[11px]">{unit}</span>
+                    </span>
                   ))}
                 </div>
               </div>
