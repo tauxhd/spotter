@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import Onboarding from '@/components/onboarding';
+import Quest from '@/components/quest';
 import { ThemedText } from '@/components/themed-text';
 import { Splash } from '@/components/ui/kit';
 import { Colors, Lime } from '@/constants/theme';
@@ -35,7 +35,7 @@ function Gate() {
   const st = useStatus();
   const [fonts] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold }); // the website's font
   if (!fonts) return <Splash />;
-  if (st.kind === 'onboarding') return <Onboarding onSave={st.save} />;
+  if (st.kind === 'onboarding') return <Quest onSave={st.save} />;
   if (st.kind === 'loading') return <Splash />;
   if (st.kind === 'error') return <View style={styles.center}><ThemedText>Couldn&apos;t connect: {st.message}</ThemedText></View>;
   return (

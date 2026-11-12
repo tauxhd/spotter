@@ -190,7 +190,31 @@ button, a { transition: opacity 160ms ease-out; }
 [role="dialog"][aria-modal] { animation: fade 200ms ease-out both; }
 [role="dialog"][aria-modal] > * { animation: zoom var(--spring-ms) var(--spring) both; }
 
+/* First-launch quest: steps slide in from the side you're heading (--dir), Spot bobs and pops into each new pose,
+   XP floats up, the student card flips in, confetti falls once at the end. */
+@keyframes quest-in { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 48px)) scale(0.98); } }
+.anim-quest-in { animation: quest-in var(--spring-ms) var(--spring) backwards; }
+@keyframes bob { 50% { transform: translateY(-5px) rotate(-2deg); } }
+.anim-bob { animation: bob 2.6s ease-in-out infinite; }
+@keyframes spot-pop { 0% { opacity: 0; transform: scale(0.55) rotate(-10deg); } 60% { opacity: 1; transform: scale(1.08) rotate(3deg); } }
+.anim-spot { animation: spot-pop 560ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+@keyframes wiggle { 25% { transform: rotate(-8deg) scale(1.05); } 75% { transform: rotate(8deg) scale(1.05); } }
+.anim-wiggle { animation: wiggle 420ms ease-in-out; }
+@keyframes xp-float { 0% { opacity: 0; transform: translateY(8px) scale(0.7); } 18% { opacity: 1; transform: translateY(0) scale(1.15); } 75% { opacity: 1; transform: translateY(-6px) scale(1); } 100% { opacity: 0; transform: translateY(-22px); } }
+.anim-xp { animation: xp-float 1.4s ease-out forwards; }
+@keyframes card-flip { from { opacity: 0; transform: perspective(900px) rotateY(-75deg) scale(0.9); } }
+.anim-flip { animation: card-flip 750ms var(--spring-bounce) 150ms backwards; }
+@keyframes bubble-in { from { opacity: 0; transform: scale(0.85); } }
+.anim-bubble { animation: bubble-in 320ms var(--spring-bounce) backwards; transform-origin: 0 50%; }
+@keyframes confetti-fall { from { transform: translate3d(0, -12vh, 0) rotate(0); } to { transform: translate3d(var(--drift, 0), 105vh, 0) rotate(var(--spin, 540deg)); } }
+.confetti { position: fixed; top: 0; width: 8px; height: 12px; border-radius: 2px; pointer-events: none; z-index: 50; animation: confetti-fall 2.6s cubic-bezier(0.25, 0.5, 0.4, 1) both; }
+@keyframes shine { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(320%) skewX(-20deg); } }
+.anim-shine { position: relative; overflow: hidden; }
+.anim-shine::after { content: ""; position: absolute; inset: 0; width: 35%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent); animation: shine 2.4s ease-in-out 0.6s infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+
 @media (prefers-reduced-motion: reduce) {
+  .confetti { display: none; }
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
 }
 

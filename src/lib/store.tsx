@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { createClient } from "@supabase/supabase-js";
 import { demoNow, oldNames, type Exercise, type ExerciseLog, type Post, type Sex } from "./data";
 import Splash from "@/components/Splash";
-import Onboarding from "@/components/Onboarding";
+import Quest from "@/components/Quest";
 import type { Unit } from "./units";
 
 export const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_KEY!);
@@ -130,7 +130,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setMe(data);
     await loadMine(data.id);
   };
-  if (!me) return <main className="mx-auto min-h-dvh max-w-md overflow-x-hidden px-4 pb-10"><Onboarding onSave={saveProfile} /></main>;
+  if (!me) return <main className="mx-auto min-h-dvh max-w-md overflow-x-hidden px-4 pb-10"><Quest onSave={saveProfile} /></main>;
 
   const setActive: Ctx["setActive"] = (fn) => setActiveRaw((a) => {
     const n = fn(a);

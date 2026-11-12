@@ -6,7 +6,7 @@ const path = require('path');
 
 const pub = path.resolve(__dirname, '../../public');
 const out = path.resolve(__dirname, '../assets/web');
-const dirs = ['icons', 'exercises', 'food', 'stalls', 'muscles', 'empty', 'avatars', 'sounds'];
+const dirs = ['icons', 'exercises', 'food', 'stalls', 'muscles', 'empty', 'avatars', 'sounds', 'quest'];
 const lines = [];
 for (const d of dirs) {
   fs.mkdirSync(path.join(out, d), { recursive: true });
