@@ -8,11 +8,11 @@ import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const tabs = [
-  { name: 'index', href: '/', label: 'Gym', icon: require('@/assets/images/tabs/gym.png') },
-  { name: 'train', href: '/train', label: 'Train', icon: require('@/assets/images/tabs/train.png') },
-  { name: 'eat', href: '/eat', label: 'Eat', icon: require('@/assets/images/tabs/eat.png') },
-  { name: 'board', href: '/board', label: 'Ranks', icon: require('@/assets/images/tabs/ranks.png') },
-  { name: 'feed', href: '/feed', label: 'Feed', icon: require('@/assets/images/tabs/feed.png') },
+  { name: 'index', href: '/', label: 'Gym', icon: require('@/assets/images/tabs/gym.png'), off: require('@/assets/images/tabs/gym-off.png') },
+  { name: 'train', href: '/train', label: 'Train', icon: require('@/assets/images/tabs/train.png'), off: require('@/assets/images/tabs/train-off.png') },
+  { name: 'eat', href: '/eat', label: 'Eat', icon: require('@/assets/images/tabs/eat.png'), off: require('@/assets/images/tabs/eat-off.png') },
+  { name: 'board', href: '/board', label: 'Ranks', icon: require('@/assets/images/tabs/ranks.png'), off: require('@/assets/images/tabs/ranks-off.png') },
+  { name: 'feed', href: '/feed', label: 'Feed', icon: require('@/assets/images/tabs/feed.png'), off: require('@/assets/images/tabs/feed-off.png') },
 ] as const;
 
 export default function AppTabs() {
@@ -24,7 +24,7 @@ export default function AppTabs() {
         <View style={StyleSheet.flatten([styles.bar, { borderTopColor: theme.border, backgroundColor: theme.background + 'a0' }])}>
           {tabs.map((t) => (
             <TabTrigger key={t.name} name={t.name} href={t.href as Href} asChild>
-              <TabButton icon={t.icon}>{t.label}</TabButton>
+              <TabButton icon={t.icon} off={t.off}>{t.label}</TabButton>
             </TabTrigger>
           ))}
         </View>
@@ -33,11 +33,11 @@ export default function AppTabs() {
   );
 }
 
-function TabButton({ children, isFocused, icon, ...props }: TabTriggerSlotProps & { icon: number }) {
+function TabButton({ children, isFocused, icon, off, ...props }: TabTriggerSlotProps & { icon: number; off: number }) {
   const theme = useTheme();
   return (
     <Pressable {...(props as PressableProps)} style={({ pressed }) => StyleSheet.flatten([styles.tab, pressed && { transform: [{ scale: 0.94 }] }])}>
-      <Image source={icon} style={[styles.icon, !isFocused && { opacity: 0.55 }]} />
+      <Image source={isFocused ? icon : off} style={[styles.icon, isFocused && { transform: [{ scale: 1.1 }] }]} />
       <Text style={[styles.label, { color: isFocused ? Lime : theme.textSecondary }]}>{children}</Text>
     </Pressable>
   );
