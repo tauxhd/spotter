@@ -172,9 +172,10 @@ export default function Video() {
     const x = sfx.current;
     if (playing && !x.ctx) {
       x.ctx = new AudioContext();
-      x.gain = x.ctx.createGain(); x.gain.gain.value = 0.7; x.gain.connect(x.ctx.destination);
+      x.gain = x.ctx.createGain(); x.gain.gain.value = 1; x.gain.connect(x.ctx.destination); // the clip is already mastered loud (ffmpeg)
       void fetch("/video/sfx/typing.mp3").then((r) => r.arrayBuffer()).then((b) => x.ctx!.decodeAudioData(b)).then((buf) => { x.typing = buf; });
     }
+    if (playing && x.ctx?.state === "suspended") void x.ctx.resume();
     if (typing && !x.src && x.ctx && x.typing) {
       const src = x.ctx.createBufferSource();
       src.buffer = x.typing; src.loop = true; src.connect(x.gain!);
