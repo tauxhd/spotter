@@ -115,6 +115,9 @@ const PINGS = heroNotify().flatMap((ns, k) => ns.map((n) => timeAt(HERO.intro + 
 // Pops: everything popping into view, taking turns between three pop sounds so neighbours don't sound the same.
 const POPS = heroPops().flatMap((ps, k) => ps.map((n) => timeAt(HERO.intro + HERO.scene * (k + n), SONG_CUES))).sort((a, b) => a - b);
 
+const SFX = ["typing", "click", "roulette-end", "counting", "message", "pop1", "pop2", "pop3"].map((n) => `/video/sfx/${n}.mp3`);
+const SFX_FILES: Record<string, Promise<ArrayBuffer>> = {};
+
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 export default function Video() {
@@ -180,14 +183,15 @@ export default function Video() {
   const own = song?.url === SONG.url, cues = own ? SONG_CUES : evenCues(len);
 
   // the typing sound loops while anything types (Web Audio, started on the first play, which counts as a user gesture)
+  useEffect(() => { for (const url of SFX) SFX_FILES[url] ??= fetch(url).then((r) => r.arrayBuffer()); }, []); // download the sounds up front
   const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; pops?: AudioBuffer[]; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
   const typing = own && playing && TYPING.some(([a, b]) => t >= a && t < b);
   useEffect(() => {
     const x = sfx.current;
-    if (playing && !x.ctx) {
+    if (playing && !x.ctx) { // the audio engine starts on the first play (a user gesture); the files were fetched on page load
       x.ctx = new AudioContext();
-      x.gain = x.ctx.createGain(); x.gain.gain.value = 1; x.gain.connect(x.ctx.destination); // the clip is already mastered loud (ffmpeg)
-      const load = (url: string) => fetch(url).then((r) => r.arrayBuffer()).then((b) => x.ctx!.decodeAudioData(b));
+      x.gain = x.ctx.createGain(); x.gain.gain.value = 1; x.gain.connect(x.ctx.destination); // the clips are already mastered loud (ffmpeg)
+      const load = (url: string) => (SFX_FILES[url] ?? fetch(url).then((r) => r.arrayBuffer())).then((b) => x.ctx!.decodeAudioData(b.slice(0)));
       void load("/video/sfx/typing.mp3").then((buf) => { x.typing = buf; });
       void load("/video/sfx/click.mp3").then((buf) => { x.click = buf; });
       void load("/video/sfx/roulette-end.mp3").then((buf) => { x.spin = buf; });
