@@ -4,12 +4,12 @@
 import { Asset } from 'expo-asset';
 import { File } from 'expo-file-system';
 import { GLView, type ExpoWebGLRenderingContext } from 'expo-gl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-import { buildBody, drawViews } from '@shared/body3d';
+import { buildBody, drawViews, paint, type Body } from '@shared/body3d';
 import { ThemedText } from '@/components/themed-text';
 
 let model: Promise<THREE.Object3D> | undefined;
@@ -24,6 +24,8 @@ function load() {
     return gltf.scene;
   })());
 }
+// parse the model in the background shortly after the app opens, so the first body is ready when a workout starts
+setTimeout(() => { load().catch(() => {}); }, 2500);
 
 // three.js wants a canvas; GLView gives a raw GL context, so hand it a minimal stand-in.
 function rendererFor(gl: ExpoWebGLRenderingContext) {
@@ -42,25 +44,39 @@ function rendererFor(gl: ExpoWebGLRenderingContext) {
   return r;
 }
 
+// The GL context, renderer and body are made once per view; a change in worked muscles only recolours the body and draws
+// one new frame, so it's instant. (Remounting a GLView per change meant a new context + shader compile every time.)
 export default function MuscleModel({ hit, compact = false, style }: { hit: Record<string, number>; compact?: boolean; style?: StyleProp<ViewStyle> }) {
   const [failed, setFailed] = useState(false);
+  const st = useRef<{ gl: ExpoWebGLRenderingContext; r: THREE.WebGLRenderer; b: Body } | null>(null);
+  const hitRef = useRef(hit);
   const key = JSON.stringify(hit);
-  if (failed) return null;
-  const draw = async (gl: ExpoWebGLRenderingContext) => {
+
+  function draw() {
+    const s = st.current;
+    if (!s) return;
+    paint(s.b, hitRef.current);
+    drawViews(s.r, s.b, s.gl.drawingBufferWidth, s.gl.drawingBufferHeight, compact);
+    s.gl.endFrameEXP?.();
+  }
+  async function init(gl: ExpoWebGLRenderingContext) {
     try {
       const src = await load();
-      const r = rendererFor(gl);
-      drawViews(r, buildBody(src, hit), gl.drawingBufferWidth, gl.drawingBufferHeight, compact);
-      gl.endFrameEXP?.();
+      st.current = { gl, r: rendererFor(gl), b: buildBody(src) };
+      draw();
     } catch (e) {
       console.warn('3D body failed', e);
       setFailed(true);
     }
-  };
-  if (compact) return <GLView key={key} style={[{ width: '100%', height: '100%' }, style]} onContextCreate={draw} />;
+  }
+  useEffect(() => { hitRef.current = hit; draw(); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { st.current?.r.dispose(); st.current = null; }, []);
+
+  if (failed) return null;
+  if (compact) return <GLView style={[{ width: '100%', height: '100%' }, style]} onContextCreate={init} />;
   return (
     <View style={style}>
-      <GLView key={key} style={styles.full} onContextCreate={draw} accessibilityLabel="Body diagram, front and back, with worked muscles highlighted" />
+      <GLView style={styles.full} onContextCreate={init} accessibilityLabel="Body diagram, front and back, with worked muscles highlighted" />
       <View style={{ flexDirection: 'row' }}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>Front</ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>Back</ThemedText>
