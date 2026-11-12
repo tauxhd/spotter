@@ -539,8 +539,8 @@ const FOOD = ["nasi-lemak-fried-chicken", "chicken-briyani", "roti-canai-dhal", 
 /** typing? / counting?: when the screen types or a number counts up (its own time 0..1, matching the typed() / smooth() count-ups
  * in its Screen, pop-outs and dataset counter), notify? when a notification arrives and popIns?
  * when something pops into view (each pop-out card's pop() start, plus pop-ins inside the phone), and scanning? while something
- * scans or searches, for the video's sound effects */
-type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; typing?: [number, number][]; counting?: [number, number][]; notify?: number[]; popIns?: number[]; scanning?: [number, number][]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
+ * scans or searches, and success? when something goes through, for the video's sound effects */
+type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; typing?: [number, number][]; counting?: [number, number][]; notify?: number[]; popIns?: number[]; scanning?: [number, number][]; success?: number[]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
 
 const scenes: Scene[] = [
   {
@@ -549,6 +549,7 @@ const scenes: Scene[] = [
     Screen: Home, counting: [[0.6, 0.7]], // the crowd peak in the pop-out
     popIns: [0.33, 0.52, 0.72], // the "You're in" check, the two pop-outs
     scanning: [[0.23, 0.33]], // the QR scanner, until it reads the code
+    success: [0.33], // "You're in"
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.1, 400, 600], [0.2, 240, 289], [0.36, 240, 289], [0.48, 110, 440], [0.56, 110, 440], [0.68, 200, 700], [1, 200, 700]],
       clicks: [0.23, 0.52, 0.72], flashes: [0.34],
@@ -583,6 +584,7 @@ const scenes: Scene[] = [
     floats: [["/icons/crowd.webp", 91, 18, 15, 1.4, -10], ["/icons/bell.webp", 52, 82, 10, 0.8, 12], ["/icons/person.webp", 97, 72, 11, 1.2, -6], ["/icons/heart.webp", 57, 12, 8, 0.6, 8]],
     Screen: Friends, notify: [0.12], // "Hafiz R. just clocked in" drops in
     popIns: [0.25, 0.62, 0.74], // Hafiz joins the list, the two pop-outs
+    success: [0.5], // "Following ✓"
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.18, 240, 96], [0.26, 240, 96], [0.44, 386, 688], [0.56, 386, 688], [0.72, 300, 520], [1, 300, 520]],
       clicks: [0.24, 0.5], flashes: [0.24, 0.5],
@@ -616,6 +618,7 @@ const scenes: Scene[] = [
     Screen: Train, typing: [[0.33, 0.41], [0.47, 0.49]], // the weight, then the reps
     counting: [[0.16, 0.4], [0.62, 0.7]], // the 450 dataset counter, the PR
     popIns: [0.62, 0.7, 0.78], // PR, rest timer, muscles
+    success: [0.565], // the set ticked: a new PR
     play: (t, wide) => {
       const secs = Math.round(90 - clamp((t - 0.72) / 0.24) * 45);
       return {
@@ -695,7 +698,7 @@ const scenes: Scene[] = [
     data: { n: 43, what: "dishes from the 9 APU cafeteria stalls: our own food dataset, with macros and art made for the real menu.", imgs: FOOD }, text: "Every dish in the APU cafeteria with its macros, counted against a target tuned to your goal.",
     floats: [["/hero/props/nasi-lemak-fried-chicken.webp", 92, 19, 19, 1.4, 8], ["/hero/props/teh-tarik.webp", 52, 83, 12, 0.8, -10], ["/hero/props/roti-canai-dhal.webp", 97, 74, 14, 1.2, 12], ["/icons/protein.webp", 57, 13, 8, 0.6, 0]],
     Screen: Eat, typing: [[0.17, 0.33]], // the search
-    notify: [0.5], // the "Added" toast
+    success: [0.5], // the meal added
     popIns: [0.6, 0.74], // macros, today's meals
     counting: [[0, 0.1], [0.16, 0.4], [0.55, 0.78]], // kcal as the screen arrives, the 43 dishes, kcal + macros after adding
     play: (t, wide) => ({
@@ -731,6 +734,7 @@ const scenes: Scene[] = [
     floats: [["/hero/props/trophy.webp", 91, 18, 19, 1.4, -8], ["/icons/medal.webp", 52, 82, 11, 0.8, 12], ["/icons/ranks.webp", 97, 70, 10, 1.2, -6], ["/icons/p4p.webp", 57, 12, 8, 0.6, 0]],
     Screen: Ranks, counting: [[0, 0.12], [0.45, 0.74]], // scores as the screen arrives, podium + the climb to #4
     popIns: [0.36, 0.5], // podium, your rank
+    success: [0.745], // up to #4
     play: (t, wide) => {
       const rank = t < 0.5 ? 11 : Math.round(tr(t, 0.52, 11, 0.74, 4));
       return {
@@ -760,6 +764,7 @@ const scenes: Scene[] = [
     Screen: MapScreen, typing: [[0.24, 0.36]], // "Used for: ..."
     counting: [[0.16, 0.4]], // the 34 machines
     scanning: [[0.21, 0.36]], // the 3D map sweeping over to the Squat Rack
+    success: [0.36], // found it
     popIns: [0.58, 0.7], // the route, the rack card
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.15, 318, 802], [0.23, 318, 802], [0.4, 250, 440], [1, 250, 440]],
@@ -832,6 +837,8 @@ export const heroNotify = () => scenes.map((s) => s.notify ?? []);
 export const heroPops = () => scenes.map((s) => s.popIns ?? []);
 /** everything scanning per scene (its own time 0..1) */
 export const heroScans = () => scenes.map((s) => s.scanning ?? []);
+/** everything succeeding per scene (its own time 0..1) */
+export const heroSuccess = () => scenes.map((s) => s.success ?? []);
 export const heroClicks = () => scenes.map((s) => s.play(0.5, true).clicks);
 export const heroMoments = () => scenes.map((s) => { const pl = s.play(0.5, true); return [...new Set([...pl.clicks, ...pl.flashes])].sort((a, b) => a - b); });
 /** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
