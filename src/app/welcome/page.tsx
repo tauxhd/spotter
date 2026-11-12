@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import DemoFrame from "@/components/DemoFrame";
 import HeroScroll from "@/components/HeroScroll";
 
 // The landing page: what Spotter is, a live demo of the web app in a phone frame (a made-up account, /?demo=1, nothing is
@@ -64,7 +65,7 @@ export default function Welcome() {
               <div className="absolute -right-[3px] top-36 h-20 w-[3px] rounded-r bg-zinc-700" aria-hidden />
               <div className="relative h-full overflow-hidden rounded-[2.6rem] bg-zinc-950">
                 <div className="pointer-events-none absolute left-1/2 top-2.5 z-10 h-7 w-24 -translate-x-1/2 rounded-full bg-black" aria-hidden />
-                <iframe src="/?demo=1&t=18:00" title="Spotter demo" className="h-full w-full border-0 pt-9" loading="lazy" />
+                <DemoFrame src="/?demo=1&t=18:00" />
               </div>
             </div>
           </div>

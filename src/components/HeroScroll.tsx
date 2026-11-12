@@ -1,11 +1,16 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 // The landing page hero: a scroll-pinned, Apple-style ad for the app. A headline zooms away as a phone rises in, then
-// each feature plays like a screen recording scrubbed by the scroll: a cursor moves and clicks, text types itself,
-// parts of the screen burst out of the phone at a bigger size, the screen zooms in, and the page flashes lime on the
-// big moments. Real screens (public/hero, captured from the demo account) with live overlays on top.
+// each feature plays inside the phone as live, coded UI scrubbed by the scroll: a cursor moves and clicks, text types,
+// numbers count, bars fill, lists filter and stagger in, sheets slide up, the camera pushes in on the phone, components
+// burst out of it as bigger live cards, and the page flashes lime on the big moments. The map scene runs the real 3D gym.
 // Everything is a pure function of scroll position, so scrolling back plays it in reverse.
-import Image from "next/image";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+
+import { equipment, floor } from "@/lib/data";
+
+const Gym3D = dynamic(() => import("./Gym3D"), { ssr: false });
 
 // --- maths --------------------------------------------------------------------------------------------------------
 const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -17,121 +22,505 @@ function tr(t: number, ...k: number[]) {
   for (let i = 0; i + 2 < k.length; i += 2) if (t <= k[i + 2]) return k[i + 1] + (k[i + 3] - k[i + 1]) * io((t - k[i]) / (k[i + 2] - k[i]));
   return k[k.length - 1];
 }
+const back = (x: number) => (x <= 0 ? 0 : 1 + 2.70158 * Math.pow(clamp(x) - 1, 3) + 1.70158 * Math.pow(clamp(x) - 1, 2));
 /** 0 before a, springs past 1 and settles, gone by b */
-function pop(t: number, a: number, b = 0.97) {
-  const x = clamp((t - a) / 0.08);
-  if (x <= 0) return 0;
-  return (1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2)) * (1 - smooth(b - 0.05, b, t));
-}
+const pop = (t: number, a: number, b = 0.97) => back((t - a) / 0.08) * (1 - smooth(b - 0.05, b, t));
 const bump = (t: number, c: number, w = 0.022) => Math.max(0, 1 - Math.abs(t - c) / w);
 const typed = (s: string, t: number, a: number, b: number) => s.slice(0, Math.round(clamp((t - a) / (b - a)) * s.length));
 const mix = (a: string, b: string, t: number) => {
   const h = (s: string, i: number) => parseInt(s.slice(1 + i * 2, 3 + i * 2), 16);
   return `rgb(${[0, 1, 2].map((i) => Math.round(h(a, i) + (h(b, i) - h(a, i)) * t)).join(",")})`;
 };
+/** staggered entrance: item i of a list, as e (the screen's entrance, 0..1) runs */
+const st = (e: number, i: number) => smooth(i * 0.07, i * 0.07 + 0.45, e);
 
-// --- phone coordinates: screenshots are 480 px wide; the phone root is a size container, so cqw scales with it -------
-const S = 0.1975; // cqw of the phone per screenshot px (the screen is 94.8% of the phone's width)
+// --- phone coordinates: the screen is a 480 x 1069 virtual canvas; the phone root is a size container (cqw) ------------
+const S = 0.1975; // cqw of the phone per virtual px (the screen is 94.8% of the phone's width)
 const u = (n: number) => `${(n * S).toFixed(3)}cqw`;
-const OFF = 40; // screenshot top inside the screen, under the island
-/** a screenshot point as % of the phone box (for things outside the screen) */
-const at = (x: number, y: number): [number, number] => [2.6 + (x / 480) * 94.8, 1.2 + ((y + OFF) / 1069) * 97.6];
+/** a screen point as % of the phone box (for things outside the screen) */
+const at = (x: number, y: number): [number, number] => [2.6 + (x / 480) * 94.8, 1.2 + (y / 1069) * 97.6];
+const rise = (v: number, dy = 30): CSSProperties => ({ opacity: v, transform: `translateY(${((1 - v) * dy * S).toFixed(3)}cqw)` });
 
-function Crop({ img, r: [x, y, w, h], z = 1.35 }: { img: string; r: number[]; z?: number }) {
-  return <div className="rounded-[inherit]" style={{ width: u(w * z), height: u(h * z), backgroundImage: `url(/hero/${img}.webp)`, backgroundSize: `${u(480 * z)} auto`, backgroundPosition: `${u(-x * z)} ${u(-y * z)}`, backgroundRepeat: "no-repeat" }} />;
+const LIME = "#a3e635";
+const CARD = "rounded-[3.6cqw] bg-zinc-900 ring-1 ring-white/[0.06]";
+
+function B({ x, y, w, h, className = "", style, children }: { x: number; y: number; w?: number; h?: number; className?: string; style?: CSSProperties; children?: ReactNode }) {
+  return <div className={`absolute ${className}`} style={{ left: u(x), top: u(y), width: w === undefined ? undefined : u(w), height: h === undefined ? undefined : u(h), ...style }}>{children}</div>;
 }
+const Caret = () => <span className="inline-block animate-pulse bg-lime-400 align-middle" style={{ width: u(3), height: "1.1em", marginLeft: u(2) }} />;
+const Icon = ({ n, s }: { n: string; s: number }) => <img src={`/icons/${n}.webp`} alt="" style={{ width: u(s), height: u(s) }} />;
 
-/** a component flying out of the phone (from) to a bigger spot beside it (to), springing on arrival */
-function Pop({ s, from, to, wide, glow, tilt = 0, children }: { s: number; from: [number, number]; to: [number, number]; wide: boolean; glow: string; tilt?: number; children: ReactNode }) {
-  if (s <= 0.001) return null;
-  const k = clamp(s);
-  const tx = wide ? to[0] : 50 + (to[0] - 50) * 0.55;
+function Head({ e, icon, title, sub }: { e: number; icon: string; title: string; sub?: string }) {
   return (
-    <div className="pointer-events-none absolute z-30" style={{ left: `${from[0] + (tx - from[0]) * k}%`, top: `${from[1] + (to[1] - from[1]) * k}%`, opacity: clamp(s * 3), transform: `translate(-50%,-50%) scale(${0.35 + 0.65 * s}) rotate(${tilt * (1 - k)}deg)` }}>
-      <div className="overflow-hidden rounded-[3.5cqw] bg-zinc-900 ring-1 ring-white/20" style={{ boxShadow: `0 30px 80px -20px ${glow}, 0 0 0 1px rgba(255,255,255,.06)` }}>{children}</div>
+    <B x={28} y={52} style={rise(st(e, 0))}>
+      <div className="flex items-center" style={{ gap: u(10) }}><Icon n={icon} s={42} /><p className="font-black tracking-tight" style={{ fontSize: u(36) }}>{title}</p></div>
+      {sub && <p className="text-zinc-400" style={{ fontSize: u(16), marginTop: u(2) }}>{sub}</p>}
+    </B>
+  );
+}
+function Nav({ on, e }: { on: number; e: number }) {
+  return (
+    <B x={0} y={985} w={480} h={84} className="flex justify-around border-t border-white/10 bg-zinc-950" style={{ paddingTop: u(10), opacity: smooth(0, 0.3, e) }}>
+      {[["gym", "Gym"], ["barbell", "Train"], ["eat", "Eat"], ["ranks", "Ranks"], ["feed", "Feed"]].map(([i, l], k) => (
+        <div key={l} className="flex flex-col items-center" style={{ gap: u(4), opacity: k === on ? 1 : 0.45 }}>
+          <Icon n={i} s={34} /><span className="font-semibold" style={{ fontSize: u(13), color: k === on ? LIME : "#a1a1aa" }}>{l}</span>
+        </div>
+      ))}
+    </B>
+  );
+}
+function Bar({ v, c, h = 10 }: { v: number; c: string; h?: number }) {
+  return <div className="overflow-hidden rounded-full bg-zinc-800" style={{ height: u(h) }}><div className="h-full rounded-full" style={{ width: `${clamp(v) * 100}%`, background: c }} /></div>;
+}
+function Ring({ v, c, size, w = 5, children }: { v: number; c: string; size: number; w?: number; children?: ReactNode }) {
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: u(size), height: u(size) }}>
+      <svg viewBox="0 0 40 40" className="absolute inset-0"><circle cx="20" cy="20" r={18 - w / 2} fill="none" stroke="#27272a" strokeWidth={w} />
+        <circle cx="20" cy="20" r={18 - w / 2} fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" pathLength={1} strokeDasharray={`${clamp(v)} 1`} transform="rotate(-90 20 20)" /></svg>
+      <div className="relative text-center">{children}</div>
     </div>
   );
 }
 
-const Caret = () => <span className="ml-[0.2cqw] inline-block w-[0.6cqw] animate-pulse bg-lime-400 align-middle" style={{ height: "1.1em" }} />;
+/** a live card flying out of the phone (from) to a bigger spot beside it (to), springing on arrival */
+function Pop({ s, from, to, wide, glow, tilt = 0, children }: { s: number; from: [number, number]; to: [number, number]; wide: boolean; glow: string; tilt?: number; children: ReactNode }) {
+  if (s <= 0.001) return null;
+  const k = clamp(s), tx = wide ? to[0] : 50 + (to[0] - 50) * 0.55;
+  return (
+    <div className="pointer-events-none absolute z-30" style={{ left: `${from[0] + (tx - from[0]) * k}%`, top: `${from[1] + (to[1] - from[1]) * k}%`, opacity: clamp(s * 3), transform: `translate(-50%,-50%) scale(${0.35 + 0.65 * s}) rotate(${tilt * (1 - k)}deg)` }}>
+      <div className="overflow-hidden rounded-[3.5cqw] bg-zinc-900/95 ring-1 ring-white/20 backdrop-blur" style={{ boxShadow: `0 30px 80px -20px ${glow}`, padding: u(26) }}>{children}</div>
+    </div>
+  );
+}
+const PopTitle = ({ c, children }: { c: string; children: ReactNode }) => <p className="font-bold uppercase tracking-widest" style={{ fontSize: u(15), color: c }}>{children}</p>;
 
-type Play = { cursor: number[][]; clicks: number[]; flashes: number[]; zoom?: number[]; focus?: [number, number]; screen?: ReactNode; pops?: ReactNode };
-type Scene = { img: string; word: string; text: string; from: string; to: string; play: (t: number, wide: boolean) => Play };
+// ================================================== screens ==========================================================
+const CROWD = [20, 14, 18, 30, 22, 16, 26, 34, 44, 58, 40, 28]; // 08:00 .. 19:00
 
-const LIME = "#a3e635";
+function Home({ t, e }: { t: number; e: number }) {
+  const crowd = Math.round(55 * smooth(0.25, 1, e)), clocked = t > 0.42;
+  const scan = smooth(0.23, 0.25, t) * (1 - smooth(0.45, 0.49, t)), ok = smooth(0.33, 0.35, t);
+  const line = ((((t - 0.23) / 0.05) % 1) + 1) % 1;
+  return <>
+    <B x={28} y={52} style={rise(st(e, 0))}>
+      <p className="text-zinc-400" style={{ fontSize: u(17) }}>Hey Aiden 👋</p>
+      <p className="font-black tracking-tight" style={{ fontSize: u(34) }}>APU SweatZone</p>
+    </B>
+    <B x={296} y={84} w={156} h={32} className="flex items-center justify-center rounded-full bg-lime-400/15 font-bold text-lime-400" style={{ fontSize: u(14), gap: u(6), ...rise(st(e, 1)) }}>
+      <span className="animate-pulse rounded-full bg-lime-400" style={{ width: u(8), height: u(8) }} />Open until 21:00
+    </B>
+
+    <B x={24} y={140} w={432} h={195} className={CARD} style={{ padding: u(20), ...rise(st(e, 1)) }}>
+      <p className="font-bold uppercase tracking-wider text-zinc-400" style={{ fontSize: u(13) }}>Skip the ID check at the counter</p>
+      <p className="font-bold" style={{ fontSize: u(22), width: u(300), marginTop: u(6), lineHeight: 1.25 }}>Scan the QR at the gym door to clock in</p>
+      <img src="/icons/qr.webp" alt="" className="absolute" style={{ right: u(18), top: u(18), width: u(72), transform: `translateY(${Math.sin(t * 40) * 0.6}cqw) rotate(${Math.sin(t * 30) * 6}deg)` }} />
+      <div className="absolute flex items-center justify-center rounded-[2cqw] font-bold"
+        style={{ left: u(20), right: u(20), bottom: u(20), height: u(52), fontSize: u(19), background: clocked ? "#27272a" : LIME, color: clocked ? LIME : "#09090b", transform: `scale(${1 - bump(t, 0.23, 0.015) * 0.06})` }}>
+        {clocked ? "✓ Clocked in · 17:45" : "→ Scan to clock in"}
+      </div>
+    </B>
+
+    <B x={24} y={355} w={432} h={250} className={CARD} style={{ padding: u(20), ...rise(st(e, 2)) }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center font-bold" style={{ gap: u(8), fontSize: u(20) }}><Icon n="crowd" s={30} />Live crowd</div>
+        <span className="flex items-center font-bold text-lime-400" style={{ gap: u(6), fontSize: u(14) }}><span className="animate-ping rounded-full bg-lime-400" style={{ width: u(8), height: u(8) }} />LIVE</span>
+      </div>
+      <div className="flex items-end justify-between" style={{ marginTop: u(8) }}>
+        <p><span className="font-black tabular-nums" style={{ fontSize: u(58), lineHeight: 1 }}>{crowd}</span><span className="text-zinc-400" style={{ fontSize: u(18) }}> / 60 people</span></p>
+        <span className="font-bold text-red-400" style={{ fontSize: u(17), opacity: smooth(40, 50, crowd) }}>Packed</span>
+      </div>
+      <div style={{ marginTop: u(10) }}><Bar v={crowd / 60} c="linear-gradient(90deg,#facc15,#ef4444)" /></div>
+      <div className="flex items-end" style={{ gap: u(6), height: u(70), marginTop: u(14) }}>
+        {CROWD.map((h, i) => <div key={i} className="flex-1 rounded-t-[0.8cqw]" style={{ height: u(h * 1.15 * smooth(0.2 + i * 0.04, 0.5 + i * 0.04, e)), background: i === 10 ? "#ef4444" : "#3f3f46" }} />)}
+      </div>
+    </B>
+
+    <B x={24} y={625} w={432} h={160} className={CARD} style={{ padding: u(20), ...rise(st(e, 3)) }}>
+      <div className="flex items-center font-bold" style={{ gap: u(8), fontSize: u(20) }}><Icon n="calendar" s={30} />Best time to train today</div>
+      <p className="font-black tabular-nums" style={{ fontSize: u(44), marginTop: u(6) }}>{typed("19:30–20:30", e, 0.45, 0.95)}<span className="opacity-0">.</span></p>
+      <p className="text-zinc-400" style={{ fontSize: u(16), opacity: smooth(0.8, 1, e) }}>~52% full · after IoT Systems</p>
+    </B>
+
+    <B x={24} y={805} w={432} h={80} className={`${CARD} flex items-center`} style={{ padding: `0 ${u(20)}`, gap: u(14), ...rise(st(e, 4)) }}>
+      <Icon n="map" s={44} /><div className="flex-1"><p className="font-bold" style={{ fontSize: u(19) }}>Gym map</p><p className="text-zinc-400" style={{ fontSize: u(15) }}>Find any machine or rack</p></div><span className="text-zinc-500" style={{ fontSize: u(24) }}>›</span>
+    </B>
+    <Nav on={0} e={e} />
+
+    {scan > 0 && (
+      <div className="absolute inset-0 z-20 bg-black/90" style={{ opacity: scan }}>
+        <p className="absolute inset-x-0 text-center font-bold" style={{ top: u(240), fontSize: u(22) }}>Point at the QR on the door</p>
+        <B x={110} y={330} w={260} h={260}>
+          <img src="/icons/qr.webp" alt="" className="absolute inset-[18%] opacity-60" style={{ width: "64%" }} />
+          {[[0, 0], [1, 0], [0, 1], [1, 1]].map(([a, b2]) => (
+            <div key={`${a}${b2}`} className="absolute border-lime-400" style={{ width: u(54), height: u(54), [a ? "right" : "left"]: 0, [b2 ? "bottom" : "top"]: 0, borderWidth: 0, [`border${b2 ? "Bottom" : "Top"}Width`]: u(6), [`border${a ? "Right" : "Left"}Width`]: u(6) }} />
+          ))}
+          <div className="absolute inset-x-[6%] bg-lime-400 shadow-[0_0_20px_#a3e635]" style={{ top: `${line * 100}%`, height: u(4), opacity: 1 - ok }} />
+        </B>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-lime-400 text-zinc-950" style={{ opacity: ok }}>
+          <svg viewBox="0 0 100 100" style={{ width: u(160) }}><circle cx="50" cy="50" r="46" fill="#09090b" style={{ transform: `scale(${back((t - 0.33) / 0.05)})`, transformOrigin: "50% 50%" }} />
+            <path d="M30 52 l14 14 l27 -30" fill="none" stroke={LIME} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={`${smooth(0.35, 0.39, t)} 1`} /></svg>
+          <p className="font-black tracking-tight" style={{ fontSize: u(54), marginTop: u(20), ...rise(smooth(0.36, 0.39, t)) }}>You&apos;re in.</p>
+          <p className="font-semibold opacity-70" style={{ fontSize: u(22), ...rise(smooth(0.37, 0.4, t)) }}>Clocked in · 17:45</p>
+        </div>
+      </div>
+    )}
+  </>;
+}
+
+const ROUTINES = [["Push day", "Bench Press, Incline DB Press, Shoulder Press, Cable Crossover, Chest Dip"], ["Pull day", "Deadlift, Pull Up, Seated Cable Row, Lat Pulldown, Bicep Curl"], ["Legs day", "Squat, Romanian Deadlift, Leg Press, Leg Extension, Calf Raise"]];
+const COL = { set: [28, 56], kg: [100, 140], reps: [262, 110], ok: [394, 58] } as const; // x, width of each column
+
+function Train({ t, e }: { t: number; e: number }) {
+  const sheet = smooth(0.19, 0.27, t), done = t > 0.56;
+  const kgLive = t > 0.32 && !done, repsLive = t > 0.46 && !done;
+  const kg = t < 0.32 ? "" : typed("72.5", t, 0.33, 0.41), reps = t < 0.46 ? "" : typed("6", t, 0.47, 0.49);
+  const cell = (col: readonly [number, number], y: number, v: string, hint: string, live: boolean, fill?: string) => (
+    <B x={col[0]} y={y} w={col[1]} h={44} className="flex items-center justify-center rounded-[1.4cqw] font-bold tabular-nums"
+      style={{ fontSize: u(21), background: fill ?? (live ? "#27272a" : "#18181b"), boxShadow: live ? `inset 0 0 0 ${u(2)} ${LIME}` : undefined }}>
+      {v || <span className="text-zinc-600">{hint}</span>}{live && <Caret />}
+    </B>
+  );
+  return <>
+    <Head e={e} icon="barbell" title="Train" />
+    <B x={28} y={120} className="font-bold" style={{ fontSize: u(19), ...rise(st(e, 1)) }}>Quick start</B>
+    <B x={24} y={150} w={432} h={52} className="flex items-center justify-center rounded-[2cqw] bg-lime-400 font-bold text-zinc-950" style={{ fontSize: u(19), ...rise(st(e, 1)) }}>+ Start empty workout</B>
+    <B x={28} y={228} className="font-bold" style={{ fontSize: u(19), ...rise(st(e, 2)) }}>My routines <span className="text-zinc-500">(3)</span></B>
+    {ROUTINES.map(([n, l], i) => (
+      <B key={n} x={24} y={265 + i * 150} w={432} h={135} className={CARD} style={{ padding: u(18), ...rise(st(e, i + 2), 50) }}>
+        <p className="font-bold" style={{ fontSize: u(23) }}>{n}</p>
+        <p className="text-zinc-400" style={{ fontSize: u(15), width: u(260), lineHeight: 1.35, marginTop: u(4) }}>{l}</p>
+        <div className="absolute flex items-center justify-center rounded-[1.6cqw] bg-lime-400 font-bold text-zinc-950"
+          style={{ right: u(18), bottom: u(18), width: u(120), height: u(42), fontSize: u(17), transform: i === 0 ? `scale(${1 - bump(t, 0.18, 0.015) * 0.08})` : undefined }}>Start</div>
+      </B>
+    ))}
+    <Nav on={1} e={e} />
+
+    {sheet > 0 && (
+      <B x={0} y={300 + (1 - sheet) * 769} w={480} h={769} className="z-10 rounded-t-[4cqw] bg-zinc-950 shadow-[0_-20px_60px_rgba(0,0,0,.7)] ring-1 ring-white/10">
+        <B x={210} y={12} w={60} h={6} className="rounded-full bg-zinc-700" />
+        <B x={28} y={34} className="font-black" style={{ fontSize: u(30) }}>Push day</B>
+        <B x={330} y={42} w={122} className="text-right font-mono font-bold text-lime-400" style={{ fontSize: u(22) }}>00:{String(Math.floor(clamp((t - 0.2) * 70, 0, 59))).padStart(2, "0")}</B>
+        <B x={28} y={88} className="font-bold text-sky-400" style={{ fontSize: u(22) }}>Bench Press (Barbell)</B>
+        {(["set", "kg", "reps", "ok"] as const).map((c) => (
+          <B key={c} x={COL[c][0]} y={130} w={COL[c][1]} className="text-center font-semibold text-zinc-500" style={{ fontSize: u(14) }}>{{ set: "SET", kg: "KG", reps: "REPS", ok: "✓" }[c]}</B>
+        ))}
+        {/* set 1, already done */}
+        <B x={12} y={156} w={456} h={56} className="rounded-[1.6cqw] bg-lime-400/10" />
+        <B x={COL.set[0]} y={156} w={COL.set[1]} h={56} className="flex items-center justify-center font-bold" style={{ fontSize: u(21) }}>1</B>
+        {cell(COL.kg, 162, "70", "", false, "transparent")}{cell(COL.reps, 162, "6", "", false, "transparent")}
+        <B x={COL.ok[0]} y={162} w={COL.ok[1]} h={44} className="flex items-center justify-center rounded-[1.4cqw] bg-lime-400 font-black text-zinc-950" style={{ fontSize: u(22) }}>✓</B>
+        {/* set 2, typed in */}
+        <B x={12} y={216} w={456} h={56} className="rounded-[1.6cqw]" style={{ background: done ? `rgba(163,230,53,${0.1 + bump(t, 0.57, 0.03) * 0.5})` : undefined }} />
+        <B x={COL.set[0]} y={216} w={COL.set[1]} h={56} className="flex items-center justify-center font-bold" style={{ fontSize: u(21) }}>2</B>
+        {cell(COL.kg, 222, kg, "70", kgLive, done ? "transparent" : undefined)}{cell(COL.reps, 222, reps, "6", repsLive, done ? "transparent" : undefined)}
+        <B x={COL.ok[0]} y={222} w={COL.ok[1]} h={44} className="flex items-center justify-center rounded-[1.4cqw] font-black"
+          style={{ fontSize: u(22), background: done ? LIME : "#27272a", color: done ? "#09090b" : "#71717a", transform: `scale(${1 + bump(t, 0.565, 0.03) * 0.5})` }}>✓</B>
+        {/* set 3 appears */}
+        <B x={0} y={276} w={480} h={56} style={rise(smooth(0.58, 0.64, t))}>
+          <B x={COL.set[0]} y={0} w={COL.set[1]} h={56} className="flex items-center justify-center font-bold text-zinc-400" style={{ fontSize: u(21) }}>3</B>
+          {cell(COL.kg, 6, "", "72.5", false)}{cell(COL.reps, 6, "", "6", false)}
+          <B x={COL.ok[0]} y={6} w={COL.ok[1]} h={44} className="flex items-center justify-center rounded-[1.4cqw] bg-zinc-800 font-black text-zinc-500" style={{ fontSize: u(22) }}>✓</B>
+        </B>
+        <B x={24} y={350} w={432} h={48} className="flex items-center justify-center rounded-[2cqw] bg-zinc-800 font-bold" style={{ fontSize: u(18) }}>+ Add set</B>
+        <B x={24} y={418} w={432} h={56} className="flex items-center justify-center rounded-[2cqw] bg-gradient-to-r from-violet-500/25 to-pink-500/25 font-black text-pink-200 ring-1 ring-pink-400/40" style={{ fontSize: u(20), ...rise(smooth(0.58, 0.63, t)) }}>🏆 New best · 72.5 kg</B>
+      </B>
+    )}
+  </>;
+}
+
+const MENU: [string, number, number, number, number, string][] = [
+  ["Nasi lemak + fried chicken", 780, 32, 85, 34, "nasi-lemak-fried-chicken"],
+  ["Chicken briyani", 850, 38, 100, 30, "chicken-briyani"],
+  ["Nasi goreng kampung", 680, 22, 90, 24, "nasi-goreng-kampung"],
+  ["Nasi lemak bungkus", 400, 10, 55, 16, "nasi-lemak-bungkus"],
+  ["Mee goreng mamak", 660, 18, 88, 26, "mee-goreng-mamak"],
+];
+const QUERY = "nasi lemak";
+
+function Eat({ t, e }: { t: number; e: number }) {
+  const add = smooth(0.55, 0.68, t), fill = smooth(0.2, 0.8, e), added = t > 0.5;
+  const eaten = 900 + 780 * add, left = t < 0.5 ? Math.round(1200 * smooth(0.2, 0.9, e)) : Math.round(2100 - eaten);
+  const q = t > 0.15 ? typed(QUERY, t, 0.17, 0.33) : "";
+  let y = 470;
+  const rows = MENU.map((m, i) => {
+    let k = 0;
+    while (k < QUERY.length && m[0].toLowerCase()[k] === QUERY[k]) k++;
+    const gone = k >= QUERY.length ? 0 : smooth(0.17 + ((k + 0.5) / QUERY.length) * 0.16, 0.2 + ((k + 0.5) / QUERY.length) * 0.16, t);
+    const row = { m, y, v: (1 - gone) * st(e, i + 3) };
+    y += 104 * (1 - gone);
+    return row;
+  });
+  const macro = (x: number, label: string, icon: string, base: number, plus: number, max: number, c: string) => (
+    <B x={x} y={110} w={124}>
+      <div className="flex items-center text-zinc-400" style={{ fontSize: u(14), gap: u(4) }}><Icon n={icon} s={20} />{label}</div>
+      <p className="font-bold tabular-nums" style={{ fontSize: u(18), margin: `${u(2)} 0 ${u(6)}` }}>{Math.round(base + plus * add)}<span className="text-zinc-500">/{max}g</span></p>
+      <Bar v={((base + plus * add) / max) * fill} c={c} h={8} />
+    </B>
+  );
+  return <>
+    <Head e={e} icon="eat" title="Eat" sub="Cut for trained lifters · 2100 kcal target ›" />
+    <B x={24} y={136} w={432} h={44} className="flex rounded-[2cqw] bg-zinc-900 p-[0.8cqw]" style={rise(st(e, 1))}>
+      <div className="flex flex-1 items-center justify-center rounded-[1.6cqw] bg-zinc-700 font-bold" style={{ fontSize: u(16) }}>Today</div>
+      <div className="flex flex-1 items-center justify-center text-zinc-400" style={{ fontSize: u(16) }}>Progress</div>
+    </B>
+    <B x={24} y={196} w={432} h={188} className={CARD} style={{ padding: u(20), ...rise(st(e, 2)) }}>
+      <B x={20} y={18} className="flex items-center" style={{ gap: u(12) }}>
+        <Icon n="target" s={50} />
+        <div><p className="font-black tabular-nums" style={{ fontSize: u(42), lineHeight: 1, color: mix("#fafafa", "#a3e635", bump(t, 0.6, 0.08)) }}>{left}</p><p className="text-zinc-400" style={{ fontSize: u(15) }}>kcal left today</p></div>
+      </B>
+      <B x={300} y={26} w={112} className="text-right text-zinc-400 tabular-nums" style={{ fontSize: u(15) }}>{Math.round(eaten * fill)} / 2100</B>
+      <B x={20} y={84} w={392}><Bar v={(eaten / 2100) * fill} c={LIME} h={8} /></B>
+      {macro(20, "Protein", "protein", 68, 32, 174, "#38bdf8")}{macro(154, "Carbs", "carbs", 140, 85, 236, "#fb923c")}{macro(288, "Fat", "fat", 15, 34, 51, "#f472b6")}
+    </B>
+    <B x={24} y={400} w={432} h={52} className="flex items-center rounded-[2cqw] bg-zinc-900"
+      style={{ padding: `0 ${u(16)}`, fontSize: u(19), boxShadow: t > 0.15 ? `inset 0 0 0 ${u(2)} ${LIME}` : undefined, ...rise(st(e, 3)) }}>
+      <span className="text-zinc-500" style={{ marginRight: u(10) }}>⌕</span>{q || (t <= 0.15 && <span className="text-zinc-500">Search food...</span>)}{t > 0.15 && <Caret />}
+    </B>
+    {rows.map(({ m: [n, kcal, p, c, f, img], y: ry, v }, i) => v > 0.01 && (
+      <B key={n} x={24} y={ry} w={432} h={96} className={`${CARD} flex items-center`} style={{ padding: `0 ${u(14)}`, gap: u(14), opacity: v, transform: `scale(${0.92 + 0.08 * v})` }}>
+        <img src={`/food/${img}.webp`} alt="" className="rounded-[1.6cqw]" style={{ width: u(68), height: u(68) }} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-bold" style={{ fontSize: u(18) }}>{n}</p>
+          <p className="text-zinc-400" style={{ fontSize: u(14) }}><b className="text-zinc-200">{kcal}</b> kcal · P {p} · C {c} · F {f}</p>
+        </div>
+        <div className="flex shrink-0 items-center justify-center rounded-[1.4cqw] font-black"
+          style={{ width: u(44), height: u(44), fontSize: u(24), background: i === 0 && added ? "#27272a" : LIME, color: i === 0 && added ? LIME : "#09090b", transform: i === 0 ? `scale(${1 + bump(t, 0.505, 0.02) * 0.4})` : undefined }}>{i === 0 && added ? "✓" : "+"}</div>
+      </B>
+    ))}
+    <Nav on={2} e={e} />
+    {added && (
+      <div className="absolute z-20 flex items-center whitespace-nowrap rounded-full bg-lime-400 font-bold text-zinc-950 shadow-lg"
+        style={{ left: "50%", top: u(60), padding: `${u(10)} ${u(22)}`, fontSize: u(18), transform: `translate(-50%, ${(1 - clamp(pop(t, 0.5, 0.75))) * -250}%)` }}>✓ Added nasi lemak · 780 kcal</div>
+    )}
+  </>;
+}
+
+const BOARD: [string, string, string, number][] = [["Daniel K.", "Engineering", "u1", 396.7], ["Hafiz R.", "Engineering", "u2", 388.2], ["Jun Wei", "Computing", "u3", 380.0], ["Priya S.", "Business", "u4", 365.3]];
+const PODIUM = [[1, 105, 80, "#d4d4d8"], [0, 240, 120, "#fbbf24"], [2, 375, 56, "#f97316"]] as const; // board index, centre x, bar height, colour
+
+function Podium({ t0, t, big = 1 }: { t0: number; t: number; big?: number }) {
+  return <>
+    {PODIUM.map(([i, x, h, c], k) => {
+      const grow = smooth(t0 + k * 0.04, t0 + k * 0.04 + 0.12, t), drop = back((t - t0 - 0.1 - k * 0.04) / 0.08);
+      const [n, , av, score] = BOARD[i];
+      return (
+        <div key={n} className="absolute bottom-0 flex flex-col items-center" style={{ left: u((x - 60) * big), width: u(120 * big) }}>
+          <div className="flex flex-col items-center" style={{ opacity: clamp(drop * 2), transform: `translateY(${(1 - clamp(drop)) * -12}cqw)` }}>
+            <img src={`/avatars/${av}.webp`} alt="" className="rounded-full bg-zinc-800" style={{ width: u((i === 0 ? 78 : 64) * big), height: u((i === 0 ? 78 : 64) * big), boxShadow: `0 0 0 ${u(4 * big)} ${c}` }} />
+            <p className="whitespace-nowrap font-bold" style={{ fontSize: u(15 * big), marginTop: u(8) }}>{n}</p>
+            <p className="font-black tabular-nums" style={{ fontSize: u(20 * big), color: c }}>{(score * smooth(t0 + 0.08, t0 + 0.22, t)).toFixed(1)}</p>
+          </div>
+          <div className="w-full rounded-t-[1.4cqw]" style={{ height: u(h * big * grow), marginTop: u(6), background: `linear-gradient(180deg, ${c}66, ${c}11)` }}>
+            <p className="text-center font-black" style={{ fontSize: u(26 * big), color: c, opacity: grow }}>{i + 1}</p>
+          </div>
+        </div>
+      );
+    })}
+  </>;
+}
+
+function Ranks({ t, e }: { t: number; e: number }) {
+  const rank = t < 0.47 ? 11 : Math.round(tr(t, 0.48, 11, 0.74, 4)), up = t > 0.74;
+  return <>
+    <Head e={e} icon="ranks" title="Ranks" />
+    <B x={28} y={112} w={430} className="flex border-b border-white/10" style={{ gap: u(22), fontSize: u(16), ...rise(st(e, 1)) }}>
+      {["Powerlifting", "Strength", "Calisthenics", "Athletics"].map((l, i) => (
+        <div key={l} className="relative font-semibold" style={{ paddingBottom: u(10), color: i ? "#a1a1aa" : LIME }}>{l}
+          {!i && <div className="absolute bottom-[-1px] left-0 bg-lime-400" style={{ height: u(3), width: `${smooth(0.3, 0.8, e) * 100}%` }} />}</div>
+      ))}
+    </B>
+    {[["barbell", "SBD total"], ["squat", "Squat"], ["bench", "Bench"], ["deadlift", "Deadlift"]].map(([ic, l], i) => (
+      <B key={l} x={24 + i * 110} y={160} w={100} h={84} className="flex flex-col items-center justify-center rounded-[2cqw] bg-zinc-900"
+        style={{ gap: u(4), boxShadow: !i ? `inset 0 0 0 ${u(2)} ${LIME}` : undefined, ...rise(st(e, i + 1)) }}>
+        <Icon n={ic} s={38} /><span className="font-bold" style={{ fontSize: u(13) }}>{l}</span>
+      </B>
+    ))}
+    <B x={0} y={262} w={480} h={244}><Podium t0={0.15} t={e * 0.55} /></B>
+    <B x={24} y={520} w={432} h={72} className={`${CARD} flex items-center`}
+      style={{ padding: `0 ${u(16)}`, gap: u(12), boxShadow: up ? `0 0 0 ${u(3)} ${LIME}, 0 0 ${u(30)} ${LIME}66` : undefined, ...rise(st(e, 5)), transform: `scale(${1 + bump(t, 0.75, 0.04) * 0.05})` }}>
+      <Icon n="medal" s={40} />
+      <div className="flex-1"><p className="font-bold tabular-nums" style={{ fontSize: u(19) }}>You&apos;re #{rank} of 11 {up && <span className="text-lime-400">▲ 7</span>}</p><p className="text-zinc-400" style={{ fontSize: u(14) }}>{up ? "Top 4 in Computing" : "100.1 DOTS to pass Mei Ling"}</p></div>
+      <p className="font-black tabular-nums" style={{ fontSize: u(22) }}>{(217.2 + 160 * smooth(0.48, 0.74, t)).toFixed(1)}</p>
+    </B>
+    {BOARD.map(([n, fac, av, score], i) => (
+      <B key={n} x={24} y={606 + i * 90} w={432} h={80} className="flex items-center border-b border-white/5" style={{ gap: u(14), padding: `0 ${u(8)}`, ...rise(st(e, i + 6), 40) }}>
+        <span className="font-black text-lime-400" style={{ width: u(20), fontSize: u(19) }}>{i + 1}</span>
+        <img src={`/avatars/${av}.webp`} alt="" className="rounded-full bg-zinc-800" style={{ width: u(50), height: u(50) }} />
+        <div className="flex-1"><p className="font-bold" style={{ fontSize: u(18) }}>{n}</p><p className="text-zinc-400" style={{ fontSize: u(14) }}>{fac}</p></div>
+        <p className="font-black tabular-nums" style={{ fontSize: u(21) }}>{(score * smooth(0.4 + i * 0.07, 0.9 + i * 0.02, e)).toFixed(1)}</p>
+      </B>
+    ))}
+    <Nav on={3} e={e} />
+  </>;
+}
+
+const CHIPS: [string, number, number][] = [["Flat Bench", 24, 118], ["Incline", 150, 98], ["Squat Rack", 256, 124], ["Rig", 388, 68]];
+
+function MapScreen({ t, e }: { t: number; e: number }) {
+  const picked = t > 0.2;
+  return <>
+    <B x={24} y={52} w={48} h={48} className="flex items-center justify-center rounded-[1.6cqw] bg-zinc-900" style={{ fontSize: u(24), ...rise(st(e, 0)) }}>←</B>
+    <B x={86} y={48} style={rise(st(e, 0))}><p className="font-black" style={{ fontSize: u(32) }}>Gym map</p><p className="text-zinc-400" style={{ fontSize: u(15) }}>{picked ? "Squat Rack · Benches & racks" : "Tap any equipment"}</p></B>
+    <B x={24} y={124} className="flex" style={{ gap: u(8), ...rise(st(e, 1)) }}>
+      <span className="rounded-[1.4cqw] bg-lime-400 font-bold text-zinc-950" style={{ padding: `${u(8)} ${u(16)}`, fontSize: u(15) }}>3D</span>
+      <span className="rounded-[1.4cqw] bg-zinc-800 font-bold" style={{ padding: `${u(8)} ${u(16)}`, fontSize: u(15) }}>Floor plan</span>
+    </B>
+    <B x={0} y={176} w={480} h={530} className="pointer-events-none overflow-hidden bg-zinc-950 [&>div]:h-full [&_canvas]:!h-full [&_canvas]:!max-h-none" style={{ opacity: smooth(0.1, 0.5, e) }}>
+      <Gym3D sel={picked ? "rack" : undefined} onPick={() => {}} />
+    </B>
+    <B x={24} y={724} w={432} className="flex border-b border-white/10" style={{ gap: u(20), fontSize: u(16), ...rise(st(e, 2)) }}>
+      {["Free weights", "Benches & racks", "Cables", "Machines"].map((l, i) => {
+        const on = picked ? i === 1 : i === 0;
+        return <div key={l} className="relative whitespace-nowrap font-semibold" style={{ paddingBottom: u(10), color: on ? "#fafafa" : "#71717a" }}>{l}{on && <div className="absolute bottom-[-1px] left-0 right-0 bg-lime-400" style={{ height: u(3) }} />}</div>;
+      })}
+    </B>
+    {CHIPS.map(([l, x, w], i) => {
+      const on = picked && i === 2;
+      return (
+        <B key={l} x={x} y={780} w={w} h={44} className="flex items-center justify-center rounded-[1.4cqw] font-bold"
+          style={{ fontSize: u(15), background: on ? LIME : "#27272a", color: on ? "#09090b" : "#fafafa", ...rise(st(e, i + 3)), ...(i === 2 && t > 0.15 ? { transform: `scale(${1 + bump(t, 0.205, 0.02) * 0.15})` } : {}) }}>{l}</B>
+      );
+    })}
+    <B x={28} y={846} w={424} className="text-zinc-300" style={{ fontSize: u(16) }}>{typed("Used for: Squat (Barbell), Front Squat (Barbell)", t, 0.24, 0.36)}</B>
+    <Nav on={0} e={e} />
+  </>;
+}
+
+// ================================================== scenes ===========================================================
+type Play = { cursor: number[][]; clicks: number[]; flashes: number[]; cam?: { z: number[]; x: number[]; y: number[] }; pops?: ReactNode };
+/** art floating around the phone: src, x and y (% of the view, desktop), size (vmin), depth (> 1 in front, moves more), turn */
+type Float = [string, number, number, number, number, number];
+type Scene = { word: string; text: string; from: string; to: string; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
 
 const scenes: Scene[] = [
   {
-    img: "home", word: "Skip the queue.", text: "Scan the QR at the door to clock in, and see how packed the SweatZone is before you walk over.", from: "#a3e635", to: "#10b981",
-    play: (t, wide) => {
-      const done = pop(t, 0.24, 0.45);
-      return {
-        cursor: [[0, 520, 900], [0.08, 420, 640], [0.2, 300, 214], [0.36, 300, 214], [0.47, 66, 330], [0.6, 66, 330], [0.7, 150, 600], [1, 150, 600]],
-        clicks: [0.23, 0.5, 0.72], flashes: [0.23],
-        zoom: [0.49, 1, 0.55, 1.22, 0.64, 1.22, 0.7, 1], focus: [200, 380],
-        screen: done > 0 && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-lime-400 text-zinc-950" style={{ opacity: clamp(done * 2) }}>
-            <div className="flex items-center justify-center rounded-full bg-zinc-950 text-lime-400" style={{ width: u(150), height: u(150), transform: `scale(${done}) rotate(${(1 - clamp(done)) * -90}deg)`, fontSize: u(90) }}>✓</div>
-            <p className="font-black tracking-tight" style={{ fontSize: u(52), marginTop: u(28) }}>You&apos;re in.</p>
-            <p className="font-semibold opacity-70" style={{ fontSize: u(22) }}>Clocked in · 17:45</p>
-          </div>
-        ),
-        pops: <>
-          <Pop s={pop(t, 0.51)} from={at(240, 390)} to={[8, 34]} wide={wide} glow="#a3e635" tilt={-8}><Crop img="home" r={[22, 255, 437, 200]} /></Pop>
-          <Pop s={pop(t, 0.73)} from={at(240, 590)} to={[92, 70]} wide={wide} glow="#10b981" tilt={8}><Crop img="home" r={[22, 480, 437, 170]} /></Pop>
-        </>,
-      };
-    },
+    word: "Skip the queue.", text: "Scan the QR at the door to clock in, and see how packed the SweatZone is before you walk over.", from: "#a3e635", to: "#10b981",
+    floats: [["/hero/props/kettlebell.webp", 91, 20, 17, 1.4, -12], ["/icons/qr.webp", 52, 80, 10, 0.7, 10], ["/icons/crowd.webp", 96, 76, 11, 1.2, -8], ["/icons/gym.webp", 57, 14, 8, 0.6, 6]],
+    Screen: Home,
+    play: (t, wide) => ({
+      cursor: [[0, 520, 900], [0.1, 400, 600], [0.2, 240, 289], [0.36, 240, 289], [0.48, 110, 440], [0.56, 110, 440], [0.68, 200, 700], [1, 200, 700]],
+      clicks: [0.23, 0.52, 0.72], flashes: [0.34],
+      cam: { z: [0.08, 1, 0.2, 1.5, 0.3, 1.5, 0.4, 1], x: [0, 240], y: [0, 289] },
+      pops: <>
+        <Pop s={pop(t, 0.52)} from={at(240, 480)} to={[9, 32]} wide={wide} glow="#a3e635" tilt={-8}>
+          <PopTitle c={LIME}>Crowd today</PopTitle>
+          <svg viewBox="0 0 330 130" style={{ width: u(330), marginTop: u(10) }}>
+            <defs><linearGradient id="hc" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={LIME} stopOpacity=".5" /><stop offset="1" stopColor={LIME} stopOpacity="0" /></linearGradient>
+              <clipPath id="hcc"><rect width={330 * smooth(0.54, 0.68, t)} height="130" /></clipPath></defs>
+            <g clipPath="url(#hcc)">
+              <path d={`M0 130 ${CROWD.map((v, i) => `L${i * 30} ${125 - v * 1.9}`).join(" ")} L330 130Z`} fill="url(#hc)" />
+              <path d={`M0 ${125 - CROWD[0] * 1.9} ${CROWD.map((v, i) => `L${i * 30} ${125 - v * 1.9}`).join(" ")}`} fill="none" stroke={LIME} strokeWidth="3" strokeLinejoin="round" />
+            </g>
+            <circle cx={270} cy={125 - 58 * 1.9} r={5 + Math.sin(t * 80) * 1.5} fill="#ef4444" opacity={smooth(0.66, 0.7, t)} />
+          </svg>
+          <p className="font-bold" style={{ fontSize: u(19), marginTop: u(8) }}>Peak at 18:00 · <span className="text-red-400">{Math.round(58 * smooth(0.6, 0.7, t))} people</span></p>
+        </Pop>
+        <Pop s={pop(t, 0.72)} from={at(240, 700)} to={[91, 68]} wide={wide} glow="#10b981" tilt={8}>
+          <PopTitle c="#34d399">Your day</PopTitle>
+          {[["08:30", "Data Structures"], ["11:00", "Cloud Infrastructure"], ["15:00", "IoT Systems"], ["19:30", "Train · quiet hour"]].map(([h, n], i) => (
+            <div key={h} className="flex items-center whitespace-nowrap font-semibold" style={{ gap: u(14), marginTop: u(12), fontSize: u(18), ...rise(smooth(0.74 + i * 0.03, 0.78 + i * 0.03, t), 20), color: i === 3 ? LIME : undefined }}>
+              <span className="font-mono text-zinc-400" style={{ width: u(64) }}>{h}</span>{n}{i === 3 && " ✓"}
+            </div>
+          ))}
+        </Pop>
+      </>,
+    }),
   },
   {
-    img: "train", word: "Lift more.", text: "Routines, rest timers and every set logged. PRs land with a bang and your progress keeps climbing.", from: "#a78bfa", to: "#ec4899",
+    word: "Lift more.", text: "Routines, rest timers and every set logged. PRs land with a bang and your progress keeps climbing.", from: "#a78bfa", to: "#ec4899",
+    floats: [["/hero/props/dumbbell.webp", 90, 16, 24, 1.5, -20], ["/hero/props/plate.webp", 52, 82, 17, 0.8, 25], ["/icons/flame.webp", 97, 64, 9, 1.2, 10], ["/icons/stopwatch.webp", 57, 12, 8, 0.6, -10]],
+    Screen: Train,
     play: (t, wide) => {
-      const sheet = smooth(0.19, 0.27, t), set = t > 0.56, secs = Math.round(90 - clamp((t - 0.68) / 0.28) * 45);
-      const cell = (x: number, w: number, text: string, live: boolean) => (
-        <div className="absolute flex items-center justify-center rounded-[1.2cqw] font-bold" style={{ left: u(x), top: 0, width: u(w), height: u(44), fontSize: u(22), background: set ? "transparent" : live ? "#27272a" : "#18181b", outline: live && !set ? `${u(2)} solid ${LIME}` : undefined }}>{text}{live && !set && <Caret />}</div>
-      );
+      const secs = Math.round(90 - clamp((t - 0.72) / 0.24) * 45);
       return {
-        cursor: [[0, 520, 900], [0.15, 398, 300], [0.2, 398, 300], [0.31, 215, 520], [0.44, 215, 520], [0.46, 325, 520], [0.52, 325, 520], [0.55, 425, 520], [0.62, 425, 520], [0.75, 300, 420], [1, 300, 420]],
-        clicks: [0.18, 0.32, 0.46, 0.56], flashes: [0.56],
-        zoom: [0.29, 1, 0.33, 1.25, 0.6, 1.25, 0.66, 1], focus: [300, 500],
-        screen: sheet > 0 && (
-          <div className="absolute inset-x-0 bottom-0 z-10 rounded-t-[4cqw] bg-zinc-950 ring-1 ring-white/10" style={{ top: u(330 + OFF), transform: `translateY(${(1 - sheet) * 100}%)` }}>
-            <div className="mx-auto rounded-full bg-zinc-700" style={{ width: u(60), height: u(6), marginTop: u(12) }} />
-            <div className="flex items-center justify-between" style={{ padding: `${u(18)} ${u(28)} 0` }}>
-              <p className="font-black" style={{ fontSize: u(30) }}>Push day</p>
-              <p className="font-mono font-bold text-lime-400" style={{ fontSize: u(22) }}>00:{String(12 + Math.floor(t * 40)).padStart(2, "0")}</p>
-            </div>
-            <p className="font-bold text-sky-400" style={{ fontSize: u(24), padding: `${u(22)} ${u(28)} ${u(10)}` }}>Bench Press (Barbell)</p>
-            <div className="grid grid-cols-[1fr_2fr_2fr_1fr] font-semibold text-zinc-500" style={{ fontSize: u(18), padding: `0 ${u(28)}` }}><span>SET</span><span>KG</span><span>REPS</span><span>✓</span></div>
-            <div className="relative bg-lime-400/15" style={{ height: u(56), marginTop: u(8) }}>
-              <div className="absolute grid w-full grid-cols-[1fr_2fr_2fr_1fr] items-center font-bold" style={{ fontSize: u(22), padding: `0 ${u(28)}`, height: u(56) }}><span>1</span><span>70</span><span>6</span><span className="text-lime-400">✓</span></div>
-            </div>
-            <div className="relative" style={{ height: u(56), marginTop: u(4), background: set ? "rgba(163,230,53,.25)" : undefined }}>
-              <span className="absolute font-bold" style={{ left: u(28), top: u(14), fontSize: u(22) }}>2</span>
-              <div className="absolute" style={{ top: u(6), left: 0, right: 0 }}>
-                {cell(170, 100, typed("72.5", t, 0.33, 0.41) || (t < 0.32 ? "70" : ""), t > 0.32 && t < 0.46)}
-                {cell(285, 90, typed("6", t, 0.47, 0.49) || (t < 0.46 ? "6" : ""), t > 0.46 && t < 0.56)}
-                <div className="absolute flex items-center justify-center rounded-[1.2cqw] font-black" style={{ left: u(400), width: u(50), height: u(44), fontSize: u(24), background: set ? LIME : "#27272a", color: set ? "#09090b" : "#71717a", transform: `scale(${1 + bump(t, 0.565, 0.03) * 0.4})` }}>✓</div>
-              </div>
-            </div>
-            {set && <p className="font-black text-lime-400" style={{ fontSize: u(22), padding: `${u(18)} ${u(28)}`, opacity: smooth(0.57, 0.6, t) }}>🏆 New best: 72.5 kg</p>}
-          </div>
-        ),
+        cursor: [[0, 520, 900], [0.14, 378, 356], [0.2, 378, 356], [0.3, 170, 544], [0.44, 170, 544], [0.46, 317, 544], [0.52, 317, 544], [0.55, 423, 544], [0.64, 423, 544], [0.78, 300, 800], [1, 300, 800]],
+        clicks: [0.18, 0.32, 0.46, 0.56], flashes: [0.57],
+        cam: { z: [0.22, 1, 0.3, 1.5, 0.56, 1.5, 0.64, 1], x: [0, 280], y: [0, 544] },
         pops: <>
-          <Pop s={pop(t, 0.58)} from={at(425, 520)} to={[90, 26]} wide={wide} glow="#ec4899" tilt={12}>
-            <div className="relative overflow-hidden" style={{ padding: `${u(26)} ${u(40)}` }}>
-              <div className="absolute inset-[-60%] opacity-60" style={{ background: `repeating-conic-gradient(from ${t * 400}deg, #ec4899 0 6deg, transparent 6deg 18deg)` }} />
-              <div className="relative whitespace-nowrap text-center">
-                <p className="font-black tracking-[0.2em] text-pink-300" style={{ fontSize: u(20) }}>NEW PR</p>
-                <p className="bg-gradient-to-r from-violet-300 to-pink-400 bg-clip-text font-black text-transparent" style={{ fontSize: u(80), lineHeight: 1 }}>72.5 kg</p>
-                <p className="font-bold text-zinc-300" style={{ fontSize: u(22) }}>Bench Press · +2.5 kg</p>
+          <Pop s={pop(t, 0.62)} from={at(423, 544)} to={[90, 26]} wide={wide} glow="#ec4899" tilt={12}>
+            <div className="relative whitespace-nowrap text-center">
+              <div className="absolute inset-[-90%] opacity-50" style={{ background: `repeating-conic-gradient(from ${t * 500}deg, #ec4899 0 6deg, transparent 6deg 18deg)` }} />
+              {Array.from({ length: 14 }, (_, i) => {
+                const a = (i / 14) * Math.PI * 2, r = smooth(0.62, 0.74, t) * 46;
+                return <span key={i} className="absolute left-1/2 top-1/2 rounded-sm" style={{ width: u(10), height: u(16), background: ["#a3e635", "#ec4899", "#a78bfa", "#facc15"][i % 4], transform: `translate(${Math.cos(a) * r}cqw, ${Math.sin(a) * r * 0.7}cqw) rotate(${t * 900 + i * 40}deg)`, opacity: 1 - smooth(0.7, 0.8, t) }} />;
+              })}
+              <div className="relative">
+                <PopTitle c="#f9a8d4">New PR</PopTitle>
+                <p className="bg-gradient-to-r from-violet-300 to-pink-400 bg-clip-text font-black tabular-nums text-transparent" style={{ fontSize: u(84), lineHeight: 1.05 }}>{(72.5 * smooth(0.62, 0.7, t)).toFixed(1)} kg</p>
+                <p className="font-bold text-zinc-300" style={{ fontSize: u(20) }}>Bench Press · +2.5 kg</p>
               </div>
             </div>
           </Pop>
-          <Pop s={pop(t, 0.68)} from={at(240, 380)} to={[10, 66]} wide={wide} glow="#a78bfa" tilt={-10}>
-            <div className="flex items-center" style={{ padding: u(26), gap: u(22) }}>
-              <svg viewBox="0 0 40 40" style={{ width: u(110) }}><circle cx="20" cy="20" r="17" fill="none" stroke="#27272a" strokeWidth="4" /><circle cx="20" cy="20" r="17" fill="none" stroke="#a78bfa" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(secs / 90) * 106.8} 200`} transform="rotate(-90 20 20)" /></svg>
-              <div><p className="font-bold text-zinc-400" style={{ fontSize: u(20) }}>Rest</p><p className="font-mono font-black" style={{ fontSize: u(54) }}>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}</p></div>
+          <Pop s={pop(t, 0.72)} from={at(240, 400)} to={[10, 68]} wide={wide} glow="#a78bfa" tilt={-10}>
+            <div className="flex items-center" style={{ gap: u(20) }}>
+              <Ring v={secs / 90} c="#a78bfa" size={110} w={4}><span style={{ fontSize: u(28) }}>⏱</span></Ring>
+              <div><PopTitle c="#c4b5fd">Rest</PopTitle><p className="font-mono font-black tabular-nums" style={{ fontSize: u(56) }}>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}</p></div>
+            </div>
+          </Pop>
+          <Pop s={pop(t, 0.8)} from={at(240, 600)} to={[10, 30]} wide={wide} glow="#ec4899" tilt={-6}>
+            <PopTitle c="#f9a8d4">Volume this week</PopTitle>
+            <div className="flex items-end" style={{ gap: u(10), height: u(120), marginTop: u(12) }}>
+              {[40, 55, 48, 62, 58, 70, 66, 84].map((h, i) => (
+                <div key={i} className="rounded-t-[1cqw]" style={{ width: u(26), height: u(h * 1.3 * smooth(0.81 + i * 0.015, 0.86 + i * 0.015, t)), background: i === 7 ? "linear-gradient(180deg,#ec4899,#a78bfa)" : "#3f3f46" }} />
+              ))}
+            </div>
+            <p className="font-bold text-lime-400" style={{ fontSize: u(18), marginTop: u(10) }}>▲ {Math.round(12 * smooth(0.84, 0.92, t))}% vs last week</p>
+          </Pop>
+        </>,
+      };
+    },
+  },
+  {
+    word: "Eat smart.", text: "Every dish in the APU cafeteria with its macros, counted against a target tuned to your goal.", from: "#fb923c", to: "#f43f5e",
+    floats: [["/hero/props/nasi-lemak-fried-chicken.webp", 92, 19, 19, 1.4, 8], ["/hero/props/teh-tarik.webp", 52, 83, 12, 0.8, -10], ["/hero/props/roti-canai-dhal.webp", 97, 74, 14, 1.2, 12], ["/icons/protein.webp", 57, 13, 8, 0.6, 0]],
+    Screen: Eat,
+    play: (t, wide) => ({
+      cursor: [[0, 520, 900], [0.12, 200, 426], [0.16, 200, 426], [0.36, 320, 480], [0.45, 422, 518], [0.55, 422, 518], [0.66, 240, 260], [1, 240, 260]],
+      clicks: [0.15, 0.5], flashes: [0.5],
+      cam: { z: [0.08, 1, 0.16, 1.5, 0.48, 1.5, 0.56, 1], x: [0.34, 200, 0.44, 380], y: [0.34, 426, 0.44, 500] },
+      pops: <>
+        <Pop s={pop(t, 0.6)} from={at(422, 518)} to={[9, 34]} wide={wide} glow="#fb923c" tilt={-10}>
+          <PopTitle c="#fdba74">Nasi lemak + fried chicken</PopTitle>
+          <p className="bg-gradient-to-r from-orange-300 to-rose-400 bg-clip-text font-black tabular-nums text-transparent" style={{ fontSize: u(68), lineHeight: 1.1 }}>{Math.round(780 * smooth(0.61, 0.7, t))}<span style={{ fontSize: u(26) }}> kcal</span></p>
+          <div className="flex" style={{ gap: u(16), marginTop: u(8) }}>
+            {([["Protein", 32, 60, "#38bdf8"], ["Carbs", 85, 120, "#fb923c"], ["Fat", 34, 60, "#f472b6"]] as const).map(([l, g, m, c], i) => {
+              const v = smooth(0.62 + i * 0.03, 0.72 + i * 0.03, t);
+              return <div key={l} className="flex flex-col items-center"><Ring v={(g / m) * v} c={c} size={92} w={5}><span className="font-black tabular-nums" style={{ fontSize: u(20) }}>{Math.round(g * v)}g</span></Ring><span className="text-zinc-400" style={{ fontSize: u(14), marginTop: u(4) }}>{l}</span></div>;
+            })}
+          </div>
+        </Pop>
+        <Pop s={pop(t, 0.74)} from={at(240, 290)} to={[91, 68]} wide={wide} glow="#f43f5e" tilt={10}>
+          <PopTitle c="#fda4af">Today</PopTitle>
+          {([["09:00", "Kaya toast + eggs", "kaya-toast-2-half-boiled-eggs", 420], ["13:00", "Chicken briyani", "chicken-briyani", 850], ["17:45", "Nasi lemak", "nasi-lemak-fried-chicken", 780]] as const).map(([h, n, img, k], i) => (
+            <div key={h} className="flex items-center" style={{ gap: u(12), marginTop: u(12), ...rise(smooth(0.76 + i * 0.03, 0.8 + i * 0.03, t), 20) }}>
+              <img src={`/food/${img}.webp`} alt="" className="rounded-[1.4cqw]" style={{ width: u(48), height: u(48) }} />
+              <div style={{ width: u(220) }}><p className="font-bold" style={{ fontSize: u(17), color: i === 2 ? LIME : undefined }}>{n}</p><p className="text-zinc-400" style={{ fontSize: u(14) }}>{h} · {k} kcal</p></div>
+            </div>
+          ))}
+        </Pop>
+      </>,
+    }),
+  },
+  {
+    word: "Climb the ranks.", text: "Leaderboards by lift, faculty and bodyweight class. The heaviest lift wins, not the most reps.", from: "#fde047", to: "#f59e0b",
+    floats: [["/hero/props/trophy.webp", 91, 18, 19, 1.4, -8], ["/icons/medal.webp", 52, 82, 11, 0.8, 12], ["/icons/ranks.webp", 97, 70, 10, 1.2, -6], ["/icons/p4p.webp", 57, 12, 8, 0.6, 0]],
+    Screen: Ranks,
+    play: (t, wide) => {
+      const rank = t < 0.5 ? 11 : Math.round(tr(t, 0.52, 11, 0.74, 4));
+      return {
+        cursor: [[0, 520, 900], [0.13, 240, 340], [0.19, 240, 340], [0.42, 240, 556], [0.55, 240, 556], [0.7, 380, 800], [1, 380, 800]],
+        clicks: [0.17, 0.45], flashes: [0.17, 0.75],
+        cam: { z: [0.06, 1, 0.14, 1.4, 0.3, 1.4, 0.38, 1, 0.42, 1, 0.48, 1.35, 0.7, 1.35, 0.78, 1], x: [0, 240], y: [0, 400, 0.4, 400, 0.44, 556] },
+        pops: <>
+          <Pop s={pop(t, 0.36)} from={at(240, 400)} to={[10, 30]} wide={wide} glow="#fde047" tilt={-8}>
+            <PopTitle c="#fde047">SBD total · this month</PopTitle>
+            <div className="relative" style={{ width: u(360), height: u(200), marginTop: u(10) }}><Podium t0={0.37} t={t} big={0.75} /></div>
+          </Pop>
+          <Pop s={pop(t, 0.5)} from={at(240, 556)} to={[90, 64]} wide={wide} glow="#f59e0b" tilt={10}>
+            <div className="text-center" style={{ padding: `0 ${u(20)}` }}>
+              <PopTitle c="#fcd34d">Your rank</PopTitle>
+              <p className="font-black tabular-nums" style={{ fontSize: u(120), lineHeight: 1, color: rank <= 4 ? "#fde047" : "#fafafa", transform: `scale(${1 + bump(t, 0.75, 0.04) * 0.35})` }}>#{rank}</p>
+              <p className="whitespace-nowrap font-black text-lime-400" style={{ fontSize: u(22), ...rise(smooth(0.74, 0.78, t)) }}>▲ 7 places this week</p>
             </div>
           </Pop>
         </>,
@@ -139,91 +528,43 @@ const scenes: Scene[] = [
     },
   },
   {
-    img: "eat", word: "Eat smart.", text: "Every dish in the APU cafeteria with its macros, counted against a target tuned to your goal.", from: "#fb923c", to: "#f43f5e",
-    play: (t, wide) => {
-      const q = typed("nasi lemak", t, 0.17, 0.33), ring = smooth(0.35, 0.4, t) * (1 - smooth(0.62, 0.66, t)), fill = smooth(0.56, 0.72, t);
-      const bar = (label: string, g: number, max: number, c: string) => (
-        <div style={{ marginTop: u(14) }}>
-          <div className="flex justify-between font-bold" style={{ fontSize: u(20) }}><span className="text-zinc-400">{label}</span><span>{Math.round(g * fill)} g</span></div>
-          <div className="overflow-hidden rounded-full bg-zinc-800" style={{ height: u(12), marginTop: u(6) }}><div className="h-full rounded-full" style={{ width: `${(g / max) * 100 * fill}%`, background: c }} /></div>
-        </div>
-      );
-      return {
-        cursor: [[0, 520, 900], [0.12, 200, 636], [0.16, 200, 636], [0.34, 260, 700], [0.44, 437, 792], [0.55, 437, 792], [0.66, 300, 300], [1, 300, 300]],
-        clicks: [0.15, 0.5], flashes: [0.5],
-        zoom: [0.35, 1, 0.41, 1.3, 0.6, 1.3, 0.67, 1], focus: [260, 790],
-        screen: <>
-          {t > 0.15 && (
-            <div className="absolute z-10 flex items-center rounded-[1.6cqw] bg-zinc-900 font-semibold" style={{ left: u(34), top: u(612 + OFF), width: u(420), height: u(48), padding: `0 ${u(16)}`, fontSize: u(22), outline: `${u(2)} solid ${LIME}` }}>
-              <span className="text-zinc-500" style={{ marginRight: u(10) }}>⌕</span>{q}<Caret />
-            </div>
-          )}
-          <div className="absolute z-10 rounded-[2cqw]" style={{ left: u(30), top: u(770 + OFF), width: u(428), height: u(108), opacity: ring, boxShadow: `0 0 0 ${u(3)} ${LIME}, 0 0 ${u(40)} ${LIME}` }} />
-          {t > 0.5 && (
-            <div className="absolute z-20 flex items-center whitespace-nowrap rounded-full bg-lime-400 font-bold text-zinc-950" style={{ left: "50%", top: u(60 + OFF), padding: `${u(10)} ${u(22)}`, fontSize: u(20), gap: u(8), transform: `translate(-50%, ${(1 - clamp(pop(t, 0.5, 0.8))) * -200}%)` }}>✓ Added nasi lemak</div>
-          )}
-        </>,
-        pops: <>
-          <Pop s={pop(t, 0.53)} from={at(437, 792)} to={[9, 36]} wide={wide} glow="#fb923c" tilt={-10}>
-            <div style={{ padding: u(28), width: u(330) }}>
-              <p className="font-bold text-zinc-400" style={{ fontSize: u(20) }}>Nasi lemak + fried chicken</p>
-              <p className="bg-gradient-to-r from-orange-300 to-rose-400 bg-clip-text font-black text-transparent" style={{ fontSize: u(72), lineHeight: 1.05 }}>{Math.round(780 * smooth(0.54, 0.68, t))}<span style={{ fontSize: u(28) }}> kcal</span></p>
-              {bar("Protein", 32, 60, "#38bdf8")}{bar("Carbs", 85, 120, "#fb923c")}{bar("Fat", 34, 60, "#f43f5e")}
-            </div>
-          </Pop>
-          <Pop s={pop(t, 0.7)} from={at(240, 220)} to={[91, 66]} wide={wide} glow="#f43f5e" tilt={10}><Crop img="eat" r={[22, 150, 437, 140]} /></Pop>
-        </>,
-      };
-    },
-  },
-  {
-    img: "board", word: "Climb the ranks.", text: "Leaderboards by lift, faculty and bodyweight class. The heaviest lift wins, not the most reps.", from: "#fde047", to: "#f59e0b",
-    play: (t, wide) => {
-      const rank = Math.round(tr(t, 0.5, 11, 0.74, 4)), up = t > 0.74;
-      return {
-        cursor: [[0, 520, 900], [0.15, 246, 370], [0.22, 246, 370], [0.42, 200, 607], [0.55, 200, 607], [0.7, 380, 300], [1, 380, 300]],
-        clicks: [0.18, 0.45], flashes: [0.18, 0.75],
-        zoom: [0.18, 1, 0.24, 1.2, 0.36, 1.2, 0.42, 1], focus: [246, 430],
-        pops: <>
-          <Pop s={pop(t, 0.19)} from={at(246, 430)} to={[10, 32]} wide={wide} glow="#fde047" tilt={-8}><Crop img="board" r={[27, 320, 437, 220]} /></Pop>
-          <Pop s={pop(t, 0.46)} from={at(200, 607)} to={[90, 64]} wide={wide} glow="#f59e0b" tilt={10}>
-            <div className="text-center" style={{ padding: `${u(26)} ${u(46)}` }}>
-              <p className="font-bold text-zinc-400" style={{ fontSize: u(20) }}>Your rank</p>
-              <p className="font-black tabular-nums" style={{ fontSize: u(110), lineHeight: 1, color: up ? "#fde047" : "#fafafa", transform: `scale(${1 + bump(t, 0.75, 0.04) * 0.35})` }}>#{rank}</p>
-              <p className="font-black text-lime-400" style={{ fontSize: u(24), opacity: smooth(0.74, 0.78, t) }}>▲ 7 places</p>
-            </div>
-          </Pop>
-        </>,
-      };
-    },
-  },
-  {
-    img: "map", word: "Find anything.", text: "A 3D map of the whole gym. Every exercise points you to the machine that does it.", from: "#22d3ee", to: "#6366f1",
-    play: (t, wide) => {
-      const pulse = (((t - 0.22) * 6) % 1 + 1) % 1;
-      return {
-        cursor: [[0, 520, 900], [0.17, 327, 789], [0.24, 327, 789], [0.4, 330, 560], [1, 330, 560]],
-        clicks: [0.21], flashes: [0.21],
-        zoom: [0.24, 1, 0.42, 2.1, 0.76, 2.1, 0.88, 1], focus: [243, 400],
-        screen: t > 0.22 && (
-          <div className="absolute z-10 rounded-full" style={{ left: u(243), top: u(400 + OFF), width: u(120), height: u(70), transform: `translate(-50%,-50%) scale(${0.4 + pulse * 1.2})`, opacity: (1 - pulse) * (1 - smooth(0.8, 0.9, t)), border: `${u(4)} solid #22d3ee` }} />
-        ),
-        pops: <>
-          <Pop s={pop(t, 0.44)} from={at(243, 400)} to={[10, 30]} wide={wide} glow="#22d3ee" tilt={-10}>
-            <div style={{ padding: u(28), width: u(330) }}>
-              <p className="font-bold text-cyan-300" style={{ fontSize: u(20) }}>📍 Benches &amp; racks</p>
-              <p className="font-black" style={{ fontSize: u(50), lineHeight: 1.1 }}>Squat Rack</p>
-              <p className="text-zinc-400" style={{ fontSize: u(20), marginTop: u(8) }}>Used for Squat (Barbell) and Front Squat (Barbell)</p>
-            </div>
-          </Pop>
-          <Pop s={pop(t, 0.56)} from={at(240, 790)} to={[90, 70]} wide={wide} glow="#6366f1" tilt={10}><Crop img="map" r={[20, 770, 450, 80]} z={1.3} /></Pop>
-        </>,
-      };
-    },
+    word: "Find anything.", text: "A 3D map of the whole gym. Every exercise points you to the machine that does it.", from: "#22d3ee", to: "#6366f1",
+    floats: [["/icons/map.webp", 91, 17, 13, 1.4, -8], ["/icons/target.webp", 52, 82, 10, 0.8, 10], ["/hero/props/plate.webp", 97, 72, 14, 1.2, 20], ["/icons/building.webp", 57, 12, 8, 0.6, 0]],
+    Screen: MapScreen,
+    play: (t, wide) => ({
+      cursor: [[0, 520, 900], [0.15, 318, 802], [0.23, 318, 802], [0.4, 250, 440], [1, 250, 440]],
+      clicks: [0.2], flashes: [0.2],
+      cam: { z: [0.06, 1, 0.15, 1.4, 0.24, 1.4, 0.34, 1.5, 0.5, 1.5, 0.58, 1], x: [0.24, 318, 0.34, 240], y: [0.24, 802, 0.34, 440] },
+      pops: <>
+        <Pop s={pop(t, 0.58)} from={at(240, 440)} to={[10, 40]} wide={wide} glow="#22d3ee" tilt={-10}>
+          <PopTitle c="#67e8f9">Route from the door</PopTitle>
+          <svg viewBox={floor.viewBox} style={{ width: u(230), marginTop: u(10) }}>
+            <polygon points={floor.outline} fill="#18181b" stroke="#52525b" strokeWidth="6" pathLength={1} strokeDasharray={`${smooth(0.59, 0.66, t)} 1`} />
+            {equipment.map((q, i) => (
+              <rect key={q.id} x={q.x} y={q.y} width={q.w} height={q.h} rx="6" fill={q.id === "rack" ? "#22d3ee" : "#3f3f46"}
+                opacity={smooth(0.6 + (i / equipment.length) * 0.08, 0.62 + (i / equipment.length) * 0.08, t)} />
+            ))}
+            <rect x={floor.door[0] - 6} y={floor.door[1]} width={floor.door[2] + 6} height={floor.door[3]} fill={LIME} />
+            <polyline points="600,1010 460,1010 460,330 300,330 300,305" fill="none" stroke="#22d3ee" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={`${smooth(0.67, 0.78, t)} 1`} />
+            <circle cx="300" cy={265 - Math.abs(Math.sin(t * 60)) * 20} r="16" fill="#22d3ee" opacity={smooth(0.77, 0.79, t)} />
+          </svg>
+        </Pop>
+        <Pop s={pop(t, 0.7)} from={at(318, 802)} to={[90, 66]} wide={wide} glow="#6366f1" tilt={10}>
+          <PopTitle c="#a5b4fc">📍 Benches &amp; racks</PopTitle>
+          <p className="font-black" style={{ fontSize: u(46), lineHeight: 1.15 }}>Squat Rack</p>
+          <div className="flex flex-wrap" style={{ gap: u(8), marginTop: u(10), width: u(320) }}>
+            {["Squat (Barbell)", "Front Squat (Barbell)", "Box Squat"].map((x, i) => (
+              <span key={x} className="rounded-full bg-indigo-500/20 font-semibold text-indigo-200" style={{ padding: `${u(6)} ${u(14)}`, fontSize: u(15), ...rise(smooth(0.73 + i * 0.03, 0.77 + i * 0.03, t), 15) }}>{x}</span>
+            ))}
+          </div>
+        </Pop>
+      </>,
+    }),
   },
 ];
 const N = scenes.length;
-const U = 1 + 2 * N; // scroll units: the intro, then two screens of scrolling per scene
+const L = 1.6; // screens of scrolling per scene
+const U = 1 + L * N; // scroll units: the intro, then the scenes
 
 export default function HeroScroll({ apk }: { apk: string }) {
   const ref = useRef<HTMLElement>(null);
@@ -245,10 +586,11 @@ export default function HeroScroll({ apk }: { apk: string }) {
     return () => { removeEventListener("scroll", on); removeEventListener("resize", on); cancelAnimationFrame(raf); };
   }, []);
 
-  const tk = (k: number) => (p - 1 - 2 * k) / 2; // scene k's own time, 0..1 while it's on
+  const tk = (k: number) => (p - 1 - L * k) / L; // scene k's own time, 0..1 while it's on
+  const ek = (k: number) => (k === 0 ? smooth(0.35, 1, p) : smooth(-0.05, 0.14, tk(k))); // its screen's entrance
   const intro = smooth(0, 0.85, p);
-  const cur = clamp(Math.floor((p - 1) / 2), 0, N - 1);
-  const f = clamp(((p - 1) / 2 - cur - 0.9) * 10); // blend colours into the next scene
+  const cur = clamp(Math.floor((p - 1) / L), 0, N - 1);
+  const f = clamp(((p - 1) / L - cur - 0.9) * 10); // blend colours into the next scene
   const nxt = Math.min(N - 1, cur + 1);
   const from = mix(scenes[cur].from, scenes[nxt].from, f), to = mix(scenes[cur].to, scenes[nxt].to, f);
 
@@ -257,6 +599,10 @@ export default function HeroScroll({ apk }: { apk: string }) {
   const cx = live ? tr(t, ...live.cursor.flatMap(([a, x]) => [a, x])) : 240, cy = live ? tr(t, ...live.cursor.flatMap(([a, , y]) => [a, y])) : 500;
   const press = live ? Math.max(0, ...live.clicks.map((c) => bump(t, c, 0.015))) : 0;
   const flash = Math.max(0, ...plays.flatMap((pl, k) => (pl ? pl.flashes.map((c) => bump(tk(k), c, 0.02)) : [])), ...scenes.map((_, k) => (k ? bump(tk(k), 0, 0.012) : 0)));
+  // the camera: push in on the phone around what the cursor is doing
+  const z = live?.cam ? tr(t, ...live.cam.z) : 1;
+  const [ox, oy] = at(live?.cam ? tr(t, ...live.cam.x) : 240, live?.cam ? tr(t, ...live.cam.y) : 500);
+  const centre = clamp((z - 1) / 0.5) * 0.9;
   const kick = live ? Math.max(0, ...live.clicks.map((c) => bump(t, c, 0.03))) : 0;
 
   return (
@@ -265,8 +611,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
       <div className="sticky top-0 h-dvh overflow-hidden">
         {/* colour field */}
         <div className="pointer-events-none absolute inset-0" style={{ opacity: 0.25 + intro * 0.5 }} aria-hidden>
-          <div className="absolute -left-[10vw] top-[10vh] h-[60vmax] w-[60vmax] rounded-full blur-[120px] motion-safe:animate-[hero-drift_14s_ease-in-out_infinite]" style={{ background: from, opacity: 0.55 }} />
-          <div className="absolute -right-[10vw] bottom-[-20vh] h-[55vmax] w-[55vmax] rounded-full blur-[120px] motion-safe:animate-[hero-drift_18s_ease-in-out_infinite_reverse]" style={{ background: to, opacity: 0.5 }} />
+          <div className="absolute -inset-[15%] motion-safe:animate-[hero-drift_16s_ease-in-out_infinite]" style={{ background: `radial-gradient(35% 40% at 25% 30%, ${from}, transparent), radial-gradient(35% 40% at 78% 72%, ${to}, transparent)`, opacity: 0.6 }} />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#09090b_85%)]" />
         </div>
         <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,#000,transparent_70%)]" aria-hidden />
@@ -291,7 +636,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
           const t = tk(k), vis = smooth(-0.04, 0.01, t) * (1 - smooth(0.93, 0.99, t));
           if (vis <= 0) return null;
           return (
-            <div key={s.img} className="pointer-events-none absolute inset-x-0 top-[8dvh] z-10 px-6 text-center md:inset-x-auto md:left-[max(2rem,calc(50%-36rem))] md:top-1/2 md:w-[min(34rem,42vw)] md:text-left"
+            <div key={s.word} className="pointer-events-none absolute inset-x-0 top-[8dvh] z-10 px-6 text-center md:inset-x-auto md:left-[max(2rem,calc(50%-36rem))] md:top-1/2 md:w-[min(34rem,42vw)] md:text-left"
               style={{ opacity: vis, transform: `translateY(${(1 - vis) * -40}px)${wide ? " translateY(-50%)" : ""}` }}>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400">{String(k + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}</p>
               <h2 className="mt-2 pb-2 text-[clamp(2.2rem,6.5vw,5.75rem)] font-black leading-[0.95] tracking-[-0.04em]">
@@ -304,45 +649,57 @@ export default function HeroScroll({ apk }: { apk: string }) {
         })}
 
         {/* the phone */}
-        <div className="absolute inset-x-0 bottom-[3dvh] top-[36dvh] flex items-center justify-center [perspective:1400px] md:inset-y-0 md:left-[40%]">
+        <div className="absolute inset-x-0 bottom-[3dvh] top-[36dvh] z-10 flex items-center justify-center [perspective:1400px] md:inset-y-0 md:left-[40%]">
           <div className="relative aspect-[390/844] h-full max-h-[760px] [container-type:inline-size] md:h-[80dvh]"
             style={{
               transform: `translateY(${(1 - intro) * (wide ? 55 : 48)}dvh) rotateX(${(1 - intro) * 28}deg) rotateY(${intro * ((cx - 240) / 240) * -7}deg) scale(${1.1 - intro * 0.1 + kick * 0.04})`,
               transformOrigin: "50% 100%",
             }}>
-            <div className="absolute -inset-10 rounded-[4rem] blur-3xl" style={{ background: `linear-gradient(160deg, ${from}, ${to})`, opacity: 0.35 * intro + flash * 0.4 }} aria-hidden />
-            <div className="relative h-full rounded-[13%/6%] bg-zinc-800 p-[2.6%] shadow-2xl ring-1 ring-white/20">
-              <div className="relative h-full overflow-hidden rounded-[11%/5.2%] bg-zinc-950">
-                {scenes.map((s, k) => {
-                  const pl = plays[k], t = tk(k);
-                  const y = k === 0 ? 0 : (1 - smooth(-0.06, 0.02, t)) * 100; // slides up over the last screen
-                  const under = k < N - 1 ? smooth(-0.06, 0.02, tk(k + 1)) : 0; // and this one sinks back
-                  if (y >= 100 || under >= 1) return null;
-                  const z = pl?.zoom ? tr(t, ...pl.zoom) : 1, [fx, fy] = pl?.focus ?? [240, 500];
-                  const cOn = smooth(0.02, 0.07, t) * (1 - smooth(0.9, 0.95, t));
-                  const ring = pl ? Math.max(0, ...pl.clicks.map((c) => (t >= c && t < c + 0.06 ? (t - c) / 0.06 : 0))) : 0;
-                  return (
-                    <div key={s.img} className="absolute inset-0 overflow-hidden bg-zinc-950" style={{ transform: `translateY(${y}%) scale(${1 - under * 0.1})`, opacity: 1 - under * 0.7 }}>
-                      <div className="absolute inset-0" style={{ transform: `scale(${z})`, transformOrigin: `${u(fx)} ${u(fy + OFF)}` }}>
-                        <Image src={`/hero/${s.img}.webp`} alt="" width={960} height={2078} sizes="420px" priority className="absolute left-0 w-full" style={{ top: u(OFF) }} />
-                        {pl?.screen}
+            <div className="absolute inset-0" style={{ transformOrigin: `${ox}% ${oy}%`, transform: `translate(${(50 - ox) * centre}%, ${(46 - oy) * centre}%) scale(${z})` }}>
+              <div className="absolute -inset-10 rounded-[4rem] blur-3xl" style={{ background: `linear-gradient(160deg, ${from}, ${to})`, opacity: 0.35 * intro + flash * 0.4 }} aria-hidden />
+              <div className="relative h-full rounded-[13%/6%] bg-zinc-800 p-[2.6%] shadow-2xl ring-1 ring-white/20">
+                <div className="relative h-full overflow-hidden rounded-[11%/5.2%] bg-zinc-950 text-zinc-50">
+                  {scenes.map(({ word, Screen }, k) => {
+                    const t = tk(k);
+                    const y = k === 0 ? 0 : (1 - smooth(-0.06, 0.02, t)) * 100; // slides up over the last screen
+                    const under = k < N - 1 ? smooth(-0.06, 0.02, tk(k + 1)) : 0; // and this one sinks back
+                    if (y >= 100 || under >= 1) return null;
+                    const pl = plays[k];
+                    const ring = pl ? Math.max(0, ...pl.clicks.map((c) => (t >= c && t < c + 0.06 ? (t - c) / 0.06 : 0))) : 0;
+                    return (
+                      <div key={word} className="absolute inset-0 overflow-hidden bg-zinc-950" style={{ transform: `translateY(${y}%) scale(${1 - under * 0.1})`, opacity: 1 - under * 0.7 }}>
+                        <Screen t={clamp(t, 0, 1.2)} e={ek(k)} />
                         {k === cur && pl && <>
-                          {ring > 0 && <div className="absolute z-40 rounded-full border-lime-300" style={{ left: u(cx), top: u(cy + OFF), width: u(90), height: u(90), borderWidth: u(4), transform: `translate(-50%,-50%) scale(${0.3 + ring * 1.6})`, opacity: 1 - ring }} />}
-                          <svg viewBox="0 0 24 24" className="absolute z-40 drop-shadow-[0_4px_8px_rgba(0,0,0,.6)]" style={{ left: u(cx), top: u(cy + OFF), width: u(46), opacity: cOn, transform: `translate(-18%,-8%) scale(${1 - press * 0.2})` }}>
+                          {ring > 0 && <div className="absolute z-40 rounded-full border-lime-300" style={{ left: u(cx), top: u(cy), width: u(90), height: u(90), borderWidth: u(4), transform: `translate(-50%,-50%) scale(${0.3 + ring * 1.6})`, opacity: 1 - ring }} />}
+                          <svg viewBox="0 0 24 24" className="absolute z-40 drop-shadow-[0_4px_8px_rgba(0,0,0,.6)]" style={{ left: u(cx), top: u(cy), width: u(46), opacity: smooth(0.02, 0.07, t) * (1 - smooth(0.9, 0.95, t)), transform: `translate(-18%,-8%) scale(${1 - press * 0.2})` }}>
                             <path d="M4 2.5 20 11l-7 2.2-3.4 7.3z" fill="#fff" stroke="#09090b" strokeWidth="1.6" strokeLinejoin="round" />
                           </svg>
                         </>}
                       </div>
-                    </div>
-                  );
-                })}
-                <div className="absolute left-1/2 top-[1.3%] z-50 h-[3.4%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
-                <div className="pointer-events-none absolute inset-0 z-50 bg-lime-300 mix-blend-overlay" style={{ opacity: flash * 0.8 }} />
+                    );
+                  })}
+                  <div className="absolute left-1/2 top-[1.3%] z-50 h-[3.4%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
+                  <div className="pointer-events-none absolute inset-0 z-50 bg-lime-300 mix-blend-overlay" style={{ opacity: flash * 0.8 }} />
+                </div>
               </div>
             </div>
             {plays.map((pl, k) => pl && <div key={k}>{pl.pops}</div>)}
           </div>
         </div>
+
+        {/* 3D props and app art drifting around the phone, behind (depth < 1) and in front */}
+        {scenes.flatMap((s, k) => {
+          const t = tk(k), vis = smooth(-0.06, 0.1, t) * (1 - smooth(0.88, 1, t));
+          if (vis <= 0) return [];
+          return s.floats.map(([src, x, y, size, depth, rot], j) => (
+            <img key={src + j} src={src} alt="" aria-hidden className="pointer-events-none absolute drop-shadow-[0_20px_30px_rgba(0,0,0,.55)]"
+              style={{
+                left: `${wide ? x : ((x - 50) / 47) * 92 + 4}%`, top: `${wide ? y : 30 + y * 0.68}%`, width: `${size * (wide ? 1 : 1.5)}vmin`,
+                zIndex: depth > 1 ? 30 : 5, opacity: vis * (depth < 1 ? 0.75 : 1),
+                transform: `translate(-50%,-50%) translateY(${(0.5 - t) * depth * 26}vh) rotate(${rot + (t - 0.5) * depth * 50}deg) scale(${0.3 + 0.7 * vis})`,
+              }} />
+          ));
+        })}
 
         {/* the lime flash on the big moments */}
         <div className="pointer-events-none absolute inset-0 z-40 bg-lime-400" style={{ opacity: flash * 0.45 }} aria-hidden />
@@ -351,7 +708,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
         <div className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-2 md:flex" style={{ opacity: intro }} aria-hidden>
           {scenes.map((s, k) => {
             const on = k === cur && p >= 1;
-            return <span key={s.img} className="w-1.5 rounded-full transition-all duration-300" style={{ height: on ? 30 : 8, background: on ? s.from : "rgba(255,255,255,.25)" }} />;
+            return <span key={s.word} className="w-1.5 rounded-full transition-all duration-300" style={{ height: on ? 30 : 8, background: on ? s.from : "rgba(255,255,255,.25)" }} />;
           })}
         </div>
       </div>
