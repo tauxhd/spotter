@@ -3,3 +3,11 @@ Derived from Z-Anatomy "MuscularSystem100.fbx" (https://github.com/LluisV/Z-Anat
 itself based on BodyParts3D (DBCLS). Licensed CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
 Changes: kept 276 superficial muscles incl. face, hands and feet (left/right, one material each), decimated to ~220k triangles,
 exported as Draco-compressed glTF. This model file is shared under the same CC BY-SA 4.0 licence.
+
+gym.glb
+The SweatZone built in Blender from the floor plan (src/lib/data.ts); racks, rig, cables and machines are modelled from
+scratch. Downloaded models (textures flattened to plain colours, scaled and placed):
+- "Treadmill" by CreativeTrio, CC0 — https://poly.pizza/m/9hYy4Zmk67
+- "Exercise Bike" by Dave Edwards, CC BY 3.0 — https://poly.pizza/m/9DwoznfSPHY (decimated)
+- "Exercise Equipment" by sirkitree, CC BY 3.0 — https://poly.pizza/m/e9qDJpbSTxf (bench press stations)
+CC BY 3.0: https://creativecommons.org/licenses/by/3.0/

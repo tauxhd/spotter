@@ -28,7 +28,7 @@ function load() {
 setTimeout(() => { load().catch(() => {}); }, 2500);
 
 // three.js wants a canvas; GLView gives a raw GL context, so hand it a minimal stand-in.
-function rendererFor(gl: ExpoWebGLRenderingContext) {
+export function rendererFor(gl: ExpoWebGLRenderingContext) {
   const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
   const canvas = { width, height, style: {}, clientWidth: width, clientHeight: height, addEventListener: () => {}, removeEventListener: () => {}, getContext: () => gl } as unknown as HTMLCanvasElement;
   // three.js (r163+) refuses anything that is `instanceof WebGLRenderingContext`, and Expo GL registers its (WebGL 2

@@ -1,4 +1,4 @@
-// Gym map (the website's /map): the SweatZone floor plan; tap a machine to highlight it (it pulses) and see what it's for.
+// Gym map (the website's /map): the SweatZone in isometric 3D (components/gym-3d) or as the flat floor plan; tap a machine to highlight it (it pulses) and see what it's for.
 // Opens on a machine when called with ?e=<equipment id> (from a workout's location chip). Plain dashed boxes are tables.
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -7,6 +7,7 @@ import Animated, { useAnimatedProps, useSharedValue, withRepeat, withSequence, w
 import Svg, { G, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 
 import { equipment, exercises, floor } from '@shared/data';
+import Gym3D from '@/components/gym-3d';
 import { ThemedText } from '@/components/themed-text';
 import { Section } from '@/components/ui/kit';
 import { Lime } from '@/constants/theme';
@@ -25,6 +26,7 @@ export default function GymMap() {
   const params = useLocalSearchParams<{ e?: string }>();
   const theme = useTheme();
   const [sel, setSel] = useState<string | undefined>(params.e);
+  const [plan, setPlan] = useState(false);
   const picked = equipment.find((e) => e.id === sel);
   const zones = [...new Set(equipment.map((e) => e.zone))];
   const usedFor = picked ? Object.entries(exercises).filter(([, v]) => v.equip === picked.id).map(([k]) => k) : [];
@@ -33,7 +35,17 @@ export default function GymMap() {
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60, gap: 16 }}>
       <Stack.Screen options={{ title: 'Gym map' }} />
       <ThemedText type="small" themeColor="textSecondary">{picked ? `${picked.name} · ${picked.zone}` : 'Tap any equipment'}</ThemedText>
-      <Section style={{ paddingVertical: 8 }}>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {(['3D', 'Floor plan'] as const).map((m) => {
+          const on = (m === 'Floor plan') === plan;
+          return (
+            <Pressable key={m} onPress={() => setPlan(m === 'Floor plan')} accessibilityState={{ selected: on }} style={[styles.chip, { backgroundColor: on ? Lime : theme.backgroundElement }]}>
+              <ThemedText type="smallBold" style={{ fontSize: 12, color: on ? '#09090b' : theme.text }}>{m}</ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+      {!plan ? <Section style={{ padding: 0, overflow: 'hidden' }}><Gym3D sel={sel} onPick={setSel} /></Section> : <Section style={{ paddingVertical: 8 }}>
         <Svg viewBox={floor.viewBox} width="100%" height={560}>
           <Polygon points={floor.outline} fill="#09090b" stroke="#3f3f46" strokeWidth={3} />
           {floor.tables.map(([x, y, w, h], i) => <Rect key={i} x={x} y={y} width={w} height={h} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth={1.5} strokeDasharray="4 3" />)}
@@ -51,7 +63,7 @@ export default function GymMap() {
             );
           })}
         </Svg>
-      </Section>
+      </Section>}
       {picked && usedFor.length > 0 && <ThemedText type="small" themeColor="textSecondary">Used for: {usedFor.join(', ')}</ThemedText>}
       {zones.map((z) => (
         <View key={z}>

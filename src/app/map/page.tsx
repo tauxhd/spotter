@@ -1,13 +1,16 @@
 "use client";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { equipment, exercises, floor } from "@/lib/data";
 import MeButton from "@/components/MeButton";
 
-// The SweatZone floor plan (lib/data `floor` + `equipment`): tap a machine to highlight it and see what it's for. The plain
-// boxes are tables and storage, so they aren't tappable.
+const Gym3D = dynamic(() => import("@/components/Gym3D"), { ssr: false }); // three.js only on this page
+
+// The SweatZone: an isometric 3D view (components/Gym3D) or the flat floor plan (lib/data `floor` + `equipment`). Tap a
+// machine to highlight it and see what it's for. The plain boxes are tables and storage, so they aren't tappable.
 
 function GymMap() {
   const params = useSearchParams();
@@ -17,9 +20,10 @@ function GymMap() {
   const zones = [...new Set(equipment.map((e) => e.zone))];
   const usedFor = picked ? Object.entries(exercises).filter(([, v]) => v.equip === picked.id).map(([k]) => k) : [];
 
-  const select = (id: string) => {
+  const [plan, setPlan] = useState(false);
+  const select = (id?: string) => {
     const p = new URLSearchParams(params);
-    p.set("e", id);
+    if (id) p.set("e", id); else p.delete("e");
     router.replace(`/map?${p}`, { scroll: false });
   };
   const t = params.get("t");
@@ -35,7 +39,12 @@ function GymMap() {
         <MeButton className="ml-auto" />
       </header>
 
-      <div className="card py-2">
+      <div className="flex gap-2" role="group" aria-label="Map view">
+        <button className="chip" aria-pressed={!plan} onClick={() => setPlan(false)}>3D</button>
+        <button className="chip" aria-pressed={plan} onClick={() => setPlan(true)}>Floor plan</button>
+      </div>
+
+      {!plan ? <div className="card overflow-hidden p-0"><Gym3D sel={picked?.id} onPick={select} /></div> : <div className="card py-2">
         <svg viewBox={floor.viewBox} className="mx-auto max-h-[70dvh] w-full" role="img" aria-label="APU gym floor plan">
           <polygon points={floor.outline} className="fill-zinc-50 stroke-zinc-300 dark:fill-zinc-950 dark:stroke-zinc-700" strokeWidth="3" />
           {floor.tables.map(([x, y, w, h], i) => (
@@ -62,7 +71,7 @@ function GymMap() {
             );
           })}
         </svg>
-      </div>
+      </div>}
 
       {picked && usedFor.length > 0 && (
         <section className="card"><p className="muted text-sm">Used for: {usedFor.join(", ")}</p></section>
