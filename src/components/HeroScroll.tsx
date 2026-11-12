@@ -391,6 +391,136 @@ function MapScreen({ t, e }: { t: number; e: number }) {
   </>;
 }
 
+
+const FRIENDS: [string, string, string][] = [["Hafiz R.", "u2", "Push day · just now"], ["Jun Wei", "u3", "Legs · 25 min"], ["Mei Ling", "u5", "Cardio · 10 min"]];
+const SUGGEST: [string, string, string][] = [["Priya S.", "u4", "Follows you · Business"], ["Aiman Z.", "u6", "Computing · trains evenings"]];
+
+function Friends({ t, e }: { t: number; e: number }) {
+  const banner = io(clamp((t - 0.12) / 0.05)) * (1 - smooth(0.24, 0.28, t));
+  const add = io(clamp((t - 0.25) / 0.08)), here = t > 0.27 ? 3 : 2, following = t > 0.5;
+  const sy = 346 + 84 * (2 + add) + 16; // the suggestions follow the list down as it grows
+  return <>
+    <Head e={e} icon="crowd" title="Friends" sub="Who's training right now" />
+    <B x={24} y={140} w={432} h={150} className={CARD} style={{ padding: u(20), ...rise(st(e, 1)) }}>
+      <div className="flex items-center justify-between">
+        <p className="font-bold" style={{ fontSize: u(20) }}>In the SweatZone now</p>
+        <span className="flex items-center font-bold text-lime-400" style={{ gap: u(6), fontSize: u(14) }}><span className="animate-ping rounded-full bg-lime-400" style={{ width: u(8), height: u(8) }} />LIVE</span>
+      </div>
+      <div className="flex items-center" style={{ marginTop: u(16), gap: u(14) }}>
+        <div className="flex">
+          {FRIENDS.map(([n, av], i) => (i > 0 || add > 0) && (
+            <img key={n} src={`/avatars/${av}.webp`} alt="" className="rounded-full bg-zinc-800 ring-2 ring-zinc-900"
+              style={{ width: u(52), height: u(52), marginLeft: i && add > 0 ? u(-14) : i === 2 ? u(-14) : 0, transform: i === 0 ? `scale(${back((t - 0.25) / 0.08)})` : undefined }} />
+          ))}
+        </div>
+        <p className="font-black tabular-nums" style={{ fontSize: u(40), transform: `scale(${1 + bump(t, 0.28, 0.04) * 0.25})` }}>{here}<span className="font-semibold text-zinc-400" style={{ fontSize: u(18) }}> friends training</span></p>
+      </div>
+    </B>
+    <B x={28} y={312} className="font-bold" style={{ fontSize: u(18), ...rise(st(e, 2)) }}>Training now</B>
+    {FRIENDS.map(([n, av, what], i) => {
+      const y = 346 + (i === 0 ? 0 : 84 * add + (i - 1) * 84), v = i === 0 ? add : st(e, i + 2);
+      return v > 0.01 && (
+        <B key={n} x={24} y={y} w={432} h={76} className={`${CARD} flex items-center`}
+          style={{ padding: `0 ${u(14)}`, gap: u(14), opacity: v, transform: `translateX(${((1 - v) * -8).toFixed(2)}cqw)`, ...(i === 0 ? { background: `rgba(163,230,53,${0.08 + bump(t, 0.32, 0.06) * 0.3})` } : {}) }}>
+          <div className="relative"><img src={`/avatars/${av}.webp`} alt="" className="rounded-full bg-zinc-800" style={{ width: u(50), height: u(50) }} />
+            <span className="absolute bottom-0 right-0 rounded-full bg-lime-400 ring-2 ring-zinc-900" style={{ width: u(14), height: u(14) }} /></div>
+          <div className="flex-1"><p className="font-bold" style={{ fontSize: u(18) }}>{n}</p><p className="text-zinc-400" style={{ fontSize: u(14) }}>{what}</p></div>
+          <span className="font-semibold text-lime-400" style={{ fontSize: u(14) }}>{i === 0 ? "Just in" : "Training"}</span>
+        </B>
+      );
+    })}
+    <B x={28} y={sy} className="font-bold" style={{ fontSize: u(18), ...rise(st(e, 5)) }}>People you may know</B>
+    {SUGGEST.map(([n, av, what], i) => {
+      const on = following && i === 0;
+      return (
+        <B key={n} x={24} y={sy + 36 + i * 84} w={432} h={76} className="flex items-center border-b border-white/5" style={{ padding: `0 ${u(8)}`, gap: u(14), ...rise(st(e, 6 + i)) }}>
+          <img src={`/avatars/${av}.webp`} alt="" className="rounded-full bg-zinc-800" style={{ width: u(50), height: u(50) }} />
+          <div className="flex-1"><p className="font-bold" style={{ fontSize: u(18) }}>{n}</p><p className="text-zinc-400" style={{ fontSize: u(14) }}>{what}</p></div>
+          <div className="flex items-center justify-center rounded-[1.4cqw] font-bold"
+            style={{ width: u(112), height: u(40), fontSize: u(15), background: on ? "#27272a" : LIME, color: on ? LIME : "#09090b", transform: i === 0 ? `scale(${1 - bump(t, 0.5, 0.015) * 0.1})` : undefined }}>
+            {on ? "Following ✓" : i === 0 ? "Follow back" : "Follow"}
+          </div>
+        </B>
+      );
+    })}
+    <Nav on={0} e={e} />
+    {banner > 0.01 && (
+      <B x={16} y={52} w={448} h={84} className="z-20 flex items-center rounded-[3cqw] bg-zinc-800/95 shadow-2xl ring-1 ring-white/10"
+        style={{ padding: `0 ${u(16)}`, gap: u(14), opacity: clamp(banner * 2), transform: `translateY(${((1 - banner) * -30).toFixed(2)}cqw)` }}>
+        <img src="/avatars/u2.webp" alt="" className="rounded-full bg-zinc-700" style={{ width: u(52), height: u(52) }} />
+        <div className="flex-1"><p className="font-bold" style={{ fontSize: u(18) }}>Hafiz R. just clocked in 💪</p><p className="text-zinc-400" style={{ fontSize: u(14) }}>SweatZone · now</p></div>
+        <Icon n="bell" s={34} />
+      </B>
+    )}
+  </>;
+}
+
+const COMMENTS: [string, string, string][] = [["Jun Wei", "u3", "monster 😤"], ["Mei Ling", "u5", "teach me your ways"]];
+const MINE = "Beast mode 🔥 see you at 6?";
+
+function Feed({ t, e }: { t: number; e: number }) {
+  const liked = t > 0.18, likes = 23 + (liked ? 1 : 0), sheet = io(clamp((t - 0.3) / 0.07));
+  const typing = t > 0.35 && t < 0.55, sent = t > 0.55, msg = t < 0.35 || sent ? "" : typed(MINE, t, 0.37, 0.5), reply = smooth(0.68, 0.72, t);
+  return <>
+    <Head e={e} icon="feed" title="Feed" sub="Your friends' latest sessions" />
+    <B x={24} y={130} w={432} h={450} className={CARD} style={{ padding: u(20), ...rise(st(e, 1)) }}>
+      <div className="flex items-center" style={{ gap: u(12) }}>
+        <img src="/avatars/u1.webp" alt="" className="rounded-full bg-zinc-800" style={{ width: u(52), height: u(52) }} />
+        <div className="flex-1"><p className="font-bold" style={{ fontSize: u(19) }}>Daniel K.</p><p className="text-zinc-400" style={{ fontSize: u(14) }}>Push day · 52 min · 2h ago</p></div>
+      </div>
+      <div className="flex items-center rounded-[2cqw] bg-lime-400/15 font-black text-lime-300" style={{ marginTop: u(16), padding: `${u(12)} ${u(16)}`, fontSize: u(19), gap: u(10) }}>🏆 New PR · Bench Press 100 kg</div>
+      <div className="grid grid-cols-3 text-center" style={{ marginTop: u(16) }}>
+        {[["6,420 kg", "Volume"], ["18", "Sets"], ["52 m", "Time"]].map(([v, l]) => (
+          <div key={l}><p className="font-black tabular-nums" style={{ fontSize: u(22) }}>{v}</p><p className="text-zinc-400" style={{ fontSize: u(13) }}>{l}</p></div>
+        ))}
+      </div>
+      {[["Bench Press (Barbell)", "5 × 100 kg"], ["Incline Press (Dumbbell)", "3 × 32 kg"], ["Cable Crossover", "3 × 20 kg"]].map(([n, v]) => (
+        <div key={n} className="flex justify-between border-b border-white/5" style={{ fontSize: u(16), padding: `${u(10)} 0` }}><span>{n}</span><span className="text-zinc-400 tabular-nums">{v}</span></div>
+      ))}
+    </B>
+    {/* like and comment, under the post */}
+    <B x={40} y={530} w={100} h={44} className="flex items-center justify-center rounded-full font-bold"
+      style={{ gap: u(8), fontSize: u(17), background: liked ? "rgba(244,63,94,.18)" : "#27272a", color: liked ? "#fb7185" : "#fafafa", transform: `scale(${1 + bump(t, 0.185, 0.02) * 0.35})`, ...rise(st(e, 2)) }}>
+      {liked ? "♥" : "♡"} <span className="tabular-nums">{likes}</span>
+    </B>
+    <B x={150} y={530} w={100} h={44} className="flex items-center justify-center rounded-full bg-zinc-800 font-bold" style={{ gap: u(8), fontSize: u(17), ...rise(st(e, 2)) }}>💬 <span className="tabular-nums">{2 + (sent ? 1 : 0) + (reply > 0.5 ? 1 : 0)}</span></B>
+    {liked && t < 0.32 && Array.from({ length: 7 }, (_, i) => { // hearts float up off the button
+      const k = clamp((t - 0.18 - i * 0.008) / 0.12);
+      return <span key={i} className="absolute z-20 text-rose-400" style={{ left: u(80 + Math.sin(i * 2.1) * 40), top: u(530 - k * 160 - i * 6), fontSize: u(18 + (i % 3) * 6), opacity: (1 - k) * clamp(k * 6) }}>♥</span>;
+    })}
+    <B x={24} y={600} w={432} h={300} className={CARD} style={{ padding: u(20), ...rise(st(e, 3)) }}>
+      <div className="flex items-center" style={{ gap: u(12) }}>
+        <img src="/avatars/u5.webp" alt="" className="rounded-full bg-zinc-800" style={{ width: u(52), height: u(52) }} />
+        <div className="flex-1"><p className="font-bold" style={{ fontSize: u(19) }}>Mei Ling</p><p className="text-zinc-400" style={{ fontSize: u(14) }}>Legs · 61 min · 5h ago</p></div>
+      </div>
+    </B>
+    <Nav on={4} e={e} />
+
+    {sheet > 0 && (
+      <B x={0} y={520 + (1 - sheet) * 549} w={480} h={549} className="z-10 rounded-t-[4cqw] bg-zinc-900 shadow-[0_-20px_60px_rgba(0,0,0,.7)] ring-1 ring-white/10">
+        <B x={210} y={12} w={60} h={6} className="rounded-full bg-zinc-700" />
+        <B x={28} y={32} className="font-black" style={{ fontSize: u(24) }}>Comments</B>
+        {[...COMMENTS, ...(sent ? [["You", "default-2", MINE]] : []), ...(reply > 0 ? [["Daniel K.", "u1", "bet 💪 6 sharp"]] : [])].map(([n, av, c], i) => {
+          const v = i === 2 ? back((t - 0.55) / 0.06) : i === 3 ? reply : 1;
+          return (
+            <B key={n + i} x={24} y={84 + i * 74} w={432} className="flex items-start" style={{ gap: u(12), opacity: clamp(v * 2), transform: `scale(${0.9 + 0.1 * v})`, transformOrigin: "left center" }}>
+              <img src={`/avatars/${av}.webp`} alt="" className="rounded-full bg-zinc-800" style={{ width: u(44), height: u(44) }} />
+              <div className="rounded-[2cqw]" style={{ background: n === "You" ? "rgba(163,230,53,.15)" : "#27272a", padding: `${u(8)} ${u(14)}` }}>
+                <p className="font-bold" style={{ fontSize: u(14), color: n === "You" ? LIME : "#a1a1aa" }}>{n}</p><p style={{ fontSize: u(17) }}>{c}</p>
+              </div>
+            </B>
+          );
+        })}
+        <B x={24} y={380} w={360} h={52} className="flex items-center rounded-full bg-zinc-800"
+          style={{ padding: `0 ${u(18)}`, fontSize: u(17), boxShadow: typing ? `inset 0 0 0 ${u(2)} ${LIME}` : undefined }}>
+          {msg || <span className="text-zinc-500">Add a comment...</span>}{typing && <Caret />}
+        </B>
+        <B x={396} y={380} w={60} h={52} className="flex items-center justify-center rounded-full bg-lime-400 font-black text-zinc-950" style={{ fontSize: u(22), transform: `scale(${1 - bump(t, 0.55, 0.015) * 0.15})` }}>↑</B>
+      </B>
+    )}
+  </>;
+}
+
 // ================================================== scenes ===========================================================
 type Play = { cursor: number[][]; clicks: number[]; flashes: number[]; cam?: { z: number[]; x: number[]; y: number[] }; pops?: ReactNode };
 /** art floating around the phone: src, x and y (% of the view, desktop), size (vmin), depth (> 1 in front, moves more), turn */
@@ -443,6 +573,36 @@ const scenes: Scene[] = [
     }),
   },
   {
+    word: ["Train", "together."], theme: "white", text: "See which friends are in the SweatZone right now, follow your classmates and get a ping when your gym buddy clocks in.",
+    floats: [["/icons/crowd.webp", 91, 18, 15, 1.4, -10], ["/icons/bell.webp", 52, 82, 10, 0.8, 12], ["/icons/person.webp", 97, 72, 11, 1.2, -6], ["/icons/heart.webp", 57, 12, 8, 0.6, 8]],
+    Screen: Friends,
+    play: (t, wide) => ({
+      cursor: [[0, 520, 900], [0.18, 240, 96], [0.26, 240, 96], [0.44, 386, 688], [0.56, 386, 688], [0.72, 300, 520], [1, 300, 520]],
+      clicks: [0.24, 0.5], flashes: [0.24, 0.5],
+      cam: { z: [0.12, 1, 0.18, 1.4, 0.3, 1.4, 0.36, 1, 0.42, 1, 0.47, 1.35, 0.6, 1.35, 0.66, 1], x: [0, 240, 0.4, 240, 0.44, 386], y: [0, 120, 0.4, 120, 0.44, 688] },
+      pops: <>
+        <Pop s={pop(t, 0.62)} from={at(240, 220)} to={[10, 34]} wide={wide} glow={LIME} tilt={-8}>
+          <PopTitle c={LIME}>Training now</PopTitle>
+          <div className="flex items-center" style={{ marginTop: u(14), gap: u(16) }}>
+            <div className="flex">{FRIENDS.map(([n, av], i) => (
+              <img key={n} src={`/avatars/${av}.webp`} alt="" className="rounded-full bg-zinc-800 ring-4 ring-zinc-900" style={{ width: u(84), height: u(84), marginLeft: i ? u(-24) : 0, transform: `scale(${back((t - 0.64 - i * 0.03) / 0.06)})` }} />
+            ))}</div>
+            <p className="font-black" style={{ fontSize: u(26), lineHeight: 1.1 }}>3 friends<br /><span className="text-lime-400">in the gym</span></p>
+          </div>
+        </Pop>
+        <Pop s={pop(t, 0.74)} from={at(386, 688)} to={[90, 66]} wide={wide} glow={LIME} tilt={8}>
+          <div className="flex items-center whitespace-nowrap" style={{ gap: u(18) }}>
+            <Icon n="bell" s={56} />
+            <div><p className="font-black" style={{ fontSize: u(24) }}>Gym buddy alert</p><p className="text-zinc-400" style={{ fontSize: u(16) }}>Ping me when Hafiz clocks in</p></div>
+            <div className="relative rounded-full" style={{ width: u(64), height: u(36), background: t > 0.8 ? LIME : "#3f3f46" }}>
+              <div className="absolute rounded-full bg-white" style={{ top: u(4), width: u(28), height: u(28), left: u(4 + 28 * io(clamp((t - 0.8) / 0.04))) }} />
+            </div>
+          </div>
+        </Pop>
+      </>,
+    }),
+  },
+  {
     word: ["Lift", "more."], theme: "lime",
     data: { n: 450, what: "exercises in our own dataset, built from scratch: every move written up and illustrated for Spotter.", imgs: EX }, text: "Routines, rest timers and every set logged. PRs land with a bang and your progress keeps climbing.",
     floats: [["/hero/props/dumbbell.webp", 90, 16, 24, 1.5, -20], ["/hero/props/plate.webp", 52, 82, 17, 0.8, 25], ["/icons/flame.webp", 97, 64, 9, 1.2, 10], ["/icons/stopwatch.webp", 57, 12, 8, 0.6, -10]],
@@ -489,7 +649,37 @@ const scenes: Scene[] = [
     },
   },
   {
-    word: ["Eat", "smart."], theme: "dark",
+    word: ["Hype the", "squad."], theme: "dark", text: "Share your sessions, like and comment on your friends' PRs, and keep each other coming back.",
+    floats: [["/icons/heart.webp", 91, 18, 15, 1.4, -10], ["/icons/comment.webp", 52, 82, 11, 0.8, 12], ["/icons/flame.webp", 97, 72, 11, 1.2, -6], ["/icons/share.webp", 57, 12, 8, 0.6, 8]],
+    Screen: Feed,
+    play: (t, wide) => ({
+      cursor: [[0, 520, 900], [0.14, 90, 552], [0.2, 90, 552], [0.27, 200, 552], [0.31, 200, 552], [0.35, 200, 926], [0.5, 200, 926], [0.53, 426, 926], [0.58, 426, 926], [0.75, 300, 450], [1, 300, 450]],
+      clicks: [0.18, 0.3, 0.355, 0.55], flashes: [0.18, 0.55],
+      cam: { z: [0.1, 1, 0.16, 1.4, 0.26, 1.4, 0.32, 1, 0.35, 1, 0.4, 1.35, 0.6, 1.35, 0.68, 1], x: [0, 140, 0.33, 140, 0.37, 240], y: [0, 552, 0.33, 552, 0.37, 860] },
+      pops: <>
+        <Pop s={pop(t, 0.62)} from={at(140, 552)} to={[10, 34]} wide={wide} glow={LIME} tilt={-8}>
+          <PopTitle c={LIME}>Notifications</PopTitle>
+          {([["u1", "Daniel K. and 23 others liked your PR", "♥"], ["u2", "Hafiz R.: let's goooo 🔥", "💬"], ["u3", "Jun Wei started following you", "＋"]] as const).map(([av, txt, ic], i) => (
+            <div key={txt} className="flex items-center" style={{ gap: u(12), marginTop: u(12), width: u(400), ...rise(smooth(0.64 + i * 0.03, 0.68 + i * 0.03, t), 20) }}>
+              <img src={`/avatars/${av}.webp`} alt="" className="rounded-full bg-zinc-800" style={{ width: u(44), height: u(44) }} />
+              <p className="flex-1 font-semibold" style={{ fontSize: u(16) }}>{txt}</p><span className="text-rose-400" style={{ fontSize: u(20) }}>{ic}</span>
+            </div>
+          ))}
+        </Pop>
+        <Pop s={pop(t, 0.76)} from={at(240, 860)} to={[90, 66]} wide={wide} glow={LIME} tilt={8}>
+          <div className="text-center">
+            <p className="font-black" style={{ fontSize: u(54), lineHeight: 1 }}>🔥 {Math.round(12 * smooth(0.77, 0.86, t))}</p>
+            <p className="font-bold text-zinc-300" style={{ fontSize: u(18) }}>day streak with your squad</p>
+            <div className="flex justify-center" style={{ gap: u(8), marginTop: u(12) }}>
+              {Array.from({ length: 7 }, (_, i) => <span key={i} className="rounded-full" style={{ width: u(22), height: u(22), background: t > 0.78 + i * 0.015 ? LIME : "#3f3f46" }} />)}
+            </div>
+          </div>
+        </Pop>
+      </>,
+    }),
+  },
+  {
+    word: ["Eat", "smart."], theme: "lime",
     data: { n: 43, what: "dishes from the 9 APU cafeteria stalls: our own food dataset, with macros and art made for the real menu.", imgs: FOOD }, text: "Every dish in the APU cafeteria with its macros, counted against a target tuned to your goal.",
     floats: [["/hero/props/nasi-lemak-fried-chicken.webp", 92, 19, 19, 1.4, 8], ["/hero/props/teh-tarik.webp", 52, 83, 12, 0.8, -10], ["/hero/props/roti-canai-dhal.webp", 97, 74, 14, 1.2, 12], ["/icons/protein.webp", 57, 13, 8, 0.6, 0]],
     Screen: Eat,
@@ -604,7 +794,7 @@ export function PhoneMock({ k, t, style }: { k: number; t: number; style?: CSSPr
     </div>
   );
 }
-const LINEUP: [scene: number, at: number][] = [[0, 0.6], [1, 0.62], [2, 0.7], [3, 0.8], [4, 0.1]]; // each feature mid-action
+const LINEUP: [scene: number, at: number][] = [[0, 0.6], [1, 0.4], [2, 0.62], [3, 0.6], [4, 0.7], [5, 0.8], [6, 0.1]]; // each feature mid-action
 /** The video's closing beat (t 0..1): a dark panel swipes in, five phones rise into a fan, one per feature, under the line
  * "One app. The whole APU SweatZone.", then gather into the middle as the logo outro swipes over them. */
 export function Lineup({ t, beat = 0 }: { t: number; beat?: number }) {
@@ -616,7 +806,7 @@ export function Lineup({ t, beat = 0 }: { t: number; beat?: number }) {
       <div className="absolute inset-0" style={{ background: LIME, clipPath: band(a) }} />
       <div className="absolute inset-0 overflow-hidden bg-zinc-950" style={{ clipPath: cut(a) }}>
         <div className="absolute inset-x-0 top-[7vh] text-center" style={{ opacity: 1 - out }}>
-          <p className="font-mono text-sm font-semibold uppercase tracking-[0.25em] text-zinc-400" style={{ opacity: smooth(0.3, 0.38, t) }}>Five features</p>
+          <p className="font-mono text-sm font-semibold uppercase tracking-[0.25em] text-zinc-400" style={{ opacity: smooth(0.3, 0.38, t) }}>Seven features</p>
           <p className="mt-3 font-bold tracking-[-0.05em]" style={{ fontSize: "clamp(2.5rem, 7.5vh, 6rem)", lineHeight: 1 }}>
             {words.map(([w, lime], i) => {
               const v = io(clamp((t - 0.34 - i * 0.03) / 0.08));
@@ -625,11 +815,11 @@ export function Lineup({ t, beat = 0 }: { t: number; beat?: number }) {
           </p>
         </div>
         {LINEUP.map(([k, at], i) => {
-          const d = Math.abs(i - 2), v = back((t - 0.1 - d * 0.06) / 0.14), x = (i - 2) * 19 * (1 - out);
+          const d = Math.abs(i - 3), v = back((t - 0.1 - d * 0.05) / 0.14), x = (i - 3) * 13.5 * (1 - out);
           return (
             <div key={k} className="absolute left-1/2 top-[56%]" style={{
-              height: "56vh", zIndex: 10 - d, opacity: clamp(v * 3) * (1 - out * 0.9),
-              transform: `translate(-50%, -50%) translate(${x}vw, ${d * 3.5 * (1 - out) + (1 - clamp(v)) * 70}vh) rotate(${(i - 2) * 5 * (1 - out)}deg) scale(${(i === 2 ? 1.06 : 0.94) * (1 - out * 0.35) + beat * 0.02})`,
+              height: "50vh", zIndex: 10 - d, opacity: clamp(v * 3) * (1 - out * 0.9),
+              transform: `translate(-50%, -50%) translate(${x}vw, ${d * 2.5 * (1 - out) + (1 - clamp(v)) * 70}vh) rotate(${(i - 3) * 4 * (1 - out)}deg) scale(${(i === 3 ? 1.08 : 0.94) * (1 - out * 0.35) + beat * 0.02})`,
             }}>
               <PhoneMock k={k} t={at} style={{ height: "100%" }} />
             </div>

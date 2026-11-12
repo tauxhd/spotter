@@ -14,7 +14,7 @@ const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
 // It opens on the Blender shot (public/video/intro.mp4, tools/intro_phone.py: the phone on a box, the camera easing in,
 // the screen waking to the logo) for CLIP_BARS, cuts to the hero on the beat drop, then the hero's own intro takes a bar.
 // After the scenes, a lineup of five phones (Lineup) takes LINEUP_BARS; the logo outro is always last.
-const CLIP_BARS = 2, HANDOFF_BARS = 2, SCENE_BARS = 3, LINEUP_BARS = 3, OUTRO_BARS = 2;
+const CLIP_BARS = 2, HANDOFF_BARS = 2, SCENE_BARS = 2, LINEUP_BARS = 3, OUTRO_BARS = 2;
 const bar = (i: number) => BEATS[Math.min(BEATS.length - 1, i * 8)];
 const FIRST = CLIP_BARS + HANDOFF_BARS; // the bar the first scene starts on
 const LAST = FIRST + HERO.scenes * SCENE_BARS; // the bar the scenes end on
