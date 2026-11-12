@@ -10,9 +10,16 @@ import HeroScroll, { HERO, heroMoments } from "@/components/HeroScroll";
 import { BEATS } from "./beats";
 
 const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
-// Where each part sits in the song (s), all on bar lines: a quiet sax intro, the beat drops at 5.2 s, a softer stretch
-// from ~24 s (the Eat scene's typing), the energy back at ~44 s (Ranks climbing), and the drop-off at ~64 s for the logo.
-const PLAN = { hold: 2.6, intro: 5.18, scenes: [5.18, 17.95, 28.26, 41.12, 51.46, 62.95], logo: 64.25, end: 69.06 };
+// The pace: every part is a whole number of bars (a bar = 8 tracked beats, ~2.6 s), so cuts always land on a bar line.
+const SCENE_BARS = 3, OUTRO_BARS = 2;
+const bar = (i: number) => BEATS[Math.min(BEATS.length - 1, i * 8)];
+const PLAN = {
+  hold: 0.7, // the headline sits for the first notes
+  intro: bar(1), // phone in by the end of the first bar
+  scenes: Array.from({ length: HERO.scenes + 1 }, (_, k) => bar(1 + k * SCENE_BARS)),
+  logo: BEATS[Math.min(BEATS.length - 1, (1 + HERO.scenes * SCENE_BARS) * 8 + 4)], // half a bar into the outro
+  end: bar(1 + HERO.scenes * SCENE_BARS + OUTRO_BARS),
+};
 
 const nearestBeat = (s: number) => BEATS.reduce((a, b) => (Math.abs(b - s) < Math.abs(a - s) ? b : a));
 /** [second, progress] pairs for the default song: scenes start on bars, their clicks and flashes land on the nearest beat */
@@ -56,7 +63,7 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).
 export default function Video() {
   const audio = useRef<HTMLAudioElement>(null);
   const [song, setSong] = useState<{ url: string; name: string } | null>(SONG);
-  const [len, setLen] = useState(PLAN.end); // the song's length (60 s with no song)
+  const [len, setLen] = useState(PLAN.end); // where the cut ends (a dropped song: its length; no song: 60 s)
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [ui, setUi] = useState(true);
@@ -72,7 +79,7 @@ export default function Video() {
     const tick = () => {
       const a = audio.current;
       const now = song && a ? a.currentTime : clock.current.from + (performance.now() - clock.current.start) / 1000;
-      if (now >= len) { setT(len); setPlaying(false); return; }
+      if (now >= len) { setT(len); setPlaying(false); a?.pause(); return; }
       setT(now);
       raf = requestAnimationFrame(tick);
     };
@@ -117,7 +124,7 @@ export default function Video() {
   return (
     <div className="relative h-dvh overflow-hidden bg-zinc-950 text-zinc-100 [color-scheme:dark]">
       <HeroScroll apk="#" progress={progressAt(t, cues)} video beat={own ? beatAt(t) : 0} />
-      {song && <audio ref={audio} src={song.url} preload="auto" onLoadedMetadata={(e) => setLen(e.currentTarget.duration)} onEnded={() => setPlaying(false)} />}
+      {song && <audio ref={audio} src={song.url} preload="auto" onLoadedMetadata={(e) => setLen(song.url === SONG.url ? PLAN.end : e.currentTarget.duration)} onEnded={() => setPlaying(false)} />}
 
       {ui && (
         <div className="fixed inset-x-0 bottom-0 z-[60] flex items-center gap-3 bg-zinc-950/80 px-4 py-3 text-sm backdrop-blur">
