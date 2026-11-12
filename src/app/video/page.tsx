@@ -6,7 +6,7 @@
 // just spreads the hero evenly over its length.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import HeroScroll, { HANDOFF, HERO, heroClicks, heroCounting, heroMoments, heroNotify, heroTyping } from "@/components/HeroScroll";
+import HeroScroll, { HANDOFF, HERO, heroClicks, heroCounting, heroMoments, heroNotify, heroPops, heroTyping } from "@/components/HeroScroll";
 import { BEATS } from "./beats";
 
 const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
@@ -112,6 +112,8 @@ const COUNTS = heroCounting().flatMap((spans, k) => spans.map(([a, b]) => {
 }));
 // Notifications: a message ping as each one arrives (a banner, a toast, the notifications card, a reply).
 const PINGS = heroNotify().flatMap((ns, k) => ns.map((n) => timeAt(HERO.intro + HERO.scene * (k + n), SONG_CUES)));
+// Pops: everything popping into view, taking turns between three pop sounds so neighbours don't sound the same.
+const POPS = heroPops().flatMap((ps, k) => ps.map((n) => timeAt(HERO.intro + HERO.scene * (k + n), SONG_CUES))).sort((a, b) => a - b);
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
@@ -178,7 +180,7 @@ export default function Video() {
   const own = song?.url === SONG.url, cues = own ? SONG_CUES : evenCues(len);
 
   // the typing sound loops while anything types (Web Audio, started on the first play, which counts as a user gesture)
-  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
+  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; pops?: AudioBuffer[]; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
   const typing = own && playing && TYPING.some(([a, b]) => t >= a && t < b);
   useEffect(() => {
     const x = sfx.current;
@@ -191,6 +193,7 @@ export default function Video() {
       void load("/video/sfx/roulette-end.mp3").then((buf) => { x.spin = buf; });
       void load("/video/sfx/counting.mp3").then((buf) => { x.count = buf; });
       void load("/video/sfx/message.mp3").then((buf) => { x.ping = buf; });
+      void Promise.all(["/video/sfx/pop1.mp3", "/video/sfx/pop2.mp3", "/video/sfx/pop3.mp3"].map(load)).then((bufs) => { x.pops = bufs; });
     }
     if (playing && x.ctx?.state === "suspended") void x.ctx.resume();
     if (typing && !x.src && x.ctx && x.typing) {
@@ -208,6 +211,7 @@ export default function Video() {
       const shot = (buf: AudioBuffer, offset = 0) => { const one = x.ctx!.createBufferSource(); one.buffer = buf; one.connect(x.gain!); one.start(0, offset); return one; };
       if (x.click) for (const c of CLICK_AT) if (c > prev && c <= t) shot(x.click);
       if (x.ping) for (const c of PINGS) if (c > prev && c <= t) shot(x.ping);
+      if (x.pops) POPS.forEach((c, i) => { if (c > prev && c <= t) shot(x.pops![i % x.pops!.length]); });
       // the wind-down starts late enough that its last tick lands as the carousel settles
       const [a, b] = SPIN;
       if (x.spin && a > prev && a <= t) x.spins.push(shot(x.spin, Math.max(0, x.spin.duration - (b - a)) + (t - a)));
