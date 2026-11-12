@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import HeroScroll from "@/components/HeroScroll";
+
 // The landing page: what Spotter is, a live demo of the web app in a phone frame (a made-up account, /?demo=1, nothing is
 // saved), and the Android download. Outside the (app) group, so it has no store, sign-in or bottom nav.
 
@@ -37,20 +39,7 @@ export default function Welcome() {
         </div>
       </nav>
 
-      <header className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-12 md:grid-cols-2 md:pt-20">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-lime-400">Built for the APU SweatZone</p>
-          <h1 className="mt-3 text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">Your gym,<br />in your pocket.</h1>
-          <p className="mt-5 max-w-md text-lg text-zinc-400">
-            Clock in with a scan, log every set, eat right from the campus cafeteria and see who&apos;s lifting the most. All in one app made for APU students.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#demo" className="rounded-xl bg-lime-400 px-5 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">Try the live demo</a>
-            <a href={APK} className="rounded-xl bg-white/10 px-5 py-3 font-semibold ring-1 ring-white/10 transition hover:bg-white/15 active:scale-[0.97]">Download for Android</a>
-          </div>
-        </div>
-        <Image src="/welcome.webp" alt="Students training in the APU gym" width={1200} height={800} priority className="w-full rounded-3xl ring-1 ring-white/10" />
-      </header>
+      <HeroScroll apk={APK} />
 
       <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Everything between the door and your last set</h2>
