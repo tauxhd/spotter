@@ -6,7 +6,6 @@ import Splash from "@/components/Splash";
 import Quest from "@/components/Quest";
 import type { Unit } from "./units";
 import { demoAccount } from "./demo";
-import { TOUCH } from "./touch";
 
 export const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_KEY!);
 
@@ -101,8 +100,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (isDemo) { // made-up account; still signs in (anonymously) so the public feed, ranks and people can be read
       const d = demoAccount();
       setDemo(true);
-      // shown in the landing page's phone frame: a phone has no scrollbar, and the mouse becomes a fingertip
-      document.head.appendChild(Object.assign(document.createElement("style"), { textContent: `html{scrollbar-width:none}html::-webkit-scrollbar{display:none}*{cursor:${TOUCH} !important}` }));
+      // shown in the landing page's phone frame: a phone has no scrollbar, and inside the frame the mouse is hidden (the frame draws a fingertip dot)
+      document.head.appendChild(Object.assign(document.createElement("style"), { textContent: `html{scrollbar-width:none}html::-webkit-scrollbar{display:none}${self !== top ? "*{cursor:none !important}" : ""}` }));
       setMe(d.me);
       setS((x) => ({ ...x, sessions: d.sessions, food: d.food, weights: d.weights, routines: d.routines }));
       sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort").then(({ data }) => data && setS((x) => ({ ...x, library: data })));

@@ -587,14 +587,18 @@ const N = scenes.length;
 const L = 2.5; // screens of scrolling per scene (more = slower)
 const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fading into the page)
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
+/** the hero's timeline in scroll units, for driving it from a clock (the /video page) */
+export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
 /** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
 const cut = (x: number) => `polygon(${x}% 0, 140% 0, 140% 100%, ${x - 40}% 100%)`;
 /** the stripe that leads a swipe: a band just ahead of the edge */
 const band = (x: number) => `polygon(${x - 7}% 0, ${x}% 0, ${x - 40}% 100%, ${x - 47}% 100%)`;
 
-export default function HeroScroll({ apk }: { apk: string }) {
+/** `progress` (0..HERO.total) drives it from outside instead of the scroll position; `video` drops the scroll hint and the tall section. */
+export default function HeroScroll({ apk, progress, video = false }: { apk: string; progress?: number; video?: boolean }) {
   const ref = useRef<HTMLElement>(null);
-  const [p, setP] = useState(0);
+  const [scrolled, setP] = useState(0);
+  const p = progress ?? scrolled;
   const [wide, setWide] = useState(false);
 
   useEffect(() => {
@@ -602,7 +606,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
     const read = () => {
       raf = 0;
       const r = ref.current?.getBoundingClientRect();
-      if (r) setP(clamp(-r.top / (r.height - innerHeight)) * U);
+      if (r && r.height > innerHeight) setP(clamp(-r.top / (r.height - innerHeight)) * U);
       setWide(innerWidth >= 768);
     };
     const on = () => { raf ||= requestAnimationFrame(read); };
@@ -632,7 +636,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
   const kick = live ? Math.max(0, ...live.clicks.map((c) => bump(t, c, 0.03))) : 0;
 
   return (
-    <section ref={ref} style={{ height: `${U * 100}dvh` }} className="relative">
+    <section ref={ref} style={{ height: video ? "100dvh" : `${U * 100}dvh` }} className="relative">
             <div className="sticky top-0 h-dvh overflow-hidden">
         {/* each scene's colour swipes across on a hard diagonal, led by a contrasting stripe */}
         <div className="pointer-events-none absolute inset-0 bg-zinc-950" aria-hidden />
@@ -662,7 +666,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
             <a href="#demo" className="rounded-full bg-lime-400 px-6 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">Try the live demo</a>
             <a href={apk} className="rounded-full bg-white/10 px-6 py-3 font-semibold ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">Download for Android</a>
           </div>
-          <p className="mt-10 text-sm text-zinc-500 motion-safe:animate-bounce">Scroll ↓</p>
+          {!video && <p className="mt-10 text-sm text-zinc-500 motion-safe:animate-bounce">Scroll ↓</p>}
         </div>
 
         {/* scene copy: the headline types itself, white with the key word in lime */}
