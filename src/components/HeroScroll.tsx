@@ -780,55 +780,6 @@ const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
 /** the hero's timeline in scroll units, for driving it from a clock (the /video page) */
 export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
 /** each scene's big moments (clicks and flashes) in its own time 0..1, so a video can land them on the beat */
-/** a still phone showing scene k's screen at its own time t (the video's lineup) */
-export function PhoneMock({ k, t, style }: { k: number; t: number; style?: CSSProperties }) {
-  const Screen = scenes[k].Screen;
-  return (
-    <div className="relative aspect-[390/844] [container-type:inline-size]" style={style}>
-      <div className="relative h-full rounded-[13%/6%] bg-zinc-800 p-[2.6%] shadow-2xl shadow-black/60 ring-1 ring-white/20">
-        <div className="relative h-full overflow-hidden rounded-[11%/5.2%] bg-zinc-950 text-zinc-50">
-          <Screen t={t} e={1} />
-          <div className="absolute left-1/2 top-[1.3%] z-50 h-[3.4%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
-        </div>
-      </div>
-    </div>
-  );
-}
-const LINEUP: [scene: number, at: number][] = [[0, 0.6], [1, 0.4], [2, 0.62], [3, 0.6], [4, 0.7], [5, 0.8], [6, 0.1]]; // each feature mid-action
-/** The video's closing beat (t 0..1): a dark panel swipes in, five phones rise into a fan, one per feature, under the line
- * "One app. The whole APU SweatZone.", then gather into the middle as the logo outro swipes over them. */
-export function Lineup({ t, beat = 0 }: { t: number; beat?: number }) {
-  if (t <= 0 || t >= 1.1) return null;
-  const a = 140 - smooth(0, 0.12, t) * 200, out = io(clamp((t - 0.86) / 0.14));
-  const words: [string, boolean][] = [["One", false], ["app.", false], ["The", false], ["whole", false], ["APU", true], ["SweatZone.", true]];
-  return (
-    <div className="pointer-events-none absolute inset-0 z-[45]" aria-hidden>
-      <div className="absolute inset-0" style={{ background: LIME, clipPath: band(a) }} />
-      <div className="absolute inset-0 overflow-hidden bg-zinc-950" style={{ clipPath: cut(a) }}>
-        <div className="absolute inset-x-0 top-[7vh] text-center" style={{ opacity: 1 - out }}>
-          <p className="font-mono text-sm font-semibold uppercase tracking-[0.25em] text-zinc-400" style={{ opacity: smooth(0.3, 0.38, t) }}>Seven features</p>
-          <p className="mt-3 font-bold tracking-[-0.05em]" style={{ fontSize: "clamp(2.5rem, 7.5vh, 6rem)", lineHeight: 1 }}>
-            {words.map(([w, lime], i) => {
-              const v = io(clamp((t - 0.34 - i * 0.03) / 0.08));
-              return <span key={w} className="inline-block" style={{ marginRight: "0.25em", color: lime ? LIME : "#fafafa", opacity: v, transform: `translateY(${(1 - v) * 40}%)`, filter: `blur(${(1 - v) * 8}px)` }}>{w}</span>;
-            })}
-          </p>
-        </div>
-        {LINEUP.map(([k, at], i) => {
-          const d = Math.abs(i - 3), v = back((t - 0.1 - d * 0.05) / 0.14), x = (i - 3) * 13.5 * (1 - out);
-          return (
-            <div key={k} className="absolute left-1/2 top-[56%]" style={{
-              height: "50vh", zIndex: 10 - d, opacity: clamp(v * 3) * (1 - out * 0.9),
-              transform: `translate(-50%, -50%) translate(${x}vw, ${d * 2.5 * (1 - out) + (1 - clamp(v)) * 70}vh) rotate(${(i - 3) * 4 * (1 - out)}deg) scale(${(i === 3 ? 1.08 : 0.94) * (1 - out * 0.35) + beat * 0.02})`,
-            }}>
-              <PhoneMock k={k} t={at} style={{ height: "100%" }} />
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 export const heroMoments = () => scenes.map((s) => { const pl = s.play(0.5, true); return [...new Set([...pl.clicks, ...pl.flashes])].sort((a, b) => a - b); });
 /** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
 const cut = (x: number) => `polygon(${x}% 0, 140% 0, 140% 100%, ${x - 40}% 100%)`;
@@ -838,7 +789,7 @@ const band = (x: number) => `polygon(${x - 7}% 0, ${x}% 0, ${x - 40}% 100%, ${x 
 /** `progress` (0..HERO.total) drives it from outside instead of the scroll position; `video` drops the scroll hint and the tall
  * section; `beat` (1 on a beat, decaying to 0) gives the phone a kick in time with music; `backdrop` sits behind the phone
  * (the video's Blender shot) and `phoneIn` fades the phone itself. */
-export default function HeroScroll({ apk, progress, video = false, beat = 0, backdrop, phoneIn = 1, interlude }: { apk: string; progress?: number; video?: boolean; beat?: number; backdrop?: ReactNode; phoneIn?: number; interlude?: ReactNode }) {
+export default function HeroScroll({ apk, progress, video = false, beat = 0, backdrop, phoneIn = 1 }: { apk: string; progress?: number; video?: boolean; beat?: number; backdrop?: ReactNode; phoneIn?: number }) {
   const ref = useRef<HTMLElement>(null);
   const [scrolled, setP] = useState(0);
   const p = progress ?? scrolled;
@@ -1064,8 +1015,6 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
 
         {/* the lime flash on the big moments */}
         <div className="pointer-events-none absolute inset-0 z-40" style={{ background: th.flash, opacity: flash * 0.45 }} aria-hidden />
-
-        {interlude}
 
         {/* outro: the logo on the signature grey, which then fades into the page below */}
         {o > -0.1 && (() => {

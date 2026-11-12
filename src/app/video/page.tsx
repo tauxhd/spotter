@@ -6,15 +6,15 @@
 // just spreads the hero evenly over its length.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import HeroScroll, { HERO, heroMoments, Lineup } from "@/components/HeroScroll";
+import HeroScroll, { HERO, heroMoments } from "@/components/HeroScroll";
 import { BEATS } from "./beats";
 
 const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
 // The pace: every part is a whole number of bars (a bar = 8 tracked beats, ~2.6 s), so cuts always land on a bar line.
 // It opens on the Blender shot (public/video/intro.mp4, tools/intro_phone.py: the phone on a box, the camera easing in,
 // the screen waking to the logo) for CLIP_BARS, cuts to the hero on the beat drop, then the hero's own intro takes a bar.
-// After the scenes, a lineup of five phones (Lineup) takes LINEUP_BARS; the logo outro is always last.
-const CLIP_BARS = 2, HANDOFF_BARS = 2, SCENE_BARS = 2, LINEUP_BARS = 3, OUTRO_BARS = 2;
+// The logo outro is always last.
+const CLIP_BARS = 2, HANDOFF_BARS = 2, SCENE_BARS = 2, OUTRO_BARS = 2;
 const bar = (i: number) => BEATS[Math.min(BEATS.length - 1, i * 8)];
 const FIRST = CLIP_BARS + HANDOFF_BARS; // the bar the first scene starts on
 const LAST = FIRST + HERO.scenes * SCENE_BARS; // the bar the scenes end on
@@ -23,13 +23,12 @@ const PLAN = {
   hold: bar(CLIP_BARS) + 0.2, // our phone fades in over the Blender phone and holds a moment
   intro: bar(FIRST), // it lifts, swipes right with words sliding out from behind it, and those clear for scene 1
   scenes: Array.from({ length: HERO.scenes + 1 }, (_, k) => bar(FIRST + k * SCENE_BARS)),
-  lineup: [bar(LAST), bar(LAST + LINEUP_BARS)] as const,
-  logo: BEATS[Math.min(BEATS.length - 1, (LAST + LINEUP_BARS) * 8 + 4)], // half a bar into the outro
-  end: bar(LAST + LINEUP_BARS + OUTRO_BARS),
+  logo: BEATS[Math.min(BEATS.length - 1, LAST * 8 + 4)], // half a bar into the outro
+  end: bar(LAST + OUTRO_BARS),
 };
 const CLIP = "/video/intro.mp4";
 
-const O0 = HERO.intro + HERO.scene * HERO.scenes, HOLD = O0 - 0.1 * HERO.outro;
+const O0 = HERO.intro + HERO.scene * HERO.scenes; // where the hero's logo outro starts
 const nearestBeat = (s: number) => BEATS.reduce((a, b) => (Math.abs(b - s) < Math.abs(a - s) ? b : a));
 /** [second, progress] pairs for the default song: scenes start on bars, their clicks and flashes land on the nearest beat */
 function songCues(): [number, number][] {
@@ -40,16 +39,15 @@ function songCues(): [number, number][] {
       const at = nearestBeat(s + m * (e - s));
       if (at > cues[cues.length - 1][0] + 0.15 && at < e - 0.15) cues.push([at, p0 + HERO.scene * m]);
     }
-    cues.push([e, k === HERO.scenes - 1 ? HOLD : p0 + HERO.scene]);
+    cues.push([e, p0 + HERO.scene]);
   });
-  // the hero waits just short of its outro (no grey swipe yet) under the lineup, then plays the outro last
-  cues.push([PLAN.lineup[1], HOLD], [PLAN.logo, O0 + 0.2 * HERO.outro], [PLAN.end, HERO.total]);
+  cues.push([PLAN.logo, O0 + 0.2 * HERO.outro], [PLAN.end, HERO.total]);
   return cues;
 }
 const SONG_CUES = songCues();
 /** 1 on a beat, decaying: a big kick on each bar (every 8th beat), a small one on every other beat, only while scenes play */
 function beatAt(t: number) {
-  if (t < PLAN.intro || t > PLAN.lineup[1]) return 0;
+  if (t < PLAN.intro || t > PLAN.scenes[PLAN.scenes.length - 1]) return 0;
   let i = 0;
   while (i + 1 < BEATS.length && BEATS[i + 1] <= t) i++;
   const bar = Math.floor(i / 8) * 8, beat = i - (i % 2);
@@ -145,7 +143,6 @@ export default function Video() {
   return (
     <div className="relative h-dvh overflow-hidden bg-zinc-950 text-zinc-100 [color-scheme:dark]">
       <HeroScroll apk="#" progress={progressAt(t, cues)} video beat={own ? beatAt(t) : 0} phoneIn={phoneIn}
-        interlude={own && <Lineup t={(t - PLAN.lineup[0]) / (PLAN.lineup[1] - PLAN.lineup[0])} beat={beatAt(t)} />}
         backdrop={own && <video ref={clip} src={CLIP} muted playsInline preload="auto" className="absolute inset-0 z-[5] h-full w-full bg-black object-cover" style={{ opacity: inClip ? clipFade : 0 }} />} />
       {song && <audio ref={audio} src={song.url} preload="auto" onLoadedMetadata={(e) => setLen(song.url === SONG.url ? PLAN.end : e.currentTarget.duration)} onEnded={() => setPlaying(false)} />}
 
