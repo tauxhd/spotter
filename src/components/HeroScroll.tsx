@@ -370,7 +370,7 @@ function MapScreen({ t, e }: { t: number; e: number }) {
       <span className="rounded-[1.4cqw] bg-lime-400 font-bold text-zinc-950" style={{ padding: `${u(8)} ${u(16)}`, fontSize: u(15) }}>3D</span>
       <span className="rounded-[1.4cqw] bg-zinc-800 font-bold" style={{ padding: `${u(8)} ${u(16)}`, fontSize: u(15) }}>Floor plan</span>
     </B>
-    <B x={0} y={176} w={480} h={530} className="pointer-events-none overflow-hidden bg-zinc-950 [&>div]:h-full [&_canvas]:!h-full [&_canvas]:!max-h-none" style={{ opacity: smooth(0.1, 0.5, e) }}>
+    <B x={0} y={176} w={480} h={530} className="pointer-events-none overflow-hidden bg-zinc-950 [&_button]:hidden [&>div]:h-full [&_canvas]:!h-full [&_canvas]:!max-h-none" style={{ opacity: smooth(0.1, 0.5, e) }}>
       <Gym3D sel={picked ? "rack" : undefined} onPick={() => {}} />
     </B>
     <B x={24} y={724} w={432} className="flex border-b border-white/10" style={{ gap: u(20), fontSize: u(16), ...rise(st(e, 2)) }}>
@@ -403,7 +403,7 @@ const THEME: Record<Theme, { bg: string; fg: string; sub: string; flash: string 
   white: { bg: "#f4f4f5", fg: "#09090b", sub: "#52525b", flash: LIME },
 };
 /** a dataset we built ourselves: how many, what it is, a strip of its art */
-type Data = { n: number; what: string; imgs: string[] };
+type Data = { n: number; tag?: string; what: string; imgs?: string[] };
 const EX = ["barbell-bench-press", "pull-up", "dumbbell-curl", "kettlebell-swing", "goblet-squat", "lat-pulldown", "push-up", "romanian-deadlift", "cable-crossover", "leg-press", "hip-thrust", "dumbbell-shoulder-press", "plank", "burpee"].map((x) => `/exercises/${x}.webp`);
 const FOOD = ["nasi-lemak-fried-chicken", "chicken-briyani", "roti-canai-dhal", "char-kuey-teow", "chicken-mandi", "chicken-katsu-don", "teh-tarik", "mee-goreng-mamak", "tandoori-chicken-naan", "kaya-toast-2-half-boiled-eggs", "fish-chips", "ayam-penyet"].map((x) => `/food/${x}.webp`);
 type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
@@ -547,7 +547,8 @@ const scenes: Scene[] = [
     },
   },
   {
-    word: ["Find", "anything."], theme: "dark", text: "A 3D map of the whole gym. Every exercise points you to the machine that does it.",
+    word: ["Find", "anything."], theme: "dark",
+    data: { n: equipment.length, tag: "The whole APU SweatZone", what: "machines, racks and benches, every one modelled and placed exactly where it stands on the SweatZone floor." }, text: "The entire APU SweatZone, modelled in 3D, wall to wall. Every exercise points you to the machine that does it.",
     floats: [["/icons/map.webp", 91, 17, 13, 1.4, -8], ["/icons/target.webp", 52, 82, 10, 0.8, 10], ["/hero/props/plate.webp", 97, 72, 14, 1.2, 20], ["/icons/building.webp", 57, 12, 8, 0.6, 0]],
     Screen: MapScreen,
     play: (t, wide) => ({
@@ -672,7 +673,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
           return (
             <div key={s.text} className="pointer-events-none absolute inset-x-0 top-[8dvh] z-10 px-6 text-center md:inset-x-auto md:left-[max(2rem,calc(50%-36rem))] md:top-1/2 md:w-[min(34rem,42vw)] md:text-left"
               style={{ opacity: vis, color: c.fg, transform: `translateY(${(1 - vis) * -40}px)${wide ? " translateY(-50%)" : ""}` }}>
-              <p className="font-mono text-sm font-semibold tracking-[0.2em]" style={{ color: c.sub }}>{String(k + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}</p>
+              <p className="font-mono text-sm font-semibold tracking-[0.2em]" style={{ color: c.sub }}>{String(k + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}{k === N - 1 && <span style={{ color: LIME }}> · APU SweatZone</span>}</p>
               <h2 className="mt-3 pb-2 text-[clamp(2.4rem,6.5vw,5.5rem)] font-bold leading-[0.95] tracking-[-0.05em]">
                 {w1.slice(0, n)}{n > w1.length && " "}{n > w1.length + 1 && <span style={accent}>{w2.slice(0, n - w1.length - 1)}</span>}
                 <span className="ml-1 inline-block w-[0.06em] animate-pulse" style={{ height: "0.8em", background: s.theme === "dark" ? LIME : "#09090b" }} />
@@ -689,19 +690,33 @@ export default function HeroScroll({ apk }: { apk: string }) {
                 const v = smooth(0.14, 0.22, t);
                 return (
                   <div className="mt-8" style={{ opacity: v, transform: `translateY(${(1 - v) * 20}px)` }}>
-                    <div className="flex items-baseline gap-3">
+                    <div className="flex items-center gap-4">
+{!s.data.imgs && (
+                      <svg viewBox={floor.viewBox} className="h-24 shrink-0" aria-label="Floor plan of the APU SweatZone">
+                        <polygon points={floor.outline} fill="none" stroke={c.fg} strokeOpacity=".8" strokeWidth="8" pathLength={1} strokeDasharray={`${smooth(0.16, 0.3, t)} 1`} />
+                        {equipment.map((q, i) => (
+                          <rect key={q.id} x={q.x} y={q.y} width={q.w} height={q.h} rx="6" fill={q.id === "rack" && t > 0.2 ? LIME : c.fg} fillOpacity={q.id === "rack" && t > 0.2 ? 1 : 0.55}
+                            opacity={smooth(0.2 + (i / equipment.length) * 0.15, 0.23 + (i / equipment.length) * 0.15, t)} />
+                        ))}
+                        <rect x={floor.door[0] - 6} y={floor.door[1]} width={floor.door[2] + 6} height={floor.door[3]} fill={LIME} opacity={smooth(0.3, 0.34, t)} />
+                      </svg>
+)}
+<div className="flex items-baseline gap-3">
                       <span className="text-6xl font-bold tabular-nums tracking-[-0.04em]" style={{ color: s.theme === "dark" ? LIME : c.fg }}>{Math.round(s.data.n * smooth(0.16, 0.4, t))}</span>
-                      <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.15em]" style={{ background: c.fg, color: c.bg }}>Our own dataset</span>
+                      <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.15em]" style={{ background: c.fg, color: c.bg }}>{s.data.tag ?? "Our own dataset"}</span>
+                    </div>
                     </div>
                     <p className="mt-2 max-w-sm" style={{ color: c.fg }}>{s.data.what}</p>
+                    {s.data.imgs ? (
                     <div className="mt-5 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_10%,#000_90%,transparent)]">
                       <div className="flex gap-2" style={{ transform: `translateX(${-t * 520}px)` }}>
-                        {[...s.data.imgs, ...s.data.imgs].map((src, i) => (
+                        {[...s.data.imgs!, ...s.data.imgs!].map((src, i) => (
                           <img key={i} src={src} alt="" className="h-16 w-16 shrink-0 rounded-xl bg-zinc-900 object-cover ring-1 ring-black/10"
                             style={{ opacity: smooth(0.16 + i * 0.008, 0.22 + i * 0.008, t), transform: `translateY(${(1 - smooth(0.16 + i * 0.008, 0.22 + i * 0.008, t)) * 16}px)` }} />
                         ))}
                       </div>
                     </div>
+                    ) : null}
                   </div>
                 );
               })()}
