@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import Icon from "@/components/Icon";
 import { useStore } from "@/lib/store";
@@ -152,11 +153,11 @@ export default function Eat() {
         <ul>
           {foods.filter((f) => (pick === ALL || (pick === HP ? highProtein(f) : f.stall === pick)) && `${f.name} ${f.stall}`.toLowerCase().includes(q.toLowerCase())).map((f) => (
             <li key={f.stall + f.name} className="card flex gap-3 py-3">
-              <Thumb name={f.name} size={88} />
+              <Link href={`/eat/${slug(f.name)}${location.search}`} aria-label={f.name} className="shrink-0 transition active:scale-95"><Thumb name={f.name} size={88} /></Link>
               <div className="min-w-0 flex-1">
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold leading-snug">{f.name}</p>
+                    <Link href={`/eat/${slug(f.name)}${location.search}`} className="font-semibold leading-snug hover:underline">{f.name}</Link>
                     <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-bold uppercase tracking-wide">
                       {pick !== f.stall && <span className="rounded-sm bg-zinc-100 px-2 py-0.5 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{f.stall}</span>}
                       {highProtein(f) && <span className="rounded-sm bg-lime-100 px-2 py-0.5 text-lime-700 dark:bg-lime-400/10 dark:text-lime-400">High protein</span>}

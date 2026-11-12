@@ -3,6 +3,7 @@
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
@@ -25,6 +26,7 @@ const ALL = 'All', HP = 'High protein';
 const WEB = process.env.EXPO_PUBLIC_WEB_URL?.replace(/\/$/, '');
 const layout = LinearTransition.springify().dampingRatio(Spring.dampingRatio).duration(Spring.duration);
 const easeInOut = Easing.bezier(0.65, 0, 0.35, 1);
+const openFood = (name: string) => router.push({ pathname: '/food/[id]', params: { id: slug(name) } });
 
 function Thumb({ name, size = 48 }: { name: string; size?: number }) {
   const src = foods.some((f) => f.name === name) ? img(`/food/${slug(name)}.webp`) : undefined;
@@ -179,11 +181,11 @@ export default function Eat() {
         </ScrollView>
         {menu.map((f) => (
           <Animated.View key={f.stall + f.name} layout={layout} style={[styles.card, card, styles.dish]}>
-            <Thumb name={f.name} size={84} />
+            <Pressable onPress={() => openFood(f.name)} accessibilityLabel={f.name}><Thumb name={f.name} size={84} /></Pressable>
             <View style={{ flex: 1, gap: 6 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <View style={{ flex: 1, gap: 4 }}>
-                  <ThemedText type="smallBold" style={{ fontSize: 15 }}>{f.name}</ThemedText>
+                  <ThemedText type="smallBold" style={{ fontSize: 15 }} onPress={() => openFood(f.name)}>{f.name}</ThemedText>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
                     {pick !== f.stall && <ThemedText style={[styles.tag, { backgroundColor: theme.backgroundSelected, color: theme.textSecondary }]}>{f.stall.toUpperCase()}</ThemedText>}
                     {highProtein(f) && <ThemedText style={[styles.tag, { backgroundColor: 'rgba(132,204,22,0.15)', color: Lime }]}>HIGH PROTEIN</ThemedText>}

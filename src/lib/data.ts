@@ -213,6 +213,12 @@ export const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").r
 
 // "High protein" = at least a quarter of the calories from protein.
 export const highProtein = (x: { kcal: number; p: number }) => x.kcal > 0 && (x.p * 4) / x.kcal >= 0.25;
+export const foodBySlug = (id: string) => foods.find((f) => slug(f.name) === id);
+// Share of a dish's calories from protein / carbs / fat (4 / 4 / 9 kcal per gram).
+export const calSplit = (x: { p: number; c: number; f: number }) => {
+  const t = x.p * 4 + x.c * 4 + x.f * 9 || 1;
+  return { p: (x.p * 4) / t, c: (x.c * 4) / t, f: (x.f * 9) / t };
+};
 
 export const targets = { kcal: 2600, p: 150, c: 310, f: 80 };
 
