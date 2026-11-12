@@ -2,7 +2,7 @@ import { NativeTabs } from 'expo-router/native-tabs';
 
 import { Lime } from '@/constants/theme';
 
-// The system tab bar: on iOS 26 it's Apple's Liquid Glass, translucent over the content, for free.
+// iOS: the system tab bar (Android and web use js-tabs.tsx). On iOS 26 it's Apple's Liquid Glass, translucent over the content, for free.
 // Icons are Spotter's illustrated set: in colour when selected, grey otherwise (like the website's nav).
 const tabs = [
   { name: 'index', label: 'Gym', icon: require('@/assets/images/tabs/gym.png'), off: require('@/assets/images/tabs/gym-off.png') },
@@ -14,7 +14,7 @@ const tabs = [
 
 export default function AppTabs() {
   return (
-    <NativeTabs tintColor={Lime} labelStyle={{ default: { color: '#a1a1aa' }, selected: { color: Lime } }}>
+    <NativeTabs tintColor={Lime} labelStyle={{ default: { color: '#a1a1aa', fontFamily: 'Geist_600SemiBold', fontSize: 11 }, selected: { color: Lime, fontFamily: 'Geist_600SemiBold', fontSize: 11 } }}>
       {tabs.map((t) => (
         <NativeTabs.Trigger key={t.name} name={t.name}>
           <NativeTabs.Trigger.Label>{t.label}</NativeTabs.Trigger.Label>

@@ -33,7 +33,7 @@ export default function Feed() {
         refreshControl={<RefreshControl refreshing={busy} tintColor={Lime} onRefresh={async () => { setBusy(true); await refresh(); setBusy(false); }} />}
         ListHeaderComponent={
           <View style={{ gap: 16, marginBottom: 4 }}>
-            <Title icon="feed" sub={<><View style={styles.live} />  What APU is lifting, live</>}>Feed</Title>
+            <Title icon="feed" sub={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><View style={styles.live} /><ThemedText type="small" themeColor="textSecondary">What APU is lifting, live</ThemedText></View>}>Feed</Title>
             {suggested.length > 0 && (
               <View>
                 <ThemedText type="smallBold" themeColor="textSecondary" style={styles.kicker}>SUGGESTED FOR YOU</ThemedText>

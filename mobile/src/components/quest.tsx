@@ -225,7 +225,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {/* XP bar */}
         <View style={styles.top}>
           <Pressable onPress={() => go(i - 1)} disabled={i === 0 || done} accessibilityLabel="Back"
