@@ -115,12 +115,13 @@ export default function PostPage() {
       <View style={{ gap: 16 }}>
         <ThemedText style={styles.h3}>Workout</ThemedText>
         {rows.map(({ e, ex, log, pr, top, labels }) => (
-          <View key={e.name}>
+          <Pressable key={e.name} disabled={!ex} onPress={() => ex && router.push({ pathname: '/exercise/[id]', params: { id: ex.id } })}
+            style={({ pressed }) => [{ borderRadius: 5 }, pressed && { opacity: 0.6 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <ExerciseThumb ex={ex} />
               <View style={{ flex: 1 }}>
                 {!!e.superset && <ThemedText style={[styles.tag, { backgroundColor: supersetHex(e.superset.charCodeAt(0) - 65) }]}>SUPERSET {e.superset}</ThemedText>}
-                <ThemedText type="smallBold" style={{ color: Lime, fontSize: 16 }} onPress={() => ex && router.push({ pathname: '/exercise/[id]', params: { id: ex.id } })}>{ex?.name ?? e.name}</ThemedText>
+                <ThemedText type="smallBold" style={{ color: Lime, fontSize: 16 }}>{ex?.name ?? e.name}</ThemedText>
                 {ex && <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, textTransform: 'capitalize' }}>{ex.muscle} · {ex.equipment}</ThemedText>}
               </View>
             </View>
@@ -134,7 +135,7 @@ export default function PostPage() {
                 </View>
               )) : <View style={[styles.setRow, { backgroundColor: theme.backgroundElement }]}><ThemedText themeColor="textSecondary" style={{ width: 48 }}>—</ThemedText><ThemedText type="small">Best {e.best}</ThemedText></View>}
             </View>
-          </View>
+          </Pressable>
         ))}
         {rows.some((r) => r.log.some((x) => x.type)) && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>

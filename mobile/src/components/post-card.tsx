@@ -32,15 +32,16 @@ export function ExerciseThumb({ ex, size = 48 }: { ex?: Exercise; size?: number 
   );
 }
 
-export function FollowButton({ id, name }: { id?: string | null; name: string }) {
+// `block`: fills its slot (the profile's button row), like the website's full-width variant.
+export function FollowButton({ id, name, block }: { id?: string | null; name: string; block?: boolean }) {
   const { s, me, follow, unfollow } = useStore();
   if (!id || id === me.id || lifters.some((l) => l.id === id)) return null; // demo lifters can't be followed
   const on = s.following.includes(id), back = s.followers.includes(id);
   return (
     <Press onPress={() => (on ? unfollow(id) : follow(id))} accessibilityLabel={on ? `Unfollow ${name}` : `Follow ${name}`}
-      style={[styles.follow, on ? { backgroundColor: 'rgba(161,161,170,0.18)' } : { backgroundColor: Lime }]}>
-      {on ? <UserCheck size={13} color="#e4e4e7" /> : <UserPlus size={13} color="#09090b" />}
-      <ThemedText type="smallBold" style={{ fontSize: 12, color: on ? '#e4e4e7' : '#09090b' }}>{on ? (back ? 'Friends' : 'Following') : back ? 'Follow back' : 'Follow'}</ThemedText>
+      style={[styles.follow, on ? { backgroundColor: 'rgba(161,161,170,0.18)' } : { backgroundColor: Lime }, block && styles.block]}>
+      {on ? <UserCheck size={block ? 15 : 13} color="#e4e4e7" /> : <UserPlus size={block ? 15 : 13} color="#09090b" />}
+      <ThemedText type="smallBold" style={{ fontSize: block ? 14 : 12, color: on ? '#e4e4e7' : '#09090b' }}>{on ? (back ? 'Friends' : 'Following') : back ? 'Follow back' : 'Follow'}</ThemedText>
     </Press>
   );
 }
@@ -192,6 +193,7 @@ export default function PostCard({ post, showFollow = true, last }: { post: Post
 
 const styles = StyleSheet.create({
   thumb: { overflow: 'hidden', backgroundColor: '#18181b', borderWidth: 1, borderColor: 'rgba(63,63,70,0.6)', alignItems: 'center', justifyContent: 'center' },
+  block: { flex: 1, alignSelf: 'stretch', justifyContent: 'center', gap: 8, paddingVertical: 8, borderRadius: 5 },
   follow: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 2, paddingHorizontal: 12, paddingVertical: 5 },
   title: { fontSize: 20, fontWeight: '700', marginTop: 12, lineHeight: 26 },
   exList: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, gap: 12 },

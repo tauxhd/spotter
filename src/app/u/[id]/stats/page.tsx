@@ -145,9 +145,9 @@ export default function GymStats() {
           <h2 className="mb-2 font-semibold">Most trained</h2>
           <ul>
             {favourites.map(([name, n]) => (
-              <li key={name} className="flex items-center gap-3 py-2">
+              <li key={name} className="relative flex items-center gap-3 py-2 transition active:opacity-60">
                 <ExerciseThumb ex={findExercise(s.library, undefined, name)} size={40} />
-                {(() => { const fx = findExercise(s.library, undefined, name); return fx && own ? <Link href={`/exercise/${fx.id}`} className="min-w-0 flex-1 truncate font-medium">{name}</Link> : <span className="min-w-0 flex-1 truncate font-medium">{name}</span>; })()}
+                {(() => { const fx = findExercise(s.library, undefined, name); return fx && own ? <Link href={`/exercise/${fx.id}`} className="min-w-0 flex-1 truncate font-medium after:absolute after:inset-0">{name}</Link> : <span className="min-w-0 flex-1 truncate font-medium">{name}</span>; })()}
                 <span className="muted text-sm tabular-nums">{n} sets</span>
               </li>
             ))}

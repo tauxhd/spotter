@@ -95,9 +95,9 @@ export default function ProfileView({ userId }: { userId: string }) {
         {p.bio ? <ThemedText type="small" style={{ marginTop: 8 }}>{p.bio}</ThemedText>
           : own ? <ThemedText type="smallBold" style={{ color: Lime, marginTop: 8 }} onPress={() => setEditing(true)}>Add a bio</ThemedText> : null}
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
-          {own ? <Button variant="ghost" style={styles.half} onPress={() => setEditing(true)}>Edit profile</Button>
+          {own ? <Button variant="ghost" style={styles.half} onPress={() => setEditing(true)}><ThemedText type="smallBold">Edit profile</ThemedText></Button>
             : demo ? <View style={[styles.half, styles.note, { backgroundColor: theme.backgroundElement }]}><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Demo student · can&apos;t be followed</ThemedText></View>
-            : <View style={[styles.half, styles.note, { backgroundColor: theme.backgroundElement }]}><FollowButton id={p.id} name={p.name} /></View>}
+            : <View style={{ flex: 1, flexDirection: 'row' }}><FollowButton id={p.id} name={p.name} block /></View>}
           <Press onPress={() => Share.share({ message: `${p.name} on Spotter` })} style={[styles.half, styles.share, { backgroundColor: theme.backgroundElement }]}>
             <Share2 size={15} color={theme.text} /><ThemedText type="smallBold">Share profile</ThemedText>
           </Press>
@@ -141,7 +141,7 @@ export default function ProfileView({ userId }: { userId: string }) {
 
 const styles = StyleSheet.create({
   head: { marginHorizontal: -16, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 20, borderBottomWidth: StyleSheet.hairlineWidth },
-  half: { flex: 1, paddingVertical: 10 },
+  half: { flex: 1, paddingVertical: 8 },
   note: { borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
   share: { borderRadius: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   headBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },

@@ -130,7 +130,7 @@ export default function GymStats() {
           {favourites.map(([name, n]) => {
             const fx = findExercise(s.library, undefined, name);
             return (
-              <Pressable key={name} disabled={!fx} onPress={() => fx && router.push({ pathname: '/exercise/[id]', params: { id: fx.id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+              <Pressable key={name} disabled={!fx || !own} onPress={() => fx && router.push({ pathname: '/exercise/[id]', params: { id: fx.id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
                 <ExerciseThumb ex={fx} size={40} />
                 <ThemedText style={{ flex: 1, fontWeight: '500' }} numberOfLines={1}>{name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">{n} sets</ThemedText>

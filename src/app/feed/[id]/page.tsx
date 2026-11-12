@@ -110,12 +110,12 @@ export default function WorkoutDetail() {
       <section className="space-y-4">
         <h3 className="text-lg font-bold">Workout</h3>
         {rows.map(({ e, ex, log, pr, top, labels }) => (
-          <div key={e.name}>
+          <div key={e.name} className="relative rounded-xl transition active:bg-zinc-100 dark:active:bg-zinc-900/60">
             <div className="flex items-center gap-3">
               <ExerciseThumb ex={ex} size={48} />
               <div className="min-w-0">
                 {e.superset && <span className={`mb-0.5 inline-block rounded-sm px-2 text-[10px] font-bold uppercase tracking-wide ${supersetColor(e.superset.charCodeAt(0) - 65).tag}`}>Superset {e.superset}</span>}
-                {ex ? <Link href={`/exercise/${ex.id}`} className="block font-semibold text-lime-600 dark:text-lime-400">{ex.name}</Link> : <p className="font-semibold text-lime-600 dark:text-lime-400">{e.name}</p>}
+                {ex ? <Link href={`/exercise/${ex.id}`} className="block font-semibold text-lime-600 after:absolute after:inset-0 dark:text-lime-400">{ex.name}</Link> : <p className="font-semibold text-lime-600 dark:text-lime-400">{e.name}</p>}
                 {ex && <p className="muted text-xs capitalize">{ex.muscle} · {ex.equipment}</p>}
               </div>
             </div>
