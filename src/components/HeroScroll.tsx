@@ -406,7 +406,7 @@ const THEME: Record<Theme, { bg: string; fg: string; sub: string; flash: string 
 type Data = { n: number; tag?: string; what: string; imgs?: string[] };
 const EX = ["barbell-bench-press", "pull-up", "dumbbell-curl", "kettlebell-swing", "goblet-squat", "lat-pulldown", "push-up", "romanian-deadlift", "cable-crossover", "leg-press", "hip-thrust", "dumbbell-shoulder-press", "plank", "burpee"].map((x) => `/exercises/${x}.webp`);
 const FOOD = ["nasi-lemak-fried-chicken", "chicken-briyani", "roti-canai-dhal", "char-kuey-teow", "chicken-mandi", "chicken-katsu-don", "teh-tarik", "mee-goreng-mamak", "tandoori-chicken-naan", "kaya-toast-2-half-boiled-eggs", "fish-chips", "ayam-penyet"].map((x) => `/food/${x}.webp`);
-type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
+type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
 
 const scenes: Scene[] = [
   {
@@ -521,7 +521,8 @@ const scenes: Scene[] = [
     }),
   },
   {
-    word: ["Climb the", "ranks."], theme: "white", text: "Leaderboards by lift, faculty and bodyweight class. The heaviest lift wins, not the most reps.",
+    word: ["Climb the", "ranks."], theme: "white", text: "Students can finally compete: live leaderboards by lift, faculty and bodyweight class. The heaviest lift wins, not the most reps.",
+    points: ["Every APU lifter on one leaderboard", "APU keeps records to pick competition athletes", "More representation and reach for students"],
     floats: [["/hero/props/trophy.webp", 91, 18, 19, 1.4, -8], ["/icons/medal.webp", 52, 82, 11, 0.8, 12], ["/icons/ranks.webp", 97, 70, 10, 1.2, -6], ["/icons/p4p.webp", 57, 12, 8, 0.6, 0]],
     Screen: Ranks,
     play: (t, wide) => {
@@ -679,11 +680,24 @@ export default function HeroScroll({ apk }: { apk: string }) {
                 <span className="ml-1 inline-block w-[0.06em] animate-pulse" style={{ height: "0.8em", background: s.theme === "dark" ? LIME : "#09090b" }} />
               </h2>
               <div className="grid">
-                <p className="mx-auto mt-1 max-w-md text-base [grid-area:1/1] md:mx-0 md:mt-4 md:text-xl" style={{ color: c.sub, opacity: smooth(0.08, 0.16, t) * (s.data && !wide ? 1 - smooth(0.14, 0.2, t) : 1) }}>{s.text}</p>
+                <p className="mx-auto mt-1 max-w-md text-base [grid-area:1/1] md:mx-0 md:mt-4 md:text-xl" style={{ color: c.sub, opacity: smooth(0.08, 0.16, t) * ((s.data || s.points) && !wide ? 1 - smooth(0.14, 0.2, t) : 1) }}>{s.text}</p>
                 {s.data && !wide && ( // on a phone the dataset line takes the paragraph's place
                   <p className="mx-auto mt-1 max-w-md text-base [grid-area:1/1]" style={{ opacity: smooth(0.16, 0.22, t) }}>
                     <b className="text-2xl tabular-nums" style={{ color: s.theme === "dark" ? LIME : c.fg }}>{Math.round(s.data.n * smooth(0.16, 0.4, t))}</b> {s.data.what}
                   </p>
+                )}
+                {s.points && ( // ticked list, one by one (in the paragraph's place on a phone)
+                  <ul className={wide ? "mt-6 space-y-3 [grid-area:2/1]" : "mx-auto mt-1 max-w-md space-y-1.5 text-left text-sm [grid-area:1/1]"}>
+                    {s.points.map((x, i) => {
+                      const v = smooth(0.16 + i * 0.05, 0.22 + i * 0.05, t);
+                      return (
+                        <li key={x} className="flex items-start gap-3 font-semibold md:text-lg" style={{ color: c.fg, opacity: v, transform: `translateX(${(1 - v) * -24}px)` }}>
+                          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md text-sm font-black" style={{ background: s.theme === "dark" ? LIME : "#09090b", color: s.theme === "dark" ? "#09090b" : LIME, transform: `scale(${back((t - 0.16 - i * 0.05) / 0.05)})` }}>✓</span>
+                          {x}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
               </div>
               {s.data && wide && (() => {
