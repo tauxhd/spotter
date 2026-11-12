@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { Check, Plus, Search, Slash, X } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, View, Platform } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -76,7 +76,7 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
           data={list}
           keyExtractor={(e) => e.id}
           keyboardShouldPersistTaps="handled"
-          initialNumToRender={14}
+          initialNumToRender={14} maxToRenderPerBatch={12} windowSize={9} removeClippedSubviews={Platform.OS === 'android'}
           ListHeaderComponent={<ThemedText type="small" themeColor="textSecondary" style={{ paddingVertical: 8 }}>{list.length} exercise{list.length === 1 ? '' : 's'}</ThemedText>}
           ListEmptyComponent={<EmptyState art="search" size={96} title="No matches" text={q ? `Nothing called “${q}” with these filters.` : 'Try another muscle or equipment filter.'} />}
           extraData={picked}

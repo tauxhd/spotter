@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Heart, Lock, MessageCircle, SendHorizontal, Share2, UserCheck, UserPlus, Users } from 'lucide-react-native';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Dimensions, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
@@ -15,7 +15,7 @@ import { Press } from '@/components/ui/button';
 import { Icon, Section } from '@/components/ui/kit';
 import { Lime, Red, SpringBounce } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useStore } from '@/lib/store';
+import { useActions, useFollows, useLibrary, useMe } from '@/lib/store';
 import { img } from '@/lib/web';
 import { Input } from '@/components/ui/input';
 
@@ -34,9 +34,9 @@ export function ExerciseThumb({ ex, size = 48 }: { ex?: Exercise; size?: number 
 
 // `block`: fills its slot (the profile's button row), like the website's full-width variant.
 export function FollowButton({ id, name, block }: { id?: string | null; name: string; block?: boolean }) {
-  const { s, me, follow, unfollow } = useStore();
+  const { me } = useMe(), { following, followers } = useFollows(), { follow, unfollow } = useActions();
   if (!id || id === me.id || lifters.some((l) => l.id === id)) return null; // demo lifters can't be followed
-  const on = s.following.includes(id), back = s.followers.includes(id);
+  const on = following.includes(id), back = followers.includes(id);
   return (
     <Press onPress={() => (on ? unfollow(id) : follow(id))} accessibilityLabel={on ? `Unfollow ${name}` : `Follow ${name}`}
       style={[styles.follow, on ? { backgroundColor: 'rgba(161,161,170,0.18)' } : { backgroundColor: Lime }, block && styles.block]}>
@@ -92,7 +92,7 @@ function Swipe({ p, find }: { p: Post; find: (id?: string, name?: string) => Exe
       <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / w))}
         onScroll={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / w))} scrollEventThrottle={64}>
         <View style={{ width: w }}>
-          {p.media!.type === 'video' ? <Video url={p.media!.url} /> : <Image source={{ uri: p.media!.url }} style={styles.media} contentFit="cover" />}
+          {p.media!.type === 'video' ? <Video url={p.media!.url} /> : <Image source={{ uri: p.media!.url }} cachePolicy="memory-disk" recyclingKey={p.id} transition={150} style={styles.media} contentFit="cover" />}
         </View>
         <View style={{ width: w, paddingHorizontal: 16, paddingVertical: 4 }}><Summary p={p} find={find} /></View>
       </ScrollView>
@@ -101,15 +101,16 @@ function Swipe({ p, find }: { p: Post; find: (id?: string, name?: string) => Exe
   );
 }
 
-export default function PostCard({ post, showFollow = true, last }: { post: Post; showFollow?: boolean; last?: boolean }) {
-  const { s, me, like, comment } = useStore();
+// memo + narrow store slices: a card only re-renders when its own post (or your profile) changes
+export default memo(function PostCard({ post, showFollow = true, last }: { post: Post; showFollow?: boolean; last?: boolean }) {
+  const { me } = useMe(), library = useLibrary(), { like, comment } = useActions();
   const theme = useTheme();
   const [p, setP] = useState(post);
   const [seen, setSeen] = useState(post); // a fresh post from the feed replaces the local copy
   if (post !== seen) { setSeen(post); setP(post); }
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
-  const find = (id?: string, name?: string) => findExercise(s.library, id, name);
+  const find = (id?: string, name?: string) => findExercise(library, id, name);
   const author = p.uid ?? lifters.find((l) => l.name === p.by)?.id;
   const likers = p.likers ?? [];
   const others = p.likes - (likers[0] ? 1 : 0);
@@ -189,7 +190,7 @@ export default function PostCard({ post, showFollow = true, last }: { post: Post
       )}
     </Section>
   );
-}
+});
 
 const styles = StyleSheet.create({
   thumb: { overflow: 'hidden', backgroundColor: '#18181b', borderWidth: 1, borderColor: 'rgba(63,63,70,0.6)', alignItems: 'center', justifyContent: 'center' },

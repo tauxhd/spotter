@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -45,12 +45,74 @@ function Bar({ pct, color, height, delay = 0 }: { pct: number; color: string; he
   return <Animated.View style={[{ height, borderRadius: 2, backgroundColor: color }, anim]} />;
 }
 
+// The APU cafeteria (search, stall filter, ~45 dish cards). Its own component with its own state, so logging a food or a
+// weigh-in re-renders the Today card above it, not every dish card here (onAdd keeps the same identity).
+const Menu = memo(function Menu({ onAdd }: { onAdd: (f: Food) => void }) {
+  const theme = useTheme();
+  const [q, setQ] = useState('');
+  const [pick, setPick] = useState<string>(ALL);
+  const card = { marginHorizontal: -16, paddingHorizontal: 16, borderRadius: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border };
+  const icon = (n: string) => img(`/icons/${n}.webp`);
+  const menu = foods.filter((f) => (pick === ALL || (pick === HP ? highProtein(f) : f.stall === pick)) && `${f.name} ${f.stall}`.toLowerCase().includes(q.toLowerCase()));
+  return (
+    <>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText type="smallBold" style={{ fontSize: 16 }}>APU cafeteria</ThemedText><InfoTip text={help.cafeteria} /></View>
+    <View style={{ justifyContent: 'center' }}>
+      <Input value={q} onChangeText={setQ} placeholder="Search food…" placeholderTextColor={theme.textSecondary}
+        style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
+      <Search size={16} color={theme.textSecondary} style={{ position: 'absolute', left: 11 }} pointerEvents="none" />
+    </View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }} style={{ marginHorizontal: -16, flexGrow: 0 }}>
+      {[ALL, HP, ...stalls].map((x) => {
+        const on = pick === x, src = x === ALL ? icon('all') : x === HP ? icon('high-protein') : img(`/stalls/${slug(x)}.webp`);
+        return (
+          <Pressable key={x} onPress={() => setPick(x)} style={{ width: 60, alignItems: 'center', gap: 4 }}>
+            <View style={[styles.stall, { borderColor: on ? Lime : 'transparent' }]}>{src && <Image source={src} style={x === ALL || x === HP ? { width: 40, height: 40 } : { width: '100%', height: '100%' }} contentFit="cover" />}</View>
+            <ThemedText type="small" style={{ fontSize: 11, lineHeight: 13, textAlign: 'center', fontWeight: on ? '700' : '500', color: on ? theme.text : theme.textSecondary }}>{x}</ThemedText>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+    {menu.map((f) => (
+      <Animated.View key={f.stall + f.name} layout={layout}>
+      {/* the whole card opens the dish; the + inside adds it without opening */}
+      <Pressable onPress={() => openFood(f.name)} accessibilityRole="link" accessibilityLabel={f.name}
+        style={({ pressed }) => [styles.card, card, styles.dish, pressed && { backgroundColor: theme.backgroundElement }]}>
+        <Thumb name={f.name} size={84} />
+        <View style={{ flex: 1, gap: 6 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <ThemedText type="smallBold" style={{ fontSize: 15 }}>{f.name}</ThemedText>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                {pick !== f.stall && <ThemedText style={[styles.tag, { backgroundColor: theme.backgroundSelected, color: theme.textSecondary }]}>{f.stall.toUpperCase()}</ThemedText>}
+                {highProtein(f) && <ThemedText style={[styles.tag, { backgroundColor: 'rgba(132,204,22,0.15)', color: Lime }]}>HIGH PROTEIN</ThemedText>}
+              </View>
+            </View>
+            <Press onPress={() => onAdd(f)} haptic={false} scaleTo={0.9} accessibilityLabel={`Add ${f.name}`} style={styles.plus}>
+              <Plus size={20} strokeWidth={2.5} color="#09090b" />
+            </Press>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 }}>
+            {([['kcal', f.kcal, '', 'kcal'], ['prot', f.p, 'g', 'protein'], ['carb', f.c, 'g', 'carbs'], ['fat', f.f, 'g', 'fat']] as const).map(([k, v, unit, ic]) => (
+              <View key={k} style={styles.macro}>
+                <Icon name={ic} size={14} />
+                <ThemedText type="smallBold" style={{ fontSize: 12, lineHeight: 16, fontVariant: ['tabular-nums'] }}>{v}{unit}</ThemedText>
+                <ThemedText themeColor="textSecondary" style={{ fontSize: 11, lineHeight: 16 }}>{k}</ThemedText>
+              </View>
+            ))}
+          </View>
+        </View>
+      </Pressable>
+      </Animated.View>
+    ))}
+    </>
+  );
+});
+
 export default function Eat() {
   const { s, me, addFood, removeFood } = useStore();
   const [view, setView] = useState<'today' | 'progress'>('today');
   const theme = useTheme();
-  const [q, setQ] = useState('');
-  const [pick, setPick] = useState<string>(ALL);
   const [busy, setBusy] = useState(false);
   const [guess, setGuess] = useState<(Food & { ai: boolean }) | null>(null);
 
@@ -94,7 +156,6 @@ export default function Eat() {
   ] as const;
   const card = { marginHorizontal: -16, paddingHorizontal: 16, borderRadius: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }; // flat sections, like the website's .card
   const icon = (n: string) => img(`/icons/${n}.webp`);
-  const menu = foods.filter((f) => (pick === ALL || (pick === HP ? highProtein(f) : f.stall === pick)) && `${f.name} ${f.stall}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
@@ -183,55 +244,7 @@ export default function Eat() {
           </View>
         )}
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText type="smallBold" style={{ fontSize: 16 }}>APU cafeteria</ThemedText><InfoTip text={help.cafeteria} /></View>
-        <View style={{ justifyContent: 'center' }}>
-          <Input value={q} onChangeText={setQ} placeholder="Search food…" placeholderTextColor={theme.textSecondary}
-            style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
-          <Search size={16} color={theme.textSecondary} style={{ position: 'absolute', left: 11 }} pointerEvents="none" />
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }} style={{ marginHorizontal: -16, flexGrow: 0 }}>
-          {[ALL, HP, ...stalls].map((x) => {
-            const on = pick === x, src = x === ALL ? icon('all') : x === HP ? icon('high-protein') : img(`/stalls/${slug(x)}.webp`);
-            return (
-              <Pressable key={x} onPress={() => setPick(x)} style={{ width: 60, alignItems: 'center', gap: 4 }}>
-                <View style={[styles.stall, { borderColor: on ? Lime : 'transparent' }]}>{src && <Image source={src} style={x === ALL || x === HP ? { width: 40, height: 40 } : { width: '100%', height: '100%' }} contentFit="cover" />}</View>
-                <ThemedText type="small" style={{ fontSize: 11, lineHeight: 13, textAlign: 'center', fontWeight: on ? '700' : '500', color: on ? theme.text : theme.textSecondary }}>{x}</ThemedText>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-        {menu.map((f) => (
-          <Animated.View key={f.stall + f.name} layout={layout}>
-          {/* the whole card opens the dish; the + inside adds it without opening */}
-          <Pressable onPress={() => openFood(f.name)} accessibilityRole="link" accessibilityLabel={f.name}
-            style={({ pressed }) => [styles.card, card, styles.dish, pressed && { backgroundColor: theme.backgroundElement }]}>
-            <Thumb name={f.name} size={84} />
-            <View style={{ flex: 1, gap: 6 }}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <View style={{ flex: 1, gap: 4 }}>
-                  <ThemedText type="smallBold" style={{ fontSize: 15 }}>{f.name}</ThemedText>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                    {pick !== f.stall && <ThemedText style={[styles.tag, { backgroundColor: theme.backgroundSelected, color: theme.textSecondary }]}>{f.stall.toUpperCase()}</ThemedText>}
-                    {highProtein(f) && <ThemedText style={[styles.tag, { backgroundColor: 'rgba(132,204,22,0.15)', color: Lime }]}>HIGH PROTEIN</ThemedText>}
-                  </View>
-                </View>
-                <Press onPress={() => add(f)} haptic={false} scaleTo={0.9} accessibilityLabel={`Add ${f.name}`} style={styles.plus}>
-                  <Plus size={20} strokeWidth={2.5} color="#09090b" />
-                </Press>
-              </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 }}>
-                {([['kcal', f.kcal, '', 'kcal'], ['prot', f.p, 'g', 'protein'], ['carb', f.c, 'g', 'carbs'], ['fat', f.f, 'g', 'fat']] as const).map(([k, v, unit, ic]) => (
-                  <View key={k} style={styles.macro}>
-                    <Icon name={ic} size={14} />
-                    <ThemedText type="smallBold" style={{ fontSize: 12, lineHeight: 16, fontVariant: ['tabular-nums'] }}>{v}{unit}</ThemedText>
-                    <ThemedText themeColor="textSecondary" style={{ fontSize: 11, lineHeight: 16 }}>{k}</ThemedText>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </Pressable>
-          </Animated.View>
-        ))}
+        <Menu onAdd={add} />
         </>}
       </ScrollView>
       <WorkoutPill />

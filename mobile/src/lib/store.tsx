@@ -1,8 +1,8 @@
 // The phone's data layer: same Supabase project, tables, anonymous sign-in and actions as the website's src/lib/store.tsx.
 // The in-progress workout lives on the device (localStorage from expo-sqlite) until it's finished, like on the web.
 import "./storage-install";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Alert, AppState } from "react-native";
 import { createClient } from "@supabase/supabase-js";
 import { oldNames, type Exercise, type ExerciseLog, type Post, type Sex } from "@shared/data";
 import type { Unit } from "@shared/units";
@@ -46,11 +46,24 @@ type Ctx = {
   removeFood: (id: string) => Promise<void>;
   addWeight: (kg: number) => Promise<void>;
 };
+const ACTIONS = ["setActive", "finishWorkout", "like", "comment", "follow", "unfollow", "signOut", "refresh", "saveRoutine", "deleteRoutine",
+  "clockIn", "clockOut", "updateProfile", "setAvatar", "addFood", "removeFood", "addWeight"] as const satisfies readonly (keyof Ctx)[];
+type Action = (typeof ACTIONS)[number];
 export type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "onboarding"; save: (p: Omit<Profile, "id">) => Promise<void> } | { kind: "ready" };
 
 const C = createContext<Ctx | null>(null);
 const S = createContext<Status>({ kind: "loading" });
+// Narrow, slow-changing slices for components that appear many times (post cards, follow buttons): reading the whole store
+// re-renders them on every change anywhere (a food log, the workout timer); these only change when their own data does.
+const A = createContext<Pick<Ctx, Action> | null>(null);
+const M = createContext<{ me: Profile; u: Unit } | null>(null);
+const L = createContext<Exercise[]>([]);
+const F = createContext<{ following: string[]; followers: string[] }>({ following: [], followers: [] });
 const ACTIVE = "spotter:active";
+const CACHE = "spotter:cache", LIB = "spotter:library"; // last-seen data, so the app opens instantly
+// read once at start-up (localStorage here is expo-sqlite, synchronous): the first frame is your app, not a spinner
+const read = (k: string) => { try { return JSON.parse(localStorage.getItem(k) ?? "null"); } catch { return null; } };
+const cached: { uid: string; me: Profile; s: Partial<State> } | null = read(CACHE);
 
 // What a post row joins to, and how it becomes a Post: same as the website's POST_SELECT / toPost.
 export const POST_SELECT = "*, profiles!posts_user_id_fkey(name, faculty, avatar_url), comments(by, text, created_at, user_id, profiles(name)), likes(user_id, profiles(name, avatar_url))";
@@ -72,13 +85,13 @@ async function upload(bucket: string, path: string, m: Media) {
 }
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [uid, setUid] = useState<string | null>(null);
-  const [me, setMe] = useState<Profile | null | undefined>(undefined); // undefined = loading, null = needs profile setup
+  const [uid, setUid] = useState<string | null>(cached?.uid ?? null);
+  const [me, setMe] = useState<Profile | null | undefined>(cached?.me); // undefined = loading, null = needs profile setup
   const [err, setErr] = useState<string | null>(null);
   const [s, setS] = useState<State>(() => {
     let active: Active = null;
     try { const a = localStorage.getItem(ACTIVE); if (a) active = JSON.parse(a); } catch {}
-    return { sessions: [], posts: [], library: [], routines: [], active, clockedIn: null, food: [], weights: [], following: [], followers: [] };
+    return { sessions: [], posts: [], routines: [], clockedIn: null, food: [], weights: [], following: [], followers: [], ...cached?.s, library: read(LIB) ?? [], active };
   });
 
   const loadPosts = useCallback(async (id: string) => {
@@ -117,29 +130,48 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
     const id = session!.user.id;
     setUid(id);
+    if (cached && cached.uid !== id) setS((x) => ({ ...x, sessions: [], posts: [], routines: [], food: [], weights: [], following: [], followers: [], clockedIn: null }));
     const { data, error } = await sb.from("profiles").select("*").eq("id", id).maybeSingle();
-    if (error) return setErr(error.message);
+    if (error) return cached?.uid === id ? undefined : setErr(error.message); // offline with a cached copy: keep showing it
     setMe(data);
     await Promise.all([loadPosts(id), data && loadMine(id)]);
   }, [loadPosts, loadMine]);
 
   useEffect(() => {
     sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort")
-      .then(({ data }) => data && setS((x) => ({ ...x, library: data })));
+      .then(({ data }) => { if (!data) return; setS((x) => ({ ...x, library: data })); try { localStorage.setItem(LIB, JSON.stringify(data)); } catch {} });
     Promise.resolve().then(boot); // async: the state it sets lands after the first render
   }, [boot]);
 
-  // feed stays live: any post / comment / like change refetches (same channel as the website)
+  // feed stays live (same channel as the website)
   useEffect(() => {
     if (!uid) return;
-    const reload = () => loadPosts(uid);
+    // Your own likes / comments are already on screen (optimistic), so they don't trigger a refetch; other people's changes
+    // are batched into one refetch at most every ~0.6 s instead of one per event.
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const reload = (e: { new?: Row; old?: Row }) => {
+      if ((e.new?.user_id ?? e.old?.user_id) === uid) return;
+      clearTimeout(t);
+      t = setTimeout(() => loadPosts(uid), 600);
+    };
     const ch = sb.channel("feed")
       .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, reload)
       .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, reload)
       .on("postgres_changes", { event: "*", schema: "public", table: "likes" }, reload)
       .subscribe();
-    return () => { sb.removeChannel(ch); };
+    return () => { clearTimeout(t); sb.removeChannel(ch); };
   }, [uid, loadPosts]);
+
+  // Keep a copy of your profile and data on the device (a moment after each change), so next time the app opens straight
+  // into it while fresh data loads behind. Temporary rows (still saving) and the exercise library (cached on its own) stay out.
+  useEffect(() => {
+    if (!me) return;
+    const t = setTimeout(() => {
+      const keep = <T extends { id: string }>(l: T[]) => l.filter((x) => !x.id.startsWith("tmp-"));
+      try { localStorage.setItem(CACHE, JSON.stringify({ uid: me.id, me, s: { ...s, active: undefined, library: [], posts: keep(s.posts).slice(0, 30), sessions: keep(s.sessions), food: keep(s.food), weights: keep(s.weights) } })); } catch {}
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [me, s]);
 
   const status: Status = err ? { kind: "error", message: err } : me === undefined ? { kind: "loading" } : !me
     ? { kind: "onboarding", async save(p) {
@@ -157,24 +189,40 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       try { if (n) localStorage.setItem(ACTIVE, JSON.stringify(n)); else localStorage.removeItem(ACTIVE); } catch {}
       return { ...x, active: n };
     }),
+    // Finish: everything on screen at once (session, post, lifts); the save runs in the background and the workout stays on
+    // the device until the server has it, so a failed save puts it back instead of losing it.
     async finishWorkout(w, post, lifts, media) {
       const at = post.at ?? new Date().toISOString();
-      let media_url = null, media_type = null;
-      if (media) {
-        const ext = media.type === "video" ? "mp4" : (media.mime?.split("/")[1] ?? "jpg");
-        media_url = await upload("media", `${me.id}/${Date.now()}.${ext}`, media);
-        media_type = media.type;
-      }
-      const { data } = await sb.from("workouts").insert({ ...w, created_at: at }).select().single();
-      await Promise.all([
-        sb.from("posts").insert({ title: post.title, note: post.note || null, exercises: post.exercises, volume: post.volume, prs: post.prs,
-          duration_min: post.duration, visibility: post.visibility ?? "everyone", media_url, media_type, created_at: at }),
-        sb.from("profiles").update(lifts).eq("id", me.id),
-      ]);
+      const kept = s.active, tmp = `tmp-${Date.now()}`;
       setMe({ ...me, ...lifts });
-      setS((x) => ({ ...x, active: null, sessions: data ? [{ id: data.id, at, ...w }, ...x.sessions] : x.sessions }));
-      try { localStorage.removeItem(ACTIVE); } catch {}
-      await loadPosts(me.id);
+      setS((x) => ({
+        ...x, active: null, sessions: [{ id: tmp, at, ...w }, ...x.sessions],
+        posts: [{ id: tmp, by: me.name, faculty: me.faculty, at, title: post.title, note: post.note, exercises: post.exercises, volume: post.volume, prs: post.prs,
+          duration: post.duration, visibility: post.visibility, media: media ? { url: media.uri, type: media.type } : null,
+          likes: 0, liked: false, mine: true, uid: me.id, avatar: me.avatar_url, likers: [], comments: [] }, ...x.posts],
+      }));
+      (async () => {
+        let media_url = null, media_type = null;
+        if (media) {
+          const ext = media.type === "video" ? "mp4" : (media.mime?.split("/")[1] ?? "jpg");
+          media_url = await upload("media", `${me.id}/${Date.now()}.${ext}`, media);
+          media_type = media.type;
+        }
+        const { data, error } = await sb.from("workouts").insert({ ...w, created_at: at }).select().single();
+        if (error) throw error;
+        await Promise.all([
+          sb.from("posts").insert({ title: post.title, note: post.note || null, exercises: post.exercises, volume: post.volume, prs: post.prs,
+            duration_min: post.duration, visibility: post.visibility ?? "everyone", media_url, media_type, created_at: at }),
+          sb.from("profiles").update(lifts).eq("id", me.id),
+        ]);
+        setS((x) => ({ ...x, sessions: x.sessions.map((y) => (y.id === tmp ? { ...y, id: data.id } : y)) }));
+        try { localStorage.removeItem(ACTIVE); } catch {}
+        await loadPosts(me.id);
+      })().catch((e) => { // couldn't save: bring the workout back so nothing is lost
+        console.warn("finish", e);
+        setS((x) => ({ ...x, active: kept, sessions: x.sessions.filter((y) => y.id !== tmp), posts: x.posts.filter((y) => y.id !== tmp) }));
+        Alert.alert("Couldn't save your workout", "It's still here, so try Finish again when you're online.");
+      });
     },
     async like(id, wasLiked) {
       const liked = wasLiked ?? s.posts.find((x) => x.id === id)?.liked ?? false;
@@ -195,7 +243,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await sb.from("follows").delete().match({ follower: me.id, followee: id });
     },
     async signOut() {
-      try { localStorage.removeItem(ACTIVE); } catch {}
+      try { localStorage.removeItem(ACTIVE); localStorage.removeItem(CACHE); } catch {}
       await sb.auth.signOut();
       setMe(undefined); setUid(null);
       setS((x) => ({ ...x, sessions: [], posts: [], routines: [], active: null, clockedIn: null, food: [], weights: [], following: [], followers: [] }));
@@ -214,19 +262,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setS((x) => ({ ...x, routines: x.routines.filter((y) => y.id !== id) }));
       await sb.from("routines").delete().eq("id", id);
     },
-    async clockIn() {
+    async clockIn() { // shows you as in straight away; undone if the server refuses
       const at = new Date().toISOString();
+      setS((x) => ({ ...x, clockedIn: at }));
       await sb.from("visits").update({ out_at: at }).is("out_at", null);
       const { error } = await sb.from("visits").insert({ in_at: at });
-      if (!error) setS((x) => ({ ...x, clockedIn: at }));
+      if (error) setS((x) => ({ ...x, clockedIn: null }));
     },
     async clockOut() {
-      await sb.from("visits").update({ out_at: new Date().toISOString() }).is("out_at", null);
       setS((x) => ({ ...x, clockedIn: null }));
+      await sb.from("visits").update({ out_at: new Date().toISOString() }).is("out_at", null);
     },
-    async updateProfile(p) {
+    async updateProfile(p) { // on screen at once; put back if the save fails
+      const before = me;
+      setMe({ ...me, ...p });
       const { data, error } = await sb.from("profiles").update(p).eq("id", me.id).select().single();
-      if (error) throw error;
+      if (error) { setMe(before); throw error; }
       setMe(data);
     },
     async setAvatar(m) {
@@ -236,25 +287,53 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setMe({ ...me, avatar_url: url });
       await loadPosts(me.id);
     },
-    async addFood(f) {
-      const { data } = await sb.from("food_logs").insert({ ...f, created_at: new Date().toISOString() }).select().single();
-      if (data) setS((x) => ({ ...x, food: [...x.food, { ...f, id: data.id, at: data.created_at }] }));
+    async addFood(f) { // on screen at once; the saved row's id replaces the temporary one
+      const at = new Date().toISOString(), tmp = `tmp-${Date.now()}`;
+      setS((x) => ({ ...x, food: [...x.food, { ...f, id: tmp, at }] }));
+      const { data } = await sb.from("food_logs").insert({ ...f, created_at: at }).select().single();
+      setS((x) => ({ ...x, food: data ? x.food.map((y) => (y.id === tmp ? { ...y, id: data.id } : y)) : x.food.filter((y) => y.id !== tmp) }));
     },
     async removeFood(id) {
       setS((x) => ({ ...x, food: x.food.filter((y) => y.id !== id) }));
       await sb.from("food_logs").delete().eq("id", id);
     },
-    async addWeight(kg) {
-      const { data, error } = await sb.from("weight_logs").insert({ kg, created_at: new Date().toISOString() }).select().single();
+    async addWeight(kg) { // on screen at once; rolled back if the save fails
+      const at = new Date().toISOString(), tmp = `tmp-${Date.now()}`;
+      setS((x) => ({ ...x, weights: [...x.weights, { id: tmp, kg, at }] }));
+      const { data, error } = await sb.from("weight_logs").insert({ kg, created_at: at }).select().single();
+      setS((x) => ({ ...x, weights: data ? x.weights.map((y) => (y.id === tmp ? { ...y, id: data.id } : y)) : x.weights.filter((y) => y.id !== tmp) }));
       if (error) throw error;
-      setS((x) => ({ ...x, weights: [...x.weights, { id: data.id, kg: +data.kg, at: data.created_at }] }));
     },
   } : null;
 
-  return <S.Provider value={status}>{ctx ? <C.Provider value={ctx}>{children}</C.Provider> : children}</S.Provider>;
+  // Hand out actions that keep the same identity across renders (they always call the latest version). Screens pass them
+  // to list items, so with stable functions the React Compiler can skip every card whose data didn't change: logging a
+  // food re-renders the Today list, not all 45 cafeteria cards.
+  const latest = useRef(ctx);
+  useLayoutEffect(() => { latest.current = ctx; });
+  const actions = useMemo(() => Object.fromEntries(ACTIONS.map((k) => [k, (...a: unknown[]) => (latest.current![k] as (...x: unknown[]) => unknown)(...a)])) as Pick<Ctx, Action>, []);
+  const value = ctx && { ...ctx, ...actions };
+  const meSlice = useMemo(() => (me ? { me, u: me.unit ?? "kg" } : null), [me]);
+  const follows = useMemo(() => ({ following: s.following, followers: s.followers }), [s.following, s.followers]);
+
+  return (
+    <S.Provider value={status}>
+      <A.Provider value={actions}><M.Provider value={meSlice}><L.Provider value={s.library}><F.Provider value={follows}>
+        {value ? <C.Provider value={value}>{children}</C.Provider> : children}
+      </F.Provider></L.Provider></M.Provider></A.Provider>
+    </S.Provider>
+  );
 }
 
 export const useStatus = () => useContext(S);
+export const useActions = () => useContext(A)!; // stable: never re-renders you
+export function useMe() {
+  const v = useContext(M);
+  if (!v) throw new Error("useMe before the profile has loaded");
+  return v;
+}
+export const useLibrary = () => useContext(L);
+export const useFollows = () => useContext(F);
 export function useStore() {
   const v = useContext(C);
   if (!v) throw new Error("useStore before the profile has loaded");

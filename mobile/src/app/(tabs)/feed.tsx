@@ -1,7 +1,7 @@
 // Feed: what APU is lifting, live. Suggested people to follow, then every post (the website's /feed).
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View, Platform } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,6 +29,8 @@ export default function Feed() {
       <FlatList
         data={s.posts}
         keyExtractor={(p) => p.id}
+        // render a few cards at a time and drop the off-screen ones (posts are tall, with photos and videos)
+        initialNumToRender={3} maxToRenderPerBatch={3} windowSize={7} removeClippedSubviews={Platform.OS === 'android'}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: BottomTabInset + 90 }}
         refreshControl={<RefreshControl refreshing={busy} tintColor={Lime} onRefresh={async () => { setBusy(true); await refresh(); setBusy(false); }} />}
         ListHeaderComponent={

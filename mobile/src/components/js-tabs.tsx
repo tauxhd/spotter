@@ -3,7 +3,8 @@
 // because Android's native bar can't show the icons in their own colours.
 import { Image } from 'expo-image';
 import type { Href } from 'expo-router';
-import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps } from 'expo-router/ui';
+import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, type TabSlotProps } from 'expo-router/ui';
+import { Screen } from 'react-native-screens';
 import { Platform, Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,7 +24,7 @@ export default function AppTabs() {
   const insets = useSafeAreaInsets();
   return (
     <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+      <TabSlot style={{ height: '100%' }} renderFn={frozenWhenHidden} />
       <TabList asChild>
         <View style={StyleSheet.flatten([styles.bar, { borderTopColor: theme.border, backgroundColor: Platform.OS === 'web' ? theme.background + 'a0' : theme.background, paddingBottom: 8 + insets.bottom }])}>
           {tabs.map((t) => (
@@ -37,6 +38,18 @@ export default function AppTabs() {
   );
 }
 
+// Like expo-router's default tab slot, but hidden tabs are frozen: they don't re-render on every store change (a food log,
+// a like, the workout timer) while you're on another tab, which keeps the visible one smooth. They catch up when shown.
+const frozenWhenHidden: NonNullable<TabSlotProps['renderFn']> = (descriptor, { isFocused, loaded, detachInactiveScreens }) => {
+  if (!loaded && !isFocused) return null; // lazy: never-visited tabs aren't built yet
+  return (
+    <Screen key={descriptor.route.key} enabled={detachInactiveScreens} activityState={isFocused ? 2 : 0} freezeOnBlur
+      style={[styles.screen, isFocused ? styles.focused : styles.unfocused]}>
+      {descriptor.render()}
+    </Screen>
+  );
+};
+
 function TabButton({ children, isFocused, icon, off, ...props }: TabTriggerSlotProps & { icon: number; off: number }) {
   const theme = useTheme();
   return (
@@ -48,6 +61,9 @@ function TabButton({ children, isFocused, icon, off, ...props }: TabTriggerSlotP
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, position: 'relative', height: '100%' },
+  focused: { zIndex: 1, display: 'flex', flexShrink: 0, flexGrow: 1 },
+  unfocused: { zIndex: -1, display: 'none', flexShrink: 1, flexGrow: 0 },
   bar: {
     position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-around',
     paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth,

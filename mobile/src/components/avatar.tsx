@@ -12,6 +12,6 @@ export function avatarSrc(id?: string | null, url?: string | null) {
 }
 
 export default function Avatar({ id, url, size = 40, ring }: { id?: string | null; url?: string | null; name?: string; size?: number; ring?: string }) {
-  return <Image source={img(avatarSrc(id, url))} contentFit="cover"
+  return <Image source={img(avatarSrc(id, url))} contentFit="cover" cachePolicy="memory-disk"
     style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: '#27272a', ...(ring ? { borderWidth: 2, borderColor: ring } : {}) }} />;
 }

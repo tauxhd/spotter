@@ -35,8 +35,8 @@ export default function FoodPage() {
   const more = foods.filter((x) => x.stall === f.stall && x.name !== f.name);
   const q = typeof window !== "undefined" ? location.search : "";
 
-  async function add() {
-    await addFood({ name: f!.name, kcal: f!.kcal, p: f!.p, c: f!.c, f: f!.f });
+  function add() { // shows at once; the store saves it in the background
+    addFood({ name: f!.name, kcal: f!.kcal, p: f!.p, c: f!.c, f: f!.f });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

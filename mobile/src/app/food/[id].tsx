@@ -50,9 +50,9 @@ export default function FoodPage() {
   const side = Math.min(288, width - 32);
   const section = [styles.section, { borderBottomColor: theme.border }];
 
-  async function add() {
+  function add() { // shows at once; the store saves it in the background
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    await addFood({ name: f!.name, kcal: f!.kcal, p: f!.p, c: f!.c, f: f!.f });
+    addFood({ name: f!.name, kcal: f!.kcal, p: f!.p, c: f!.c, f: f!.f });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

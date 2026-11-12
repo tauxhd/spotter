@@ -41,6 +41,7 @@ type Ctx = {
 
 const C = createContext<Ctx | null>(null);
 const ACTIVE = "spotter:active"; // the in-progress workout stays on the device until finished
+const CACHE = "spotter:cache", LIB = "spotter:library"; // last-seen data, so the app opens instantly
 
 export type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 // What a post row joins to, and how it becomes a Post. Shared by the feed and profile pages.
@@ -92,8 +93,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try { const a = localStorage.getItem(ACTIVE); if (a) setActiveRaw(JSON.parse(a)); } catch {}
+    // open straight into what was on screen last time (then refresh below)
+    let cachedUid: string | undefined;
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE) ?? "null"), lib = JSON.parse(localStorage.getItem(LIB) ?? "null");
+      if (c?.me) { cachedUid = c.uid; setUid(c.uid); setMe(c.me); setS((x) => ({ ...x, ...c.s })); }
+      if (lib) setS((x) => ({ ...x, library: lib }));
+    } catch {}
     sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort")
-      .then(({ data }) => data && setS((x) => ({ ...x, library: data })));
+      .then(({ data }) => { if (!data) return; setS((x) => ({ ...x, library: data })); try { localStorage.setItem(LIB, JSON.stringify(data)); } catch {} });
     (async () => {
       let { data: { session } } = await sb.auth.getSession();
       if (!session) {
@@ -103,24 +111,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
       const id = session!.user.id;
       setUid(id);
+      if (cachedUid && cachedUid !== id) setS((x) => ({ ...x, sessions: [], posts: [], routines: [], food: [], weights: [], following: [], followers: [], clockedIn: null }));
       const { data, error } = await sb.from("profiles").select("*").eq("id", id).maybeSingle();
-      if (error) return setErr(error.message);
+      if (error) return cachedUid ? undefined : setErr(error.message); // offline with a cached copy: keep showing it
       setMe(data);
       await Promise.all([loadPosts(id), data && loadMine(id)]);
     })();
   }, [loadPosts, loadMine]);
 
-  // feed stays live: any post / comment / like change refetches
+  // feed stays live
   useEffect(() => {
     if (!uid) return;
-    const reload = () => loadPosts(uid);
+    // Your own likes / comments are already on screen (optimistic), so they don't trigger a refetch; other people's changes
+    // are batched into one refetch at most every ~0.6 s instead of one per event.
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const reload = (e: { new?: Row; old?: Row }) => {
+      if ((e.new?.user_id ?? e.old?.user_id) === uid) return;
+      clearTimeout(t);
+      t = setTimeout(() => loadPosts(uid), 600);
+    };
     const ch = sb.channel("feed")
       .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, reload)
       .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, reload)
       .on("postgres_changes", { event: "*", schema: "public", table: "likes" }, reload)
       .subscribe();
-    return () => { sb.removeChannel(ch); };
+    return () => { clearTimeout(t); sb.removeChannel(ch); };
   }, [uid, loadPosts]);
+
+  // Keep a copy of your profile and data on the device (a moment after each change), so next time the app opens straight
+  // into it while fresh data loads behind. Temporary rows (still saving) and the exercise library (cached on its own) stay out.
+  useEffect(() => {
+    if (!me) return;
+    const t = setTimeout(() => {
+      const keep = <T extends { id: string }>(l: T[]) => l.filter((x) => !x.id.startsWith("tmp-"));
+      try { localStorage.setItem(CACHE, JSON.stringify({ uid: me.id, me, s: { ...s, active: undefined, library: [], posts: keep(s.posts).slice(0, 30), sessions: keep(s.sessions), food: keep(s.food), weights: keep(s.weights) } })); } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [me, s]);
 
   if (err) return <p className="card mt-10 text-sm">Couldn&apos;t connect: {err}</p>;
   if (me === undefined) return <Splash />;
@@ -141,36 +168,53 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const ctx: Ctx = {
     s: { ...s, active }, me, u: me.unit ?? "kg", setActive, saveProfile,
-    async clockIn() {
+    async clockIn() { // shows you as in straight away; undone if the server refuses
       const at = demoNow().toISOString();
+      setS((x) => ({ ...x, clockedIn: at }));
       await sb.from("visits").update({ out_at: at }).is("out_at", null);
       const { error } = await sb.from("visits").insert({ in_at: at });
-      if (!error) setS((x) => ({ ...x, clockedIn: at }));
+      if (error) setS((x) => ({ ...x, clockedIn: null }));
     },
     async clockOut() {
-      await sb.from("visits").update({ out_at: demoNow().toISOString() }).is("out_at", null);
       setS((x) => ({ ...x, clockedIn: null }));
+      await sb.from("visits").update({ out_at: demoNow().toISOString() }).is("out_at", null);
     },
-    async addFood(f) {
-      const { data } = await sb.from("food_logs").insert({ ...f, created_at: demoNow().toISOString() }).select().single();
-      if (data) setS((x) => ({ ...x, food: [...x.food, { ...f, id: data.id, at: data.created_at }] }));
+    async addFood(f) { // on screen at once; the saved row's id replaces the temporary one
+      const at = demoNow().toISOString(), tmp = `tmp-${Date.now()}`;
+      setS((x) => ({ ...x, food: [...x.food, { ...f, id: tmp, at }] }));
+      const { data } = await sb.from("food_logs").insert({ ...f, created_at: at }).select().single();
+      setS((x) => ({ ...x, food: data ? x.food.map((y) => (y.id === tmp ? { ...y, id: data.id } : y)) : x.food.filter((y) => y.id !== tmp) }));
     },
     async removeFood(id) {
       setS((x) => ({ ...x, food: x.food.filter((y) => y.id !== id) }));
       await sb.from("food_logs").delete().eq("id", id);
     },
-    async addWeight(kg) {
-      const { data, error } = await sb.from("weight_logs").insert({ kg, created_at: demoNow().toISOString() }).select().single();
+    async addWeight(kg) { // on screen at once; rolled back if the save fails
+      const at = demoNow().toISOString(), tmp = `tmp-${Date.now()}`;
+      setS((x) => ({ ...x, weights: [...x.weights, { id: tmp, kg, at }] }));
+      const { data, error } = await sb.from("weight_logs").insert({ kg, created_at: at }).select().single();
+      setS((x) => ({ ...x, weights: data ? x.weights.map((y) => (y.id === tmp ? { ...y, id: data.id } : y)) : x.weights.filter((y) => y.id !== tmp) }));
       if (error) throw error;
-      setS((x) => ({ ...x, weights: [...x.weights, { id: data.id, kg: +data.kg, at: data.created_at }] }));
     },
-    async updateProfile(p) {
+    async updateProfile(p) { // on screen at once; put back if the save fails
+      const before = me;
+      setMe({ ...me, ...p });
       const { data, error } = await sb.from("profiles").update(p).eq("id", me.id).select().single();
-      if (error) throw error;
+      if (error) { setMe(before); throw error; }
       setMe(data);
     },
     async finishWorkout(w, post, lifts, media) {
       const at = post.at ?? demoNow().toISOString();
+      const kept = active, tmp = `tmp-${Date.now()}`;
+      setMe({ ...me, ...lifts });
+      setS((x) => ({
+        ...x, sessions: [{ id: tmp, at, ...w }, ...x.sessions],
+        posts: [{ id: tmp, by: me.name, faculty: me.faculty, at, title: post.title, note: post.note, exercises: post.exercises, volume: post.volume, prs: post.prs,
+          duration: post.duration, visibility: post.visibility, media: media ? { url: URL.createObjectURL(media), type: media.type.startsWith("video") ? "video" : "image" } : null,
+          likes: 0, liked: false, mine: true, uid: me.id, avatar: me.avatar_url, likers: [], comments: [] }, ...x.posts],
+      }));
+      setActiveRaw(null); // the saved copy in localStorage stays until the server confirms
+      (async () => {
       let media_url = null, media_type = null;
       if (media) {
         // video or photo -> media/<uid>/<time>.<ext>; the post shows it first, swipe for the workout
@@ -180,16 +224,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         media_url = sb.storage.from("media").getPublicUrl(path).data.publicUrl;
         media_type = media.type.startsWith("video") ? "video" : "image";
       }
-      const { data } = await sb.from("workouts").insert({ ...w, created_at: at }).select().single();
+      const { data, error } = await sb.from("workouts").insert({ ...w, created_at: at }).select().single();
+      if (error) throw error;
       await Promise.all([
         sb.from("posts").insert({ title: post.title, note: post.note || null, exercises: post.exercises, volume: post.volume, prs: post.prs,
           duration_min: post.duration, visibility: post.visibility ?? "everyone", media_url, media_type, created_at: at }),
         sb.from("profiles").update(lifts).eq("id", me.id),
       ]);
-      setMe({ ...me, ...lifts });
-      if (data) setS((x) => ({ ...x, sessions: [{ id: data.id, at, ...w }, ...x.sessions] }));
-      setActive(() => null);
+      setS((x) => ({ ...x, sessions: x.sessions.map((y) => (y.id === tmp ? { ...y, id: data.id } : y)) }));
+      try { localStorage.removeItem(ACTIVE); } catch {}
       await loadPosts(me.id);
+      })().catch((e) => { // couldn't save: bring the workout back so nothing is lost
+        console.error("finish", e);
+        setS((x) => ({ ...x, sessions: x.sessions.filter((y) => y.id !== tmp), posts: x.posts.filter((y) => y.id !== tmp) }));
+        setActiveRaw(kept);
+        alert("Couldn't save your workout. It's still here, so try Finish again when you're online.");
+      });
     },
     async like(id, wasLiked) {
       const liked = wasLiked ?? s.posts.find((x) => x.id === id)?.liked ?? false;
@@ -238,7 +288,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await sb.from("follows").delete().match({ follower: me.id, followee: id });
     },
     async signOut() {
-      try { localStorage.removeItem(ACTIVE); } catch {}
+      try { localStorage.removeItem(ACTIVE); localStorage.removeItem(CACHE); } catch {}
       await sb.auth.signOut();
       location.href = "/" + location.search; // starts a fresh session, which opens the sign-in quest
     },

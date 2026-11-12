@@ -28,8 +28,9 @@ export default function EatProgress() {
   async function log() {
     const v = parseFloat(kg);
     if (!(v >= 30 && v <= 250)) return;
+    setKg(""); // on the chart at once; if the save fails the number comes back so you can retry
     setBusy(true);
-    try { await addWeight(v); setKg(""); } finally { setBusy(false); }
+    try { await addWeight(v); } catch { setKg(String(v)); } finally { setBusy(false); }
   }
 
   return (

@@ -66,8 +66,10 @@ export function EatProgress() {
   async function log() {
     const v = parseFloat(kg.replace(',', '.'));
     if (!(v >= 30 && v <= 250)) return;
+    setKg(''); // on the chart at once; if the save fails the number comes back so you can retry
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setBusy(true);
-    try { await addWeight(v); setKg(''); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); } finally { setBusy(false); }
+    try { await addWeight(v); } catch { setKg(String(v)); } finally { setBusy(false); }
   }
 
   return (

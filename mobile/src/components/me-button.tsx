@@ -3,10 +3,10 @@ import { router } from 'expo-router';
 
 import Avatar from '@/components/avatar';
 import { Press } from '@/components/ui/button';
-import { useStore } from '@/lib/store';
+import { useMe } from '@/lib/store';
 
 export function MeButton({ size = 34 }: { size?: number }) {
-  const { me } = useStore();
+  const { me } = useMe();
   return (
     <Press onPress={() => router.push('/me')} accessibilityLabel="Your profile" scaleTo={0.9}>
       <Avatar id={me.id} url={me.avatar_url} name={me.name} size={size} ring="rgba(132,204,22,0.4)" />
