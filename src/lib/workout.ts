@@ -18,6 +18,10 @@ export function rankedLifts(sessions: { at: string; exercises: ExerciseLog[] }[]
 // Best set for each rep count (heaviest weight done for exactly that many reps), strongest 1RM first.
 export const repRecords = (lifts: RankedLift[]) => lifts.filter((l, i) => lifts.findIndex((x) => x.reps === l.reps) === i);
 
+// Session volume: kg × reps over ticked sets, warm-up and assisted sets left out (the live header and the saved post).
+export const sessionVolume = (exs: ExerciseLog[]) =>
+  exs.reduce((v, e) => v + e.sets.filter((x) => x.done && countsVolume(x.type)).reduce((w, x) => w + x.kg * x.reps, 0), 0);
+
 // Turn the sets ticked in a workout into what gets saved: done exercises, PRs, the post's exercise list, volume and set count.
 export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<string, number>, body: (name: string) => number = () => 0) {
   const lib = new Map(library.map((e) => [e.name, e]));
@@ -45,7 +49,7 @@ export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<
     };
   });
 
-  const volume = done.reduce((v, e) => v + e.sets.filter((x) => countsVolume(x.type)).reduce((w, x) => w + x.kg * x.reps, 0), 0);
+  const volume = sessionVolume(done);
   const sets = done.reduce((n, e) => n + e.sets.length, 0);
   return { done, prs, exercises, volume, sets };
 }

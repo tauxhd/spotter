@@ -7,7 +7,7 @@ import { BookmarkCheck, BookmarkPlus, Check, Clock, GripVertical, Hash, Link2, M
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
-import { fromUnit, w, wNum } from "@/lib/units";
+import { fromUnit, wNum, wTotal } from "@/lib/units";
 import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
@@ -21,6 +21,7 @@ import dynamic from "next/dynamic";
 import InfoTip from "@/components/InfoTip";
 import MeButton from "@/components/MeButton";
 import { help } from "@/lib/help";
+import { sessionVolume } from "@/lib/workout";
 const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-full min-h-10 w-full rounded-xl" /> });
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
@@ -381,13 +382,17 @@ export default function Train() {
   const areas: Record<string, number> = {}; // same sets by body area, for the spider chart
   for (const e of a.exercises) addSets(areas, lib.get(e.name), e.sets.filter((x) => x.done && countsPR(x.type)).length);
   const q = typeof window !== "undefined" ? location.search : "";
+  const vol = sessionVolume(a.exercises);
 
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-3">
         <button onClick={() => setEditingStart(true)} aria-label={`Workout time ${hhmmss(elapsed)}. Change timers`} className="min-w-0 text-left">
           <span className="flex items-center gap-2 whitespace-nowrap text-3xl font-bold tabular-nums"><Clock size={24} className="shrink-0 text-lime-500" />{hhmmss(elapsed)}</span>
-          <span className="muted block text-xs font-medium">Rest {restOn ? mmss(restSecs) : "off"}</span>
+          <span className="muted flex items-center gap-1 text-xs font-medium">
+            <Icon name="barbell" size={14} />
+            <span key={Math.round(vol)} className="anim-pop font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{wTotal(vol, u)}</span> volume · Rest {restOn ? mmss(restSecs) : "off"}
+          </span>
         </button>
         <div className="flex shrink-0 items-center gap-2">
           <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" aria-label="Muscles hit"

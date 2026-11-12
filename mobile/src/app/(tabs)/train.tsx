@@ -29,6 +29,8 @@ import { art } from '@/lib/art';
 import { Input } from '@/components/ui/input';
 import { InfoTip } from '@/components/ui/info-tip';
 import { help } from '@shared/help';
+import { sessionVolume } from '@shared/workout';
+import { wTotal } from '@shared/units';
 
 const REST_KEY = 'spotter:rest', REST_ON_KEY = 'spotter:rest-on'; // same keys as the website
 const store = typeof localStorage !== 'undefined' ? localStorage : undefined;
@@ -111,7 +113,7 @@ function Routines() {
 
 // ---------- the live workout ----------
 function Workout() {
-  const { s, me, setActive, saveRoutine } = useStore();
+  const { s, me, u, setActive, saveRoutine } = useStore();
   const theme = useTheme();
   const a = s.active!;
   const lib = new Map(s.library.map((e) => [e.name, e]));
@@ -266,6 +268,7 @@ function Workout() {
   const groups = [...new Set(a.exercises.map((e) => e.superset).filter((g) => g !== undefined))];
   const letter = (g?: number) => (g === undefined ? '' : String.fromCharCode(65 + groups.indexOf(g)));
   const { hit, areas, ranked } = musclesHit(a.exercises, s.library);
+  const vol = sessionVolume(a.exercises);
   const typingSet = typing && a.exercises[typing.i]?.sets[typing.j];
   const discard = () => ask('Discard this workout?', 'Your sets won’t be saved.', 'Discard', () => setActive(() => null));
 
@@ -276,7 +279,13 @@ function Workout() {
         <View style={styles.header}>
           <Pressable onPress={() => setTimers(true)} style={{ flex: 1 }} accessibilityLabel={`Workout time ${hhmmss(elapsed)}. Change timers`}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Clock size={24} color={Lime} /><ThemedText style={styles.timer}>{hhmmss(elapsed)}</ThemedText></View>
-            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Rest {restOn ? mmss(restSecs) : 'off'}</ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Icon name="barbell" size={14} />
+              <Animated.View key={Math.round(vol)} entering={ZoomIn.springify().dampingRatio(0.6).duration(260)}>
+                <ThemedText type="smallBold" style={{ fontSize: 12, fontVariant: ['tabular-nums'] }}>{wTotal(vol, u)}</ThemedText>
+              </Animated.View>
+              <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>volume · Rest {restOn ? mmss(restSecs) : 'off'}</ThemedText>
+            </View>
           </Pressable>
           <Press onPress={() => setShowHit(true)} accessibilityLabel="Muscles hit" scaleTo={0.95} style={{ width: 80, height: 64 }}>
             <MuscleModel hit={hit} compact />
