@@ -576,7 +576,7 @@ const scenes: Scene[] = [
   },
 ];
 const N = scenes.length;
-const L = 1.6; // screens of scrolling per scene
+const L = 2.5; // screens of scrolling per scene (more = slower)
 const U = 1 + L * N; // scroll units: the intro, then the scenes
 
 export default function HeroScroll({ apk }: { apk: string }) {
