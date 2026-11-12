@@ -129,7 +129,7 @@ export default function Ranks() {
             return (
               <Pressable key={e.id} onPress={() => setEventId(e.id)} style={[styles.event, { backgroundColor: on ? 'rgba(163,230,53,0.1)' : theme.backgroundElement, borderColor: on ? Lime : 'transparent' }]}>
                 <Icon name={e.icon} size={40} />
-                <ThemedText style={{ fontSize: 11, lineHeight: 13, textAlign: 'center', fontWeight: on ? '800' : '500', color: on ? theme.text : theme.textSecondary }}>{e.name}</ThemedText>
+                <ThemedText style={{ fontSize: 11, lineHeight: 13, textAlign: 'center', fontWeight: on ? '700' : '500', color: on ? theme.text : theme.textSecondary }}>{e.name}</ThemedText>
               </Pressable>
             );
           })}

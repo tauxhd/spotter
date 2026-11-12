@@ -231,7 +231,7 @@ export default function ExerciseStats() {
                 <View style={{ marginTop: 8, gap: 4 }}>
                   {x.sets.map((st, i) => (
                     <View key={i} style={{ flexDirection: 'row', gap: 12, opacity: st.type === 'warmup' ? 0.6 : 1 }}>
-                      <ThemedText type="small" style={{ width: 22, fontWeight: st.type === 'warmup' ? '800' : '400', color: st.type === 'warmup' ? '#f59e0b' : theme.textSecondary }}>{labels[i]}</ThemedText>
+                      <ThemedText type="small" style={{ width: 22, fontWeight: st.type === 'warmup' ? '700' : '400', color: st.type === 'warmup' ? '#f59e0b' : theme.textSecondary }}>{labels[i]}</ThemedText>
                       <ThemedText type="small" style={{ fontVariant: ['tabular-nums'] }}>{timed ? `${st.kg ? `${st.kg} kg × ` : ''}${mmss(st.secs ?? 0)}` : `${st.kg || !added ? `${st.kg} kg` : 'BW'} × ${st.reps}`}</ThemedText>
                       {!timed && countsPR(st.type) && st.reps > 0 && st.kg + body > 0 && <ThemedText type="small" themeColor="textSecondary" style={{ marginLeft: 'auto', fontSize: 12 }}>1RM {Math.round(e1rm(st.kg + body, st.reps) - body)} kg</ThemedText>}
                     </View>

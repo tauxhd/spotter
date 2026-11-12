@@ -180,7 +180,7 @@ export default function GymHome() {
               return (
                 <View key={h} style={styles.hour}>
                   <HourBar p={p} now={isNow && open} i={i} />
-                  <ThemedText style={{ fontSize: 9, color: isNow ? theme.text : theme.textSecondary, fontWeight: isNow ? '800' : '400' }}>{Number(h) % 3 === 0 ? h : ' '}</ThemedText>
+                  <ThemedText style={{ fontSize: 9, color: isNow ? theme.text : theme.textSecondary, fontWeight: isNow ? '700' : '400' }}>{Number(h) % 3 === 0 ? h : ' '}</ThemedText>
                 </View>
               );
             })}

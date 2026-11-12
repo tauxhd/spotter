@@ -172,7 +172,7 @@ export default function Eat() {
             return (
               <Pressable key={x} onPress={() => setPick(x)} style={{ width: 60, alignItems: 'center', gap: 4 }}>
                 <View style={[styles.stall, { borderColor: on ? Lime : 'transparent' }]}>{src && <Image source={src} style={x === ALL || x === HP ? { width: 40, height: 40 } : { width: '100%', height: '100%' }} contentFit="cover" />}</View>
-                <ThemedText type="small" style={{ fontSize: 11, lineHeight: 13, textAlign: 'center', fontWeight: on ? '800' : '500', color: on ? theme.text : theme.textSecondary }}>{x}</ThemedText>
+                <ThemedText type="small" style={{ fontSize: 11, lineHeight: 13, textAlign: 'center', fontWeight: on ? '700' : '500', color: on ? theme.text : theme.textSecondary }}>{x}</ThemedText>
               </Pressable>
             );
           })}
