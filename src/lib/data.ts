@@ -28,8 +28,9 @@ export const floor = {
   viewBox: "68 82 556 1034",
   tables: [
     [97, 313, 61, 37], [506, 318, 69, 37], [97, 604, 69, 38], [506, 604, 69, 38], [94, 841, 69, 37], [507, 862, 69, 38],
-    [354, 144, 20, 75], [152, 230, 65, 22], [77, 642, 23, 94], [117, 642, 28, 94], [78, 764, 80, 27], [469, 602, 22, 42], [600, 949, 16, 123],
+    [354, 144, 20, 75], [152, 230, 65, 22], [77, 642, 23, 94], [117, 642, 28, 94], [78, 764, 80, 27], [469, 602, 22, 42],
   ] as [number, number, number, number][],
+  door: [600, 949, 16, 123] as [number, number, number, number], // the entrance, in the east wall
 };
 
 type Equip = { id: string; name: string; label: string; zone: string; x: number; y: number; w: number; h: number };

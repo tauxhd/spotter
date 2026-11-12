@@ -51,6 +51,12 @@ function GymMap() {
       {!plan ? <div className="card overflow-hidden p-0"><Gym3D sel={picked?.id} onPick={select} /></div> : <div className="card py-2">
         <svg viewBox={floor.viewBox} className="mx-auto max-h-[70dvh] w-full" role="img" aria-label="APU gym floor plan">
           <polygon points={floor.outline} className="fill-zinc-50 stroke-zinc-300 dark:fill-zinc-950 dark:stroke-zinc-700" strokeWidth="3" />
+          {(([x, y, w, h]) => (
+            <g aria-label="Entrance">
+              <rect x={x} y={y} width={w} height={h} className="fill-lime-400" />
+              <text x={x - 8} y={y + h / 2} textAnchor="middle" fontSize="13" transform={`rotate(-90 ${x - 8} ${y + h / 2})`} className="fill-lime-500 font-bold">Entrance</text>
+            </g>
+          ))(floor.door)}
           {floor.tables.map(([x, y, w, h], i) => (
             <rect key={i} x={x} y={y} width={w} height={h} rx="2" strokeDasharray="4 3" strokeWidth="1.5" aria-hidden
               className="fill-white stroke-zinc-300 dark:fill-zinc-900/60 dark:stroke-zinc-800" />

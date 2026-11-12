@@ -248,8 +248,20 @@ objs = [obj_from("floor", [(x, y, 0) for x, y in P] + [(x, y, -0.15) for x, y in
                  [(i, (i + 1) % len(P), len(P) + (i + 1) % len(P), len(P) + i) for i in range(len(P))], M["floor"])]
 objs[0].data.polygons[0].vertices  # ensure built
 walls, T, H = [], 0.2, 0.9  # cut-away walls, so the isometric camera sees over them
+# the entrance (floor.door) is a gap in the east wall, with a lime mat inside it
+# ponytail: only splits a north-south wall, which is where the door is
+dx, dy, dw, dh = data["floor"]["door"]
+top, bot = -dy * S, -(dy + dh) * S
+segs = []
 for i in range(len(P)):
-    (x1, y1), (x2, y2) = P[i], P[(i + 1) % len(P)]
+    a, b = P[i], P[(i + 1) % len(P)]
+    if abs(a[0] - b[0]) < 1e-6 and abs(a[0] - (dx + dw / 2) * S) < 1 and min(a[1], b[1]) < bot and max(a[1], b[1]) > top:
+        n, f = (top, bot) if a[1] > b[1] else (bot, top)
+        segs += [(a, (a[0], n)), ((a[0], f), b)]
+    else:
+        segs.append((a, b))
+box(P[1][0] - 0.6, (top + bot) / 2, 0, 1.2, top - bot, 0.02, "accent").name = "entrance"
+for (x1, y1), (x2, y2) in segs:
     L = math.hypot(x2 - x1, y2 - y1); ang = math.degrees(math.atan2(y2 - y1, x2 - x1))
     for z0, h, m in ((0, H, "wall"), (H, 0.04, "wallcap")):
         b = box(0, 0, z0, L + T, T, h, m)

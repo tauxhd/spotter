@@ -1,17 +1,19 @@
 // The 3D SweatZone (public/models/gym.glb, built in Blender from `floor` + `equipment` in lib/data; credits in
 // public/models/CREDITS.txt), shared by the website (components/Gym3D) and the phone app (mobile/src/components/gym-3d).
 // An isometric view: an orthographic camera looking down from one fixed corner. Each machine is a node named by its
-// equipment id; the picked one glows lime with a pin over it and the camera glides in to it.
+// equipment id; the picked one glows lime with a pin over it and the camera glides in to it. With nothing picked it
+// starts zoomed in at the entrance (bottom-right); drag to look around, pinch / wheel to zoom (pan, zoom).
 // Platform-free: callers bring the loaded glTF scene, a three.js renderer, a frame loop and taps (as 0..1 of the view).
 import * as THREE from "three";
 
 const LIME = new THREE.Color("#84cc16");
 const DIR = new THREE.Vector3(0.45, 0.95, 1).normalize(); // from the south-east, steep enough to see over the low walls
+const DOOR = new THREE.Box3(new THREE.Vector3(15, 0, 33), new THREE.Vector3(24.5, 1, 45)); // inside the entrance (floor.door, plan x 375-610, y 825-1106)
 
 type View = { c: THREE.Vector3; half: number };
 export type Gym = {
   scene: THREE.Scene; cam: THREE.OrthographicCamera; parts: Map<string, THREE.Object3D>; pin: THREE.Mesh;
-  view: View; goal: View; sel?: string; looks: Map<THREE.Mesh, THREE.Material>;
+  view: View; goal: View; sel?: string; looks: Map<THREE.Mesh, THREE.Material>; bounds: THREE.Box3;
 };
 
 export function buildGym(src: THREE.Object3D, ids: string[]): Gym {
@@ -33,8 +35,9 @@ export function buildGym(src: THREE.Object3D, ids: string[]): Gym {
   const parts = new Map(ids.map((id) => [id, root.getObjectByName(id)] as const).filter((p): p is [string, THREE.Object3D] => !!p[1]));
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 500);
   cam.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(DIR, new THREE.Vector3(), new THREE.Vector3(0, 1, 0)));
-  const g: Gym = { scene, cam, parts, pin, view: { c: new THREE.Vector3(), half: 1 }, goal: { c: new THREE.Vector3(), half: 1 }, looks: new Map() };
+  const g: Gym = { scene, cam, parts, pin, view: { c: new THREE.Vector3(), half: 1 }, goal: { c: new THREE.Vector3(), half: 1 }, looks: new Map(), bounds: new THREE.Box3() };
   root.updateMatrixWorld(true);
+  g.bounds.setFromObject(root);
   return g;
 }
 
@@ -73,10 +76,22 @@ export function focus(g: Gym, id: string | undefined, aspect: number, jump = fal
     g.pin.position.set((b.min.x + b.max.x) / 2, b.max.y + 1.1, (b.min.z + b.max.z) / 2);
     box = b.clone().expandByVector(new THREE.Vector3(5, 0, 5)); // the machine plus what's around it
   } else {
-    box = new THREE.Box3().setFromObject(g.scene.children[0]);
+    box = DOOR;
   }
   g.goal = fit(g, box, aspect);
   if (jump) g.view = { c: g.goal.c.clone(), half: g.goal.half };
+}
+
+// Drag the view by (dx, dy) pixels of a view h pixels tall; zoom by a factor (> 1 = closer). Kept over the gym floor.
+export function pan(g: Gym, dx: number, dy: number, h: number, zoom = 1) {
+  const v = g.view, px = (2 * v.half) / h;
+  v.c.addScaledVector(new THREE.Vector3(1, 0, 0).applyQuaternion(g.cam.quaternion), -dx * px)
+    .addScaledVector(new THREE.Vector3(0, 1, 0).applyQuaternion(g.cam.quaternion), dy * px);
+  v.c.addScaledVector(DIR, -v.c.y / DIR.y); // back down to the floor along the view ray
+  const b = g.bounds;
+  v.c.x = THREE.MathUtils.clamp(v.c.x, b.min.x, b.max.x); v.c.z = THREE.MathUtils.clamp(v.c.z, b.min.z, b.max.z);
+  v.half = THREE.MathUtils.clamp(v.half / zoom, 2.5, 26);
+  g.goal = { c: v.c.clone(), half: v.half }; // stop any glide
 }
 
 // Advance the glide by dt seconds; true while still moving (keep drawing frames).

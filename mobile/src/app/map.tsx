@@ -37,6 +37,7 @@ export default function GymMap() {
   const theme = useTheme();
   const [sel, setSel] = useState<string | undefined>(params.e);
   const [plan, setPlan] = useState(false);
+  const [scroll, setScroll] = useState(true); // off while a finger is on the 3D gym
   const picked = equipment.find((e) => e.id === sel);
   const zones = [...new Set(equipment.map((e) => e.zone))];
   const [tab, setTab] = useState<string>();
@@ -46,7 +47,7 @@ export default function GymMap() {
   const usedFor = picked ? Object.entries(exercises).filter(([, v]) => v.equip === picked.id).map(([k]) => k) : [];
 
   return (
-    <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60, gap: 16 }}>
+    <ScrollView scrollEnabled={scroll} style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60, gap: 16 }}>
       <Stack.Screen options={{ title: 'Gym map' }} />
       <ThemedText type="small" themeColor="textSecondary">{picked ? `${picked.name} · ${picked.zone}` : 'Tap any equipment'}</ThemedText>
       <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -59,9 +60,15 @@ export default function GymMap() {
           );
         })}
       </View>
-      {!plan ? <Section style={{ padding: 0, overflow: 'hidden' }}><Gym3D sel={sel} onPick={pickId} /></Section> : <Section style={{ paddingVertical: 8 }}>
+      {!plan ? <Section style={{ padding: 0, overflow: 'hidden' }}><Gym3D sel={sel} onPick={pickId} onGrab={(on) => setScroll(!on)} /></Section> : <Section style={{ paddingVertical: 8 }}>
         <Svg viewBox={floor.viewBox} width="100%" height={560}>
           <Polygon points={floor.outline} fill="#09090b" stroke="#3f3f46" strokeWidth={3} />
+          {(([x, y, w, h]) => (
+            <G>
+              <Rect x={x} y={y} width={w} height={h} fill={Lime} />
+              <SvgText x={x - 8} y={y + h / 2} textAnchor="middle" fontSize={13} fontWeight="700" fill={Lime} transform={`rotate(-90 ${x - 8} ${y + h / 2})`}>Entrance</SvgText>
+            </G>
+          ))(floor.door)}
           {floor.tables.map(([x, y, w, h], i) => <Rect key={i} x={x} y={y} width={w} height={h} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth={1.5} strokeDasharray="4 3" />)}
           {equipment.map((e) => {
             const on = e.id === sel, text = e.label, tall = e.h > e.w * 1.5;
