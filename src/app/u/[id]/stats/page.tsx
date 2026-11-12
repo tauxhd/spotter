@@ -11,7 +11,7 @@ import { StatsSkeleton } from "@/components/Skeleton";
 import { toUnit, w, wNum, wTotal } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
 import { findExercise, lifters, type Post } from "@/lib/data";
-import { baseOf, bests, dots, liftsOf } from "@/lib/lifting";
+import { baseOf, heaviest, dots, liftsOf } from "@/lib/lifting";
 import MeButton from "@/components/MeButton";
 import InfoTip from "@/components/InfoTip";
 import { help } from "@/lib/help";
@@ -72,7 +72,7 @@ export default function GymStats() {
     : posts.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(s.library, e.id, e.name), sets: e.log ?? Array.from({ length: e.sets || 1 }, () => ({ kg: 0, reps: 0 })) })) }));
   const favourites = Object.entries(exSets).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-  const lifts = own ? liftsOf(bests(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
+  const lifts = own ? liftsOf(heaviest(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
   const sbd = lifts.squat + lifts.bench + lifts.deadlift;
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();

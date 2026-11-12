@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarDays, ChevronRight, Eye, Globe, ImagePlus, Lock, Pencil, Users } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Visibility } from "@/lib/data";
-import { baseOf, bests, liftsOf } from "@/lib/lifting";
+import { baseOf, bests, heaviest, liftsOf } from "@/lib/lifting";
 import { bodyFor, volumeBodyFor } from "@/lib/strength";
 import { summarize } from "@/lib/workout";
 import { toUnit } from "@/lib/units";
@@ -71,7 +71,7 @@ export default function SaveWorkout() {
           title: title.trim() || a.title, note: note.trim() || undefined, prs: sum.prs, exercises: sum.exercises, volume: sum.volume,
           duration: Math.min(600, Math.max(1, Number(duration) || 1)), visibility, at: at.toISOString(),
         },
-        liftsOf(bests(prev, [{ exercises: sum.done }], body)),
+        liftsOf(heaviest(baseOf(me), [...s.sessions, { exercises: sum.done }])), // heaviest actually lifted, not an estimate
         media,
       );
       router.push("/feed" + q);

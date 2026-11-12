@@ -69,3 +69,16 @@ test("volume: the share of bodyweight a rep moves", async () => {
   assert.equal(volumeShare("knee-push-up"), 0.45);
   assert.equal(volumeShare(undefined), 0);
 });
+
+test("heaviest: the weight actually lifted, not an estimated 1RM", async () => {
+  const { heaviest, bests } = await import("./lifting.ts");
+  const log = [{ exercises: [{ name: "Bench", sets: [
+    { kg: 100, reps: 10, done: true }, // estimates to ~133 kg
+    { kg: 105, reps: 0, done: true }, // failed rep: doesn't count
+    { kg: 110, reps: 1, done: true, type: "warmup" }, // warm-up: doesn't count
+    { kg: 120, reps: 3 }, // not ticked
+  ] }] }];
+  assert.equal(heaviest({}, log).Bench, 100);
+  assert.ok(bests({}, log).Bench > 130);
+  assert.equal(heaviest({ Bench: 102.5 }, log).Bench, 102.5); // a higher starting value stays
+});

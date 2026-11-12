@@ -8,7 +8,7 @@ import Animated, { FadeInDown, LinearTransition, ZoomIn } from 'react-native-rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { eventGroups, events, gymLifts, lifters, mockResults, weightClasses, type Sex } from '@shared/data';
-import { baseOf, bests, dots, fmtResult, liftsOf, parseResult, weightClass } from '@shared/lifting';
+import { baseOf, heaviest, dots, fmtResult, liftsOf, parseResult, weightClass } from '@shared/lifting';
 import Avatar from '@/components/avatar';
 import { FollowButton } from '@/components/post-card';
 import { ThemedText } from '@/components/themed-text';
@@ -74,7 +74,7 @@ export default function Ranks() {
 
   const rows = useMemo(() => {
     const lifts = <T extends { squat: number; bench: number; deadlift: number }>(l: T) => ({ ...l, total: l.squat + l.bench + l.deadlift });
-    const you = { ...me, name: `${me.name} (you)`, verified: false, ...lifts(liftsOf(bests(baseOf(me), s.sessions))) };
+    const you = { ...me, name: `${me.name} (you)`, verified: false, ...lifts(liftsOf(heaviest(baseOf(me), s.sessions))) };
     const people = [
       ...lifters.map((l) => ({ ...lifts(l), avatar_url: null as string | null | undefined, value: gym ? lifts(l)[ev.id as 'total'] : mockResults[l.id]?.[ev.id] })),
       ...others.map((p) => { const l = lifts({ squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) }); return { ...p, ...l, bw: Number(p.bw), verified: false, value: gym ? l[ev.id as 'total'] : results[p.id] }; }),

@@ -6,8 +6,8 @@ import ExerciseThumb from "./ExerciseThumb";
 import EmptyState from "./EmptyState";
 import { useStore } from "@/lib/store";
 import type { Exercise } from "@/lib/data";
-import { baseOf, bests } from "@/lib/lifting";
-import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
+import { baseOf, heaviest } from "@/lib/lifting";
+import { isLoadedBodyweight } from "@/lib/strength";
 import OneRM from "./OneRM";
 import { family, kit, pickerGroups } from "@/lib/muscles";
 
@@ -19,7 +19,7 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 // then one button adds them all.
 export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (list: Exercise[]) => void; onClose: () => void; taken: string[] }) {
   const { s, me, u } = useStore();
-  const logged = bests(baseOf(me), s.sessions, bodyFor(s.library, Number(me.bw)));
+  const logged = heaviest(baseOf(me), s.sessions);
   const [q, setQ] = useState("");
   const [g, setG] = useState("all");
   const [k, setK] = useState("any");

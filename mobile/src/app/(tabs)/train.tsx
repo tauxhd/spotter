@@ -11,7 +11,7 @@ import Animated, { FadeIn, FadeInDown, FadeOut, FadeOutDown, LinearTransition, u
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { equipment, exercises, setTypes, templates, timeAgo, timedByDefault, type Exercise, type ExerciseLog, type SetType } from '@shared/data';
-import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from '@shared/lifting';
+import { baseOf, bests, countsPR, e1rm, heaviest, hhmmss, mmss, parseResult, setLabels } from '@shared/lifting';
 import { bodyFor, isLoadedBodyweight, volumeBodyFor } from '@shared/strength';
 import ExercisePicker from '@/components/exercise-picker';
 import MuscleModel from '@/components/muscle-model';
@@ -138,6 +138,7 @@ function Workout() {
 
   const body = bodyFor(s.library, Number(me.bw));
   const prev = bests(baseOf(me), s.sessions, body);
+  const heavy = heaviest(baseOf(me), s.sessions); // heaviest weight actually lifted, for each card's "Best"
   const setMax = (name: string, st: { kg: number; reps: number }) => { const b = body(name); return st.reps > 0 && st.kg + b > 0 ? e1rm(st.kg + b, st.reps) - b : 0; };
   const isTimed = (e: ExerciseLog) => e.timed ?? timedByDefault(lib.get(e.name)?.id);
   const edit = (fn: (ex: ExerciseLog[]) => void) => setActive((x) => { if (!x) return x; const ex = structuredClone(x.exercises); fn(ex); return { ...x, exercises: ex }; });
@@ -308,7 +309,7 @@ function Workout() {
             const timed = isTimed(ex), added = isLoadedBodyweight(item?.id);
             const sc = ex.superset !== undefined ? supersetHex(groups.indexOf(ex.superset)) : undefined;
             const dragging = drag?.i === i;
-            const top1rm = Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)));
+            const top = Math.max(heavy[ex.name] ?? 0, ...ex.sets.filter((st) => st.done && st.reps > 0 && countsPR(st.type)).map((st) => st.kg));
             return (
               <Animated.View key={ex.name} layout={dragging ? undefined : layout}
                 style={[sorting ? [styles.collapsed, { backgroundColor: theme.backgroundElement }] : [styles.card, { borderBottomColor: theme.border }],
@@ -323,10 +324,10 @@ function Workout() {
                     <HoldToSort onStart={(y) => beginSort(i, y)} onMove={moveSort} onEnd={endSort}>
                       <ThemedText type="smallBold" style={{ fontSize: 16 }} numberOfLines={sorting ? 1 : undefined}>{ex.name}</ThemedText>
                     </HoldToSort>
-                    {!sorting && !timed && top1rm > 0 && (
+                    {!sorting && !timed && top > 0 && (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Icon name="medal" size={14} /><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>1RM </ThemedText>
-                        <ThemedText type="smallBold" style={{ fontSize: 12 }}>{added ? '+' : ''}{Math.round(top1rm * 10) / 10} kg</ThemedText>
+                        <Icon name="medal" size={14} /><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Best </ThemedText>
+                        <ThemedText type="smallBold" style={{ fontSize: 12 }}>{added ? '+' : ''}{Math.round(top * 10) / 10} kg</ThemedText>
                       </View>
                     )}
                     {!sorting && (a.exercises[i + 1] || ex.superset !== undefined) && (

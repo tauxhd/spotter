@@ -9,7 +9,7 @@ import FollowButton from "@/components/FollowButton";
 import ProfileLink from "@/components/ProfileLink";
 import { sb, useStore, type Profile } from "@/lib/store";
 import { eventGroups, events, gymLifts, lifters, mockResults, weightClasses, type Sex } from "@/lib/data";
-import { baseOf, bests, dots, fmtResult, liftsOf, parseResult, weightClass } from "@/lib/lifting";
+import { baseOf, heaviest, dots, fmtResult, liftsOf, parseResult, weightClass } from "@/lib/lifting";
 import InfoTip from "@/components/InfoTip";
 import MeButton from "@/components/MeButton";
 import { ranksHelp } from "@/lib/help";
@@ -60,7 +60,7 @@ export default function Ranks() {
   }, [ev.id, gym]);
 
   const lifts = <T extends { squat: number; bench: number; deadlift: number }>(l: T) => ({ ...l, total: l.squat + l.bench + l.deadlift });
-  const you = { ...me, name: `${me.name} (you)`, verified: false, ...lifts(liftsOf(bests(baseOf(me), s.sessions))) };
+  const you = { ...me, name: `${me.name} (you)`, verified: false, ...lifts(liftsOf(heaviest(baseOf(me), s.sessions))) };
   const people = [
     ...lifters.map((l) => ({ ...lifts(l), avatar_url: null as string | null, value: gym ? lifts(l)[ev.id as "total"] : mockResults[l.id]?.[ev.id] })),
     ...others.map((p) => {

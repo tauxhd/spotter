@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { Visibility } from '@shared/data';
-import { baseOf, bests, liftsOf } from '@shared/lifting';
+import { baseOf, bests, heaviest, liftsOf } from '@shared/lifting';
 import { bodyFor, volumeBodyFor } from '@shared/strength';
 import { summarize } from '@shared/workout';
 import { ThemedText } from '@/components/themed-text';
@@ -63,7 +63,7 @@ export default function Finish() {
         { title: a!.title, exercises: sum.done },
         { title: title.trim() || a!.title, note: note.trim() || undefined, prs: sum.prs, exercises: sum.exercises, volume: sum.volume,
           duration: Math.min(600, Math.max(1, Number(duration) || 1)), visibility, at: at.toISOString() },
-        liftsOf(bests(prev, [{ exercises: sum.done }], body)),
+        liftsOf(heaviest(baseOf(me), [...s.sessions, { exercises: sum.done }])), // heaviest actually lifted, not an estimate
         media,
       );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

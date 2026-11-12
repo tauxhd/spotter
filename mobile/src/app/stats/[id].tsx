@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { findExercise, lifters, type Post } from '@shared/data';
-import { baseOf, bests, dots, liftsOf } from '@shared/lifting';
+import { baseOf, heaviest, dots, liftsOf } from '@shared/lifting';
 import MuscleDistribution, { type Log } from '@/components/muscle-distribution';
 import { ExerciseThumb } from '@/components/post-card';
 import { ThemedText } from '@/components/themed-text';
@@ -66,7 +66,7 @@ export default function GymStats() {
     ? s.sessions.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(s.library, undefined, e.name), sets: e.sets.filter((st) => st.done) })) }))
     : posts.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(s.library, e.id, e.name), sets: e.log ?? Array.from({ length: e.sets || 1 }, () => ({ kg: 0, reps: 0 })) })) }));
   const favourites = Object.entries(exSets).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const lifts = own ? liftsOf(bests(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
+  const lifts = own ? liftsOf(heaviest(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
   const sbd = lifts.squat + lifts.bench + lifts.deadlift;
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();

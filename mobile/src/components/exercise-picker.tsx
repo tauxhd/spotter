@@ -10,9 +10,9 @@ import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { Exercise } from '@shared/data';
-import { baseOf, bests } from '@shared/lifting';
+import { baseOf, heaviest } from '@shared/lifting';
 import { family, kit, pickerGroups } from '@shared/muscles';
-import { bodyFor } from '@shared/strength';
+import { isLoadedBodyweight } from '@shared/strength';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
 import { Lime } from '@/constants/theme';
@@ -34,7 +34,7 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
   const toggle = (e: Exercise) => { Haptics.selectionAsync().catch(() => {}); setPicked((p) => (p.some((x) => x.id === e.id) ? p.filter((x) => x.id !== e.id) : [...p, e])); };
   const close = () => { setPicked([]); onClose(); };
   const add = () => { const p = picked; setPicked([]); onPick(p); };
-  const logged = useMemo(() => bests(baseOf(me), s.sessions, bodyFor(s.library, Number(me.bw))), [me, s.sessions, s.library]);
+  const logged = useMemo(() => heaviest(baseOf(me), s.sessions), [me, s.sessions]); // heaviest weight actually lifted
   const inGroup = pickerGroups.find(([x]) => x === g)![1];
   const list = s.library.filter((e) => inGroup(e) && (k === 'any' || family(e.equipment) === k) && `${e.name} ${e.muscle} ${e.equipment}`.toLowerCase().includes(q.toLowerCase()));
 
@@ -90,7 +90,7 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
                 <View style={{ flex: 1 }}>
                   <ThemedText style={{ fontWeight: '600' }}>{e.name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">{cap(e.muscle)} · {cap(e.equipment)}{has ? ' · added' : ''}</ThemedText>
-                  {!!logged[e.name] && <ThemedText type="small" style={{ color: Lime }}>1RM {Math.round(logged[e.name] * 10) / 10} kg</ThemedText>}
+                  {!!logged[e.name] && <ThemedText type="small" style={{ color: Lime }}>Best {isLoadedBodyweight(e.id) ? '+' : ''}{Math.round(logged[e.name] * 10) / 10} kg</ThemedText>}
                 </View>
                 {n ? (
                   <Animated.View key={n} entering={ZoomIn.springify().dampingRatio(0.55).duration(320)} style={[styles.badge, { backgroundColor: Lime }]}>

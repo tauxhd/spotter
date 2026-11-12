@@ -12,7 +12,7 @@ import ExercisePicker from "@/components/ExercisePicker";
 import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
 import { addSets, demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDefault, supersetColor, type Exercise, type ExerciseLog, type SetType } from "@/lib/data";
-import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from "@/lib/lifting";
+import { baseOf, bests, countsPR, e1rm, heaviest, hhmmss, mmss, parseResult, setLabels } from "@/lib/lifting";
 import { bodyFor, isLoadedBodyweight, volumeBodyFor } from "@/lib/strength";
 import OneRM from "@/components/OneRM";
 import { Radar } from "@/components/MuscleDistribution";
@@ -61,6 +61,7 @@ export default function Train() {
 
   const body = bodyFor(s.library, Number(me.bw));
   const prev = bests(baseOf(me), s.sessions, body);
+  const heavy = heaviest(baseOf(me), s.sessions); // heaviest weight actually lifted, for each card's "Best"
   // 1RM a set works out to (added weight for pull-ups / dips)
   const setMax = (name: string, st: { kg: number; reps: number }) => { const b = body(name); return st.reps > 0 && st.kg + b > 0 ? e1rm(st.kg + b, st.reps) - b : 0; };
   const a = s.active;
@@ -459,7 +460,7 @@ export default function Train() {
               <ExerciseThumb ex={lib.get(ex.name)} size={sorting ? 36 : 48} />
               <div className="min-w-0 flex-1">
                 <h2 {...longPress(i)} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} draggable={false} className={`underline-offset-2 hover:underline ${sorting ? "" : "after:absolute after:inset-0"}`}>{ex.name}</Link> : ex.name}</h2>
-                {!isTimed(ex) && !sorting && <OneRM kg={Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
+                {!isTimed(ex) && !sorting && <OneRM kg={Math.max(heavy[ex.name] ?? 0, ...ex.sets.filter((st) => st.done && st.reps > 0 && countsPR(st.type)).map((st) => st.kg))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
                 {!sorting && (a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
                     className={`relative z-10 mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
