@@ -597,12 +597,14 @@ const cut = (x: number) => `polygon(${x}% 0, 140% 0, 140% 100%, ${x - 40}% 100%)
 const band = (x: number) => `polygon(${x - 7}% 0, ${x}% 0, ${x - 40}% 100%, ${x - 47}% 100%)`;
 
 /** `progress` (0..HERO.total) drives it from outside instead of the scroll position; `video` drops the scroll hint and the tall
- * section; `beat` (1 on a beat, decaying to 0) gives the phone a kick in time with music. */
-export default function HeroScroll({ apk, progress, video = false, beat = 0 }: { apk: string; progress?: number; video?: boolean; beat?: number }) {
+ * section; `beat` (1 on a beat, decaying to 0) gives the phone a kick in time with music; `backdrop` sits behind the phone
+ * (the video's Blender shot) and `phoneIn` fades the phone itself. */
+export default function HeroScroll({ apk, progress, video = false, beat = 0, backdrop, phoneIn = 1 }: { apk: string; progress?: number; video?: boolean; beat?: number; backdrop?: ReactNode; phoneIn?: number }) {
   const ref = useRef<HTMLElement>(null);
   const [scrolled, setP] = useState(0);
   const p = progress ?? scrolled;
   const [wide, setWide] = useState(false);
+  const [vh, setVh] = useState(800);
 
   useEffect(() => {
     let raf = 0;
@@ -611,6 +613,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0 }: {
       const r = ref.current?.getBoundingClientRect();
       if (r && r.height > innerHeight) setP(clamp(-r.top / (r.height - innerHeight)) * U);
       setWide(innerWidth >= 768);
+      setVh(innerHeight);
     };
     const on = () => { raf ||= requestAnimationFrame(read); };
     read();
@@ -656,6 +659,8 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0 }: {
         })}
         <div className="pointer-events-none absolute inset-0 [background-size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,#000,transparent_70%)]" aria-hidden
           style={{ opacity: 0.08, backgroundImage: `linear-gradient(${th.fg} 1px,transparent 1px),linear-gradient(90deg,${th.fg} 1px,transparent 1px)` }} />
+
+        {backdrop}
 
         {/* intro headline: zooms past you as you scroll */}
         <div className="absolute inset-x-0 top-[13dvh] z-20 px-4 text-center md:top-[16dvh]"
@@ -751,9 +756,12 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0 }: {
             style={{
               // the video picks up from the Blender phone: centred and big, it tilts up to face you, then swipes right into place
               transform: video && wide && p < 1
-                ? `translateX(${(1 - smooth(0.4, 1, p)) * -20}vw) translateY(${(1 - smooth(0, 0.45, p)) * 3}dvh) rotateX(${(1 - smooth(0, 0.45, p)) * 16}deg) rotateY(${Math.sin(smooth(0.4, 1, p) * Math.PI) * -12}deg) scale(${0.9 + smooth(0, 0.45, p) * 0.1 + kick * 0.04})`
+                ? (() => { // starts exactly over the Blender phone (70% of the height, see tools/intro_phone.py), lifts, swipes
+                  const a = smooth(0, 0.45, p), b = smooth(0.4, 1, p), s0 = (0.7 * vh) / Math.min(0.8 * vh, 760);
+                  return `translateX(${(1 - b) * -20}vw) translateY(${-Math.sin(a * Math.PI) * 4}dvh) rotateY(${Math.sin(b * Math.PI) * -12}deg) scale(${s0 + (1 - s0) * a + Math.sin(a * Math.PI) * 0.06 + kick * 0.04})`;
+                })()
                 : `translateY(${(1 - intro) * (wide ? 55 : 48)}dvh) rotateX(${(1 - intro) * 28}deg) rotateY(${intro * ((cx - 240) / 240) * -7}deg) scale(${1.1 - intro * 0.1 + kick * 0.04})`,
-              transformOrigin: video ? "50% 50%" : "50% 100%",
+              transformOrigin: video ? "50% 50%" : "50% 100%", opacity: phoneIn,
             }}>
             <div className="absolute inset-0" style={{ transformOrigin: `${ox}% ${oy}%`, transform: `translate(${(50 - ox) * centre}%, ${(46 - oy) * centre}%) scale(${z})` }}>
               <div className="relative h-full rounded-[13%/6%] bg-zinc-800 p-[2.6%] shadow-2xl ring-1 ring-white/20">
@@ -778,7 +786,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0 }: {
                     );
                   })}
                   {video && p < 0.5 && ( // the same logo screen the Blender phone wakes up to, fading into the app
-                    <img src="/video/screen.png" alt="" className="absolute inset-0 z-[45] h-full w-full object-cover" style={{ opacity: 1 - smooth(0.12, 0.4, p) }} />
+                    <img src="/video/screen.png" alt="" className="absolute inset-0 z-[45] h-full w-full object-fill" style={{ opacity: 1 - smooth(0.12, 0.4, p) }} />
                   )}
                   <div className="absolute left-1/2 top-[1.3%] z-50 h-[3.4%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
                   <div className="pointer-events-none absolute inset-0 z-50 bg-lime-300 mix-blend-overlay" style={{ opacity: flash * 0.8 }} />

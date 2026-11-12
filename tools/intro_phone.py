@@ -49,9 +49,11 @@ lime.node_tree.nodes["Principled BSDF"].inputs["Emission Color"].default_value =
 lime.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 0.6
 rounded_slab("stripe", 0.2015, 0.012, 0.0, 0.003, BOX_H * 0.45, lime)  # a thin lime band round the box
 
-PW, PH, PT = 0.0715, 0.1505, 0.0082
+# the same shape as the web page's phone (components/HeroScroll: 390:844, corners 13% / 6%, a 2.6% bezel), so the shot can
+# hand off to it without a seam
+PH = 0.1505; PW = PH * 390 / 844; PT = 0.0082; BEZEL = 0.026 * PW
 body = mat("body", (0.05, 0.05, 0.055), rough=0.28, metal=0.85)
-rounded_slab("phone", PW, PH, 0.011, PT, BOX_H, body, edge=0.0015)
+rounded_slab("phone", PW, PH, 0.13 * PW, PT, BOX_H, body, edge=0.0015)
 
 # the screen: glossy black glass, its emission (the logo) fades up from frame ON
 m = bpy.data.materials.new("screen"); m.use_nodes = True
@@ -64,7 +66,7 @@ nt.links.new(tex.outputs["Color"], b.inputs["Emission Color"])
 glow = b.inputs["Emission Strength"]
 for f, v in [(1, 0.0), (ON, 0.0), (ON + 4, 2.2), (ON + 10, 1.2)]:  # a little bright kick as it wakes, then settles
     glow.default_value = v; glow.keyframe_insert("default_value", frame=f)
-scr = rounded_slab("screen", PW - 0.004, PH - 0.004, 0.0095, 0, BOX_H + PT + 0.0003, m)
+scr = rounded_slab("screen", PW - 2 * BEZEL, PH - 2 * BEZEL, 0.11 * (PW - 2 * BEZEL), 0, BOX_H + PT + 0.0003, m)
 
 # --- light: a spot from above, a cool rim; a near-black world (the lime comes from the box band and the screen) --------------------------------
 def area(name, loc, power, size, color=(1, 1, 1)):
@@ -74,7 +76,7 @@ def area(name, loc, power, size, color=(1, 1, 1)):
     d = Vector((0, 0, BOX_H)) - l.location
     l.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
 # key: a spot pooling light on the box, falling off to black around it
-bpy.ops.object.light_add(type="SPOT", location=(0.06, -0.1, 1.5))
+bpy.ops.object.light_add(type="SPOT", location=(0.45, -0.55, 1.3))  # off to the side: its glare stays off the screen
 key = bpy.context.object; key.data.energy = 80; key.data.spot_size = math.radians(30); key.data.spot_blend = 0.75; key.data.shadow_soft_size = 0.25
 key.rotation_euler = (Vector((0, 0, BOX_H)) - key.location).to_track_quat("-Z", "Y").to_euler()
 area("rim", (-0.6, 0.7, 0.55), 5, 0.6, (0.75, 0.85, 1.0))
@@ -82,7 +84,8 @@ w = bpy.data.worlds.new("w"); sc.world = w; w.use_nodes = True
 w.node_tree.nodes["Background"].inputs[0].default_value = (0.01, 0.01, 0.012, 1)
 w.node_tree.nodes["Background"].inputs[1].default_value = 0.05
 
-# --- camera: high above, easing down onto the phone with a slow quarter-turn of drift --------------------------------
+# --- camera: high above, easing down onto the phone with a slow drift, ending straight overhead with the phone 70% of
+# the frame's height, exactly where the web page's phone picks it up (video page: HANDOFF) ---------------------------------
 target = Vector((0, 0, BOX_H + PT))
 bpy.ops.object.empty_add(location=target); aim = bpy.context.object
 bpy.ops.object.camera_add(); cam = bpy.context.object; sc.camera = cam
@@ -92,14 +95,13 @@ def cam_at(d, spin, tilt=14):
     t, s = math.radians(tilt), math.radians(spin)
     off = Vector((math.sin(s) * math.sin(t), -math.cos(s) * math.sin(t), math.cos(t))) * d
     return target + off
-for f, d, spin in [(1, 2.3, -16), (END, 0.5, 0)]:
-    cam.location = cam_at(d, spin); cam.keyframe_insert("location", frame=f)
-# sample the arc so the spin follows a curve, not a straight line
-for f in range(1, END + 1, 6):
-    k = (f - 1) / (END - 1); e = 1 - (1 - k) ** 3  # ease out: moving in, settling as the screen lights
-    cam.location = cam_at(2.3 + (0.5 - 2.3) * e, -16 * (1 - e)); cam.keyframe_insert("location", frame=f)
+FILL = 0.70
+D0, D1 = 2.3, PH / (FILL * (36 * 9 / 16) / 50)  # a 50 mm lens on a 16:9 frame sees 0.405 d of height
+for f in range(1, END + 1):  # every frame: an ease-in-out, starting gently, gathering, settling as the screen lights
+    k = (f - 1) / (END - 1); e = 0.5 - 0.5 * math.cos(math.pi * k)
+    cam.location = cam_at(D0 + (D1 - D0) * e, -16 * (1 - e), 14 - 13 * e); cam.keyframe_insert("location", frame=f)
 for fc in cam.animation_data.action.fcurves:
-    for kp in fc.keyframe_points: kp.interpolation = "BEZIER"
+    for kp in fc.keyframe_points: kp.interpolation = "LINEAR"
 
 # --- render -------------------------------------------------------------------------------------------------------
 sc.render.engine = "BLENDER_EEVEE_NEXT"
