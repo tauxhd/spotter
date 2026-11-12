@@ -18,8 +18,8 @@ const bar = (i: number) => BEATS[Math.min(BEATS.length - 1, i * 8)];
 const FIRST = CLIP_BARS + 1; // the bar the first scene starts on
 const PLAN = {
   clip: bar(CLIP_BARS), // the cut from the Blender shot into the hero
-  hold: bar(CLIP_BARS) + 0.5, // the headline sits for a beat
-  intro: bar(FIRST), // phone in by the end of that bar
+  hold: bar(CLIP_BARS) + 0.15, // the hand-off from the Blender phone holds for a moment
+  intro: bar(FIRST), // then it tilts up and swipes into place by the end of that bar
   scenes: Array.from({ length: HERO.scenes + 1 }, (_, k) => bar(FIRST + k * SCENE_BARS)),
   logo: BEATS[Math.min(BEATS.length - 1, (FIRST + HERO.scenes * SCENE_BARS) * 8 + 4)], // half a bar into the outro
   end: bar(FIRST + HERO.scenes * SCENE_BARS + OUTRO_BARS),
@@ -126,7 +126,7 @@ export default function Video() {
   });
 
   const own = song?.url === SONG.url, cues = own ? SONG_CUES : evenCues(len);
-  const inClip = own && t < PLAN.clip;
+  const inClip = own && t < PLAN.clip + 0.12, clipFade = 1 - Math.max(0, Math.min(1, (t - PLAN.clip) / 0.12)); // cross-fade the Blender phone into ours
   // keep the Blender clip on the song's clock: play along, re-sync when it drifts or after a seek
   const clip = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -135,13 +135,11 @@ export default function Video() {
     if (Math.abs(v.currentTime - t) > 0.08) v.currentTime = Math.min(t, PLAN.clip);
     if (playing && inClip) { if (v.paused) void v.play(); } else if (!v.paused) v.pause();
   }, [t, playing, inClip]);
-  const cut = own ? Math.max(0, 1 - Math.abs(t - PLAN.clip) / 0.18) : 0; // a white flash over the cut
 
   return (
     <div className="relative h-dvh overflow-hidden bg-zinc-950 text-zinc-100 [color-scheme:dark]">
       <HeroScroll apk="#" progress={progressAt(t, cues)} video beat={own ? beatAt(t) : 0} />
-      {own && <video ref={clip} src={CLIP} muted playsInline preload="auto" className="fixed inset-0 z-[55] h-full w-full bg-black object-cover" style={{ opacity: inClip ? 1 : 0 }} />}
-      {cut > 0 && <div className="pointer-events-none fixed inset-0 z-[56] bg-white" style={{ opacity: cut * 0.9 }} />}
+      {own && <video ref={clip} src={CLIP} muted playsInline preload="auto" className="fixed inset-0 z-[55] h-full w-full bg-black object-cover" style={{ opacity: inClip ? clipFade : 0 }} />}
       {song && <audio ref={audio} src={song.url} preload="auto" onLoadedMetadata={(e) => setLen(song.url === SONG.url ? PLAN.end : e.currentTarget.duration)} onEnded={() => setPlaying(false)} />}
 
       {ui && (

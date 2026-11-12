@@ -620,7 +620,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0 }: {
   }, []);
 
   const tk = (k: number) => (p - 1 - L * k) / L; // scene k's own time, 0..1 while it's on
-  const ek = (k: number) => (k === 0 ? smooth(0.35, 1, p) : smooth(-0.05, 0.14, tk(k))); // its screen's entrance
+  const ek = (k: number) => (k === 0 ? (video ? smooth(0.15, 0.6, p) : smooth(0.35, 1, p)) : smooth(-0.05, 0.14, tk(k))); // its screen's entrance
   const intro = smooth(0, 0.85, p);
   const cur = clamp(Math.floor((p - 1) / L), 0, N - 1);
   const o = (p - 1 - L * N) / O; // the outro's own time, 0..1
@@ -659,7 +659,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0 }: {
 
         {/* intro headline: zooms past you as you scroll */}
         <div className="absolute inset-x-0 top-[13dvh] z-20 px-4 text-center md:top-[16dvh]"
-          style={{ opacity: 1 - smooth(0, 0.55, p), transform: `scale(${1 + p * 0.5})`, filter: `blur(${smooth(0, 0.6, p) * 12}px)`, pointerEvents: p > 0.3 ? "none" : undefined }}>
+          style={{ opacity: video ? 0 : 1 - smooth(0, 0.55, p), transform: `scale(${1 + p * 0.5})`, filter: `blur(${smooth(0, 0.6, p) * 12}px)`, pointerEvents: p > 0.3 ? "none" : undefined }}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-lime-400">Built for the APU SweatZone</p>
           <h1 className="mx-auto mt-4 max-w-4xl text-[clamp(2.75rem,9vw,7.5rem)] font-bold leading-[0.95] tracking-[-0.05em]">
             Your gym,{" "}
@@ -749,8 +749,11 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0 }: {
         <div className="absolute inset-x-0 bottom-[3dvh] top-[36dvh] z-10 flex items-center justify-center [perspective:1400px] md:inset-y-0 md:left-[40%]">
           <div className="relative aspect-[390/844] h-full max-h-[760px] [container-type:inline-size] md:h-[80dvh]"
             style={{
-              transform: `translateY(${(1 - intro) * (wide ? 55 : 48)}dvh) rotateX(${(1 - intro) * 28}deg) rotateY(${intro * ((cx - 240) / 240) * -7}deg) scale(${1.1 - intro * 0.1 + kick * 0.04})`,
-              transformOrigin: "50% 100%",
+              // the video picks up from the Blender phone: centred and big, it tilts up to face you, then swipes right into place
+              transform: video && wide && p < 1
+                ? `translateX(${(1 - smooth(0.4, 1, p)) * -20}vw) translateY(${(1 - smooth(0, 0.45, p)) * 3}dvh) rotateX(${(1 - smooth(0, 0.45, p)) * 16}deg) rotateY(${Math.sin(smooth(0.4, 1, p) * Math.PI) * -12}deg) scale(${0.9 + smooth(0, 0.45, p) * 0.1 + kick * 0.04})`
+                : `translateY(${(1 - intro) * (wide ? 55 : 48)}dvh) rotateX(${(1 - intro) * 28}deg) rotateY(${intro * ((cx - 240) / 240) * -7}deg) scale(${1.1 - intro * 0.1 + kick * 0.04})`,
+              transformOrigin: video ? "50% 50%" : "50% 100%",
             }}>
             <div className="absolute inset-0" style={{ transformOrigin: `${ox}% ${oy}%`, transform: `translate(${(50 - ox) * centre}%, ${(46 - oy) * centre}%) scale(${z})` }}>
               <div className="relative h-full rounded-[13%/6%] bg-zinc-800 p-[2.6%] shadow-2xl ring-1 ring-white/20">
@@ -774,6 +777,9 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0 }: {
                       </div>
                     );
                   })}
+                  {video && p < 0.5 && ( // the same logo screen the Blender phone wakes up to, fading into the app
+                    <img src="/video/screen.png" alt="" className="absolute inset-0 z-[45] h-full w-full object-cover" style={{ opacity: 1 - smooth(0.12, 0.4, p) }} />
+                  )}
                   <div className="absolute left-1/2 top-[1.3%] z-50 h-[3.4%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
                   <div className="pointer-events-none absolute inset-0 z-50 bg-lime-300 mix-blend-overlay" style={{ opacity: flash * 0.8 }} />
                 </div>
