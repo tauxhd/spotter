@@ -14,14 +14,14 @@ const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
 // It opens on the Blender shot (public/video/intro.mp4, tools/intro_phone.py: the phone on a box, the camera easing in,
 // the screen waking to the logo) for CLIP_BARS, cuts to the hero on the beat drop, then the hero's own intro takes a bar.
 // The logo outro is always last.
-const CLIP_BARS = 2, HANDOFF_BARS = 2, SCENE_BARS = 2, OUTRO_BARS = 2;
+const CLIP_BARS = 2, HANDOFF_BARS = 1, SCENE_BARS = 2, OUTRO_BARS = 2;
 const bar = (i: number) => BEATS[Math.min(BEATS.length - 1, i * 8)];
 const FIRST = CLIP_BARS + HANDOFF_BARS; // the bar the first scene starts on
 const LAST = FIRST + HERO.scenes * SCENE_BARS; // the bar the scenes end on
 const PLAN = {
   clip: bar(CLIP_BARS), // the cut from the Blender shot into the hero
   hold: bar(CLIP_BARS) + 0.2, // our phone fades in over the Blender phone and holds a moment
-  intro: bar(FIRST), // it lifts, swipes right with words sliding out from behind it, and those clear for scene 1
+  intro: bar(FIRST), // the app's screens spin past inside it and land on home, then it snaps right into scene 1
   scenes: Array.from({ length: HERO.scenes + 1 }, (_, k) => bar(FIRST + k * SCENE_BARS)),
   logo: BEATS[Math.min(BEATS.length - 1, LAST * 8 + 4)], // half a bar into the outro
   end: bar(LAST + OUTRO_BARS),

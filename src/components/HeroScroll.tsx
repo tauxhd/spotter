@@ -777,6 +777,9 @@ const N = scenes.length;
 const L = 2.5; // screens of scrolling per scene (more = slower)
 const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fading into the page)
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
+/** the video's opening carousel: [scene, its time], spun through inside the phone, landing on home; and when it stops (0..1 of the hand-off) */
+const CAROUSEL: [number, number][] = [[1, 0.4], [2, 0.62], [3, 0.6], [4, 0.7], [5, 0.8], [0, 0]];
+const CAROUSEL_END = 0.5;
 /** the hero's timeline in scroll units, for driving it from a clock (the /video page) */
 export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
 /** each scene's big moments (clicks and flashes) in its own time 0..1, so a video can land them on the beat */
@@ -813,7 +816,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
   }, []);
 
   const tk = (k: number) => (p - 1 - L * k) / L; // scene k's own time, 0..1 while it's on
-  const ek = (k: number) => (k === 0 ? (video ? smooth(0.15, 0.6, p) : smooth(0.35, 1, p)) : smooth(-0.05, 0.14, tk(k))); // its screen's entrance
+  const ek = (k: number) => (k === 0 ? (video ? 1 : smooth(0.35, 1, p)) : smooth(-0.05, 0.14, tk(k))); // its screen's entrance
   const intro = smooth(0, 0.85, p);
   const cur = clamp(Math.floor((p - 1) / L), 0, N - 1);
   const o = (p - 1 - L * N) / O; // the outro's own time, 0..1
@@ -851,18 +854,6 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           style={{ opacity: 0.08, backgroundImage: `linear-gradient(${th.fg} 1px,transparent 1px),linear-gradient(90deg,${th.fg} 1px,transparent 1px)` }} />
 
         {backdrop}
-        {video && wide && p > 0.15 && p < 1 && (() => { // as the phone swipes right, big words slide out from behind it
-          const out = smooth(0.75, 0.9, p);
-          return (
-            <div className="pointer-events-none absolute left-[max(2rem,calc(50%-36rem))] top-1/2 z-[6]" style={{ opacity: 1 - out, transform: `translateY(calc(-50% - ${out * 6}vh))` }}>
-              {["Every rep.", "Every meal.", "Every rank."].map((l, i) => {
-                const v = io(clamp((p - 0.28 - i * 0.07) / 0.18));
-                return <p key={l} className="font-bold leading-[0.95] tracking-[-0.05em]" style={{ fontSize: "clamp(3rem, 11vh, 8rem)", color: i === 2 ? LIME : "#fafafa", opacity: v, transform: `translateX(${(1 - v) * 14}vw)`, filter: `blur(${(1 - v) * 10}px)` }}>{l}</p>;
-              })}
-              <p className="mt-5 text-xl text-zinc-400" style={{ opacity: smooth(0.5, 0.6, p) }}>One app for the whole APU SweatZone.</p>
-            </div>
-          );
-        })()}
 
         {/* intro headline: zooms past you as you scroll */}
         <div className="absolute inset-x-0 top-[13dvh] z-20 px-4 text-center md:top-[16dvh]"
@@ -959,8 +950,8 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
               // the video picks up from the Blender phone: centred and big, it tilts up to face you, then swipes right into place
               transform: video && wide && p < 1
                 ? (() => { // starts exactly over the Blender phone (70% of the height, see tools/intro_phone.py), lifts, swipes
-                  const a = io(clamp(p / 0.2)), b = io(clamp((p - 0.2) / 0.3)), s0 = (0.7 * vh) / Math.min(0.8 * vh, 760);
-                  return `translateX(${(1 - b) * -20}vw) translateY(${-Math.sin(a * Math.PI) * 4}dvh) rotateY(${Math.sin(b * Math.PI) * -12}deg) scale(${s0 + (1 - s0) * a + Math.sin(a * Math.PI) * 0.06 + kick * 0.04})`;
+                  const a = io(clamp(p / 0.15)), lock = bump(p, CAROUSEL_END, 0.06), b = io(clamp((p - 0.6) / 0.3)), s0 = (0.7 * vh) / Math.min(0.8 * vh, 760);
+                  return `translateX(${(1 - b) * -20}vw) rotateY(${Math.sin(b * Math.PI) * -12}deg) scale(${s0 + (1 - s0) * a + lock * 0.04 + kick * 0.04})`;
                 })()
                 : `translateY(${(1 - intro) * (wide ? 55 : 48)}dvh) rotateX(${(1 - intro) * 28}deg) rotateY(${intro * ((cx - 240) / 240) * -7}deg) scale(${1.1 - intro * 0.1 + kick * 0.04})`,
               transformOrigin: video ? "50% 50%" : "50% 100%", opacity: phoneIn,
@@ -987,8 +978,16 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
                       </div>
                     );
                   })}
-                  {video && p < 0.5 && ( // the same logo screen the Blender phone wakes up to, fading into the app
-                    <img src="/video/screen.png" alt="" className="absolute inset-0 z-[45] h-full w-full object-fill" style={{ opacity: 1 - smooth(0.12, 0.4, p) }} />
+                  {video && p < CAROUSEL_END && (() => { // the app's screens spin past and decelerate onto home
+                    const k = 1 - Math.pow(1 - clamp((p - 0.04) / (CAROUSEL_END - 0.04)), 3), speed = 3 * Math.pow(1 - clamp((p - 0.04) / (CAROUSEL_END - 0.04)), 2);
+                    return (
+                      <div className="absolute inset-0 z-[44] flex" style={{ transform: `translateX(${-k * (CAROUSEL.length - 1) * 100}%)`, filter: `blur(${(speed * 1.1).toFixed(2)}px)` }}>
+                        {CAROUSEL.map(([i, at]) => { const Screen = scenes[i].Screen; return <div key={i} className="relative h-full w-full shrink-0 overflow-hidden bg-zinc-950"><Screen t={at} e={1} /></div>; })}
+                      </div>
+                    );
+                  })()}
+                  {video && p < 0.12 && ( // the same logo screen the Blender phone wakes up to, giving way to the carousel
+                    <img src="/video/screen.png" alt="" className="absolute inset-0 z-[45] h-full w-full object-fill" style={{ opacity: 1 - smooth(0.03, 0.1, p) }} />
                   )}
                   <div className="absolute left-1/2 top-[1.3%] z-50 h-[3.4%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
                   <div className="pointer-events-none absolute inset-0 z-50 bg-lime-300 mix-blend-overlay" style={{ opacity: flash * 0.8 }} />
