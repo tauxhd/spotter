@@ -20,42 +20,80 @@ export const crowdByHour: Record<number, number> = {
   9: 30, 10: 28, 11: 35, 12: 50, 13: 40, 14: 32, 15: 38, 16: 55, 17: 78, 18: 92, 19: 85, 20: 45,
 };
 
-// Floor plan traced from the team's sketch (units = sketch pixels). Unlabelled boxes are numbered until named.
-// ponytail: positions are hand-traced; replace with coordinates exported from the Blender model later.
+// Floor plan of the SweatZone, from the team's full layout (units = pixels of that drawing, 640 x 1152). `tables` are the
+// plain boxes (tables, storage): drawn, not tappable. Every machine has an id (map pins, ?e=<id>), a name, a zone and a
+// short label for the map.
 export const floor = {
-  outline: "474,143 758,143 758,1273 167,1273 167,298 474,298",
-  pillars: [[190, 391, 70, 41], [645, 398, 77, 40], [190, 714, 77, 41], [645, 714, 77, 41], [186, 977, 77, 42], [645, 1001, 77, 42]],
+  outline: "354,91 608,91 608,1106 77,1106 77,230 354,230",
+  viewBox: "68 82 556 1034",
+  tables: [
+    [97, 313, 61, 37], [506, 318, 69, 37], [97, 604, 69, 38], [506, 604, 69, 38], [94, 841, 69, 37], [507, 862, 69, 38],
+    [354, 144, 20, 75], [152, 230, 65, 22], [77, 642, 23, 94], [117, 642, 28, 94], [78, 764, 80, 27], [469, 602, 22, 42], [600, 949, 16, 123],
+  ] as [number, number, number, number][],
 };
 
-const unl = (n: number, x: number, y: number, w: number, h: number) => ({ id: `m${n}`, name: `Unlabelled #${n}`, zone: "Not named yet", x, y, w, h });
+type Equip = { id: string; name: string; label: string; zone: string; x: number; y: number; w: number; h: number };
+const row = (id: string, name: string, label: string, zone: string, list: [number, number][], w: number, h: number): Equip[] =>
+  list.map(([x, y], i) => ({ id: `${id}${i + 1}`, name: `${name} ${i + 1}`, label, zone, x, y, w, h }));
 
-export const equipment = [
-  { id: "dbs", name: "Dumbbell Rack", zone: "Free weights", x: 501, y: 143, w: 242, h: 48 },
-  { id: "dbseat1", name: "Dumbbell Bench 1", zone: "Free weights", x: 531, y: 219, w: 19, h: 54 },
-  { id: "dbseat2", name: "Dumbbell Bench 2", zone: "Free weights", x: 590, y: 219, w: 18, h: 54 },
-  { id: "bench1", name: "Flat Bench Press", zone: "Benches", x: 684, y: 222, w: 73, h: 71 },
-  { id: "bench2", name: "Incline Bench Press", zone: "Benches", x: 647, y: 324, w: 73, h: 71 },
-  unl(1, 475, 203, 22, 83), unl(2, 251, 299, 73, 24), unl(3, 368, 299, 94, 61), unl(4, 260, 393, 46, 38),
-  unl(5, 535, 401, 100, 37), unl(6, 190, 457, 46, 35), unl(7, 190, 500, 46, 35), unl(8, 190, 548, 46, 40),
-  unl(9, 190, 628, 46, 48), unl(10, 413, 486, 159, 141), unl(11, 691, 457, 30, 47), unl(12, 691, 517, 59, 47),
-  unl(13, 691, 580, 59, 47), unl(14, 691, 641, 26, 48), unl(15, 602, 713, 26, 46), unl(16, 167, 757, 26, 105),
-  unl(17, 212, 757, 31, 105), unl(18, 169, 893, 89, 30), unl(19, 749, 1098, 18, 137),
+export const equipment: Equip[] = [
+  { id: "dbs", name: "Dumbbell Rack", label: "Dumbbells", zone: "Free weights", x: 377, y: 91, w: 218, h: 43 },
+  { id: "dbseat1", name: "Dumbbell Bench 1", label: "DB bench", zone: "Free weights", x: 404, y: 158, w: 17, h: 48 },
+  { id: "dbseat2", name: "Dumbbell Bench 2", label: "DB bench", zone: "Free weights", x: 457, y: 158, w: 16, h: 48 },
+  { id: "bench1", name: "Flat Bench Press", label: "Bench", zone: "Benches & racks", x: 542, y: 161, w: 65, h: 64 },
+  { id: "bench2", name: "Incline Bench Press", label: "Incline", zone: "Benches & racks", x: 508, y: 253, w: 66, h: 63 },
+  { id: "rack", name: "Squat Rack", label: "Squat rack", zone: "Benches & racks", x: 258, y: 232, w: 85, h: 67 },
+  { id: "rig", name: "Pull-up Rig & Squat Stations", label: "Rig", zone: "Benches & racks", x: 278, y: 368, w: 151, h: 148 },
+  { id: "tower", name: "Pull-up & Dip Tower", label: "Dip tower", zone: "Benches & racks", x: 162, y: 299, w: 38, h: 59 },
+  { id: "cable", name: "Cable Crossover", label: "Cable crossover", zone: "Cables", x: 407, y: 289, w: 91, h: 77 },
+  { id: "latpd", name: "Lat Pulldown", label: "Lat pulldown", zone: "Cables", x: 273, y: 567, w: 46, h: 59 },
+  { id: "cablestack", name: "Cable Station", label: "Cable", zone: "Cables", x: 322, y: 548, w: 50, h: 52 },
+  { id: "calf", name: "Standing Calf Raise", label: "Calf raise", zone: "Machines", x: 98, y: 361, w: 41, h: 45 },
+  { id: "squatm", name: "Squat Machine", label: "Squat machine", zone: "Machines", x: 98, y: 410, w: 41, h: 38 },
+  { id: "legpress1", name: "Leg Press 1", label: "Leg press", zone: "Machines", x: 93, y: 454, w: 54, h: 49 },
+  { id: "legpress2", name: "Leg Press 2", label: "Leg press", zone: "Machines", x: 93, y: 526, w: 54, h: 49 },
+  { id: "preacher", name: "Preacher Curl Machine", label: "Preacher", zone: "Machines", x: 543, y: 372, w: 41, h: 43 },
+  { id: "pecdeck", name: "Pec Deck / Rear Delt", label: "Pec deck", zone: "Machines", x: 548, y: 426, w: 54, h: 43 },
+  { id: "shoulder", name: "Shoulder Press Machine", label: "Shoulder press", zone: "Machines", x: 548, y: 478, w: 54, h: 50 },
+  { id: "abs", name: "Ab Crunch Machine", label: "Ab crunch", zone: "Machines", x: 542, y: 538, w: 43, h: 42 },
+  { id: "pecfly", name: "Chest Fly Machine", label: "Chest fly", zone: "Machines", x: 375, y: 575, w: 44, h: 44 },
+  { id: "legext", name: "Leg Extension", label: "Leg extension", zone: "Machines", x: 325, y: 604, w: 45, h: 56 },
+  ...row("bike", "Spin Bike", "Bike", "Cardio", [[311, 680], [311, 726], [311, 778], [311, 831], [311, 882]], 40, 41),
+  ...row("tm", "Treadmill", "Treadmill", "Cardio", [[512, 679], [512, 734], [512, 789], [135, 1034], [216, 1034], [288, 1034], [367, 1034], [444, 1034]], 48, 49),
 ];
 
 // Where each exercise is done in the gym (map pin). Names match the exercise library (supabase/exercises.json).
 export const exercises: Record<string, { equip: string }> = {
-  "Squat (Barbell)": { equip: "rack1" },
-  "Romanian Deadlift (Barbell)": { equip: "platform" },
-  "Leg Press (Machine)": { equip: "legpress" },
-  "Lying Leg Curl (Machine)": { equip: "legcurl" },
+  "Squat (Barbell)": { equip: "rack" },
+  "Front Squat (Barbell)": { equip: "rack" },
+  "Romanian Deadlift (Barbell)": { equip: "rig" },
+  "Deadlift (Barbell)": { equip: "rig" },
   "Bench Press (Barbell)": { equip: "bench1" },
   "Incline Bench Press (Barbell)": { equip: "bench2" },
-  "Cable Crossover": { equip: "cable" },
+  "Bench Press (Dumbbell)": { equip: "dbseat2" },
+  "Incline Bench Press (Dumbbell)": { equip: "dbseat2" },
   "Shoulder Press (Dumbbell)": { equip: "dbseat1" },
-  "Deadlift (Barbell)": { equip: "platform" },
-  "Lat Pulldown (Cable)": { equip: "latpd" },
-  "Seated Cable Row": { equip: "row" },
   "Bicep Curl (Dumbbell)": { equip: "dbs" },
+  "Pull Up": { equip: "tower" },
+  "Chest Dip": { equip: "tower" },
+  "Cable Crossover": { equip: "cable" },
+  "Low to High Cable Fly": { equip: "cable" },
+  "High to Low Cable Fly": { equip: "cable" },
+  "Straight Arm Pulldown (Cable)": { equip: "cable" },
+  "Bicep Curl (Cable)": { equip: "cable" },
+  "Lat Pulldown (Cable)": { equip: "latpd" },
+  "Lat Pulldown (Machine)": { equip: "latpd" },
+  "Lat Pulldown - Close Grip (Cable)": { equip: "latpd" },
+  "Seated Cable Row": { equip: "cablestack" },
+  "Standing Calf Raise (Machine)": { equip: "calf" },
+  "Hack Squat (Machine)": { equip: "squatm" },
+  "Leg Press (Machine)": { equip: "legpress1" },
+  "Leg Extension (Machine)": { equip: "legext" },
+  "Preacher Curl (EZ Bar)": { equip: "preacher" },
+  "Pec Deck (Machine Fly)": { equip: "pecfly" },
+  "Reverse Pec Deck (Machine)": { equip: "pecdeck" },
+  "Running (Treadmill)": { equip: "tm1" },
+  "Cycling (Stationary Bike)": { equip: "bike1" },
 };
 // Names used before the library existed (old workouts / posts) -> library names.
 export const oldNames: Record<string, string> = {

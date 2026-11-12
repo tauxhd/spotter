@@ -1,5 +1,5 @@
 // Gym map (the website's /map): the SweatZone floor plan; tap a machine to highlight it (it pulses) and see what it's for.
-// Opens on a machine when called with ?e=<equipment id> (from a workout's location chip).
+// Opens on a machine when called with ?e=<equipment id> (from a workout's location chip). Plain dashed boxes are tables.
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -12,8 +12,6 @@ import { Section } from '@/components/ui/kit';
 import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-const short: Record<string, string> = { dbs: 'Dumbbells', dbseat1: 'DB Bench', dbseat2: 'DB Bench', bench1: 'Bench', bench2: 'Incline' };
-const label = (e: { id: string }) => short[e.id] ?? e.id.slice(1);
 const ARect = Animated.createAnimatedComponent(Rect);
 
 function Picked({ e }: { e: (typeof equipment)[number] }) {
@@ -36,13 +34,13 @@ export default function GymMap() {
       <Stack.Screen options={{ title: 'Gym map' }} />
       <ThemedText type="small" themeColor="textSecondary">{picked ? `${picked.name} · ${picked.zone}` : 'Tap any equipment'}</ThemedText>
       <Section style={{ paddingVertical: 8 }}>
-        <Svg viewBox="155 130 625 1155" width="100%" height={520}>
+        <Svg viewBox={floor.viewBox} width="100%" height={560}>
           <Polygon points={floor.outline} fill="#09090b" stroke="#3f3f46" strokeWidth={3} />
-          {floor.pillars.map(([x, y, w, h], i) => <Rect key={i} x={x} y={y} width={w} height={h} fill="#3f3f46" />)}
+          {floor.tables.map(([x, y, w, h], i) => <Rect key={i} x={x} y={y} width={w} height={h} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth={1.5} strokeDasharray="4 3" />)}
           {equipment.map((e) => {
-            const on = e.id === sel, text = label(e), tall = e.h > e.w * 1.5;
+            const on = e.id === sel, text = e.label, tall = e.h > e.w * 1.5;
             const long = tall ? e.h : e.w, thin = tall ? e.w : e.h;
-            const size = Math.min(22, (long * 1.6) / text.length, thin * 0.7);
+            const size = Math.min(14, (long * 1.7) / text.length, thin * 0.62);
             const cx = e.x + e.w / 2, cy = e.y + e.h / 2;
             return (
               <G key={e.id} onPress={() => setSel(e.id)}>
@@ -61,7 +59,7 @@ export default function GymMap() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {equipment.filter((e) => e.zone === z).map((e) => (
               <Pressable key={e.id} onPress={() => setSel(e.id)} style={[styles.chip, { backgroundColor: e.id === sel ? Lime : theme.backgroundElement }]}>
-                <ThemedText type="smallBold" style={{ fontSize: 12, color: e.id === sel ? '#09090b' : theme.text }}>{e.name.startsWith('Unlabelled') ? `#${label(e)}` : e.name}</ThemedText>
+                <ThemedText type="smallBold" style={{ fontSize: 12, color: e.id === sel ? '#09090b' : theme.text }}>{e.name}</ThemedText>
               </Pressable>
             ))}
           </View>

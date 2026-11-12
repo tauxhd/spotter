@@ -6,10 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import { equipment, exercises, floor } from "@/lib/data";
 import MeButton from "@/components/MeButton";
 
-// ponytail: 2D plan traced from the team's sketch. Swap in the Blender model (.glb via <model-viewer>) later;
-// the equipment ids stay the same and become hotspot names.
-const short: Record<string, string> = { dbs: "Dumbbells", dbseat1: "DB Bench", dbseat2: "DB Bench", bench1: "Bench", bench2: "Incline" };
-const label = (e: { id: string }) => short[e.id] ?? e.id.slice(1); // unlabelled boxes show their number
+// The SweatZone floor plan (lib/data `floor` + `equipment`): tap a machine to highlight it and see what it's for. The plain
+// boxes are tables and storage, so they aren't tappable.
 
 function GymMap() {
   const params = useSearchParams();
@@ -38,17 +36,18 @@ function GymMap() {
       </header>
 
       <div className="card py-2">
-        <svg viewBox="155 130 625 1155" className="mx-auto max-h-[70dvh] w-full" role="img" aria-label="APU gym floor plan">
+        <svg viewBox={floor.viewBox} className="mx-auto max-h-[70dvh] w-full" role="img" aria-label="APU gym floor plan">
           <polygon points={floor.outline} className="fill-zinc-50 stroke-zinc-300 dark:fill-zinc-950 dark:stroke-zinc-700" strokeWidth="3" />
-          {floor.pillars.map(([x, y, w, h], i) => (
-            <rect key={i} x={x} y={y} width={w} height={h} className="fill-zinc-300 dark:fill-zinc-700" aria-hidden />
+          {floor.tables.map(([x, y, w, h], i) => (
+            <rect key={i} x={x} y={y} width={w} height={h} rx="2" strokeDasharray="4 3" strokeWidth="1.5" aria-hidden
+              className="fill-white stroke-zinc-300 dark:fill-zinc-900/60 dark:stroke-zinc-800" />
           ))}
           {equipment.map((e) => {
             const on = e.id === sel;
-            const text = label(e);
+            const text = e.label;
             const tall = e.h > e.w * 1.5;
             const long = tall ? e.h : e.w, thin = tall ? e.w : e.h;
-            const size = Math.min(22, (long * 1.6) / text.length, thin * 0.7);
+            const size = Math.min(14, (long * 1.7) / text.length, thin * 0.62);
             const cx = e.x + e.w / 2, cy = e.y + e.h / 2;
             return (
               <g key={e.id} onClick={() => select(e.id)} className="cursor-pointer">
@@ -75,7 +74,7 @@ function GymMap() {
           <div className="flex flex-wrap gap-2">
             {equipment.filter((e) => e.zone === z).map((e) => (
               <button key={e.id} aria-pressed={e.id === sel} onClick={() => select(e.id)} className="chip">
-                {e.name.startsWith("Unlabelled") ? `#${label(e)}` : e.name}
+                {e.name}
               </button>
             ))}
           </div>
