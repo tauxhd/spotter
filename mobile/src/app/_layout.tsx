@@ -1,3 +1,4 @@
+import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold, useFonts } from '@expo-google-fonts/geist';
 import { DarkTheme, ThemeProvider } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
@@ -32,11 +33,13 @@ export default function RootLayout() {
 // Signed in and set up → the app (tabs, with pages pushed over them); first launch → profile setup.
 function Gate() {
   const st = useStatus();
+  const [fonts] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold }); // the website's font
+  if (!fonts) return <Splash />;
   if (st.kind === 'onboarding') return <Onboarding onSave={st.save} />;
   if (st.kind === 'loading') return <Splash />;
   if (st.kind === 'error') return <View style={styles.center}><ThemedText>Couldn&apos;t connect: {st.message}</ThemedText></View>;
   return (
-    <Stack screenOptions={{ headerTintColor: Lime, headerTitleStyle: { color: Colors.dark.text }, headerShadowVisible: false, headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: Colors.dark.background } }}>
+    <Stack screenOptions={{ headerTintColor: Lime, headerTitleStyle: { color: Colors.dark.text, fontFamily: 'Geist_600SemiBold' }, headerShadowVisible: false, headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: Colors.dark.background } }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="finish" options={{ title: 'Finish workout', presentation: 'modal' }} />
       <Stack.Screen name="exercise/[id]" options={{ title: '' }} />

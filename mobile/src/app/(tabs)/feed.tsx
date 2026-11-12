@@ -68,5 +68,5 @@ export default function Feed() {
 const styles = StyleSheet.create({
   live: { width: 8, height: 8, borderRadius: 4, backgroundColor: Lime },
   kicker: { fontSize: 12, letterSpacing: 1, marginBottom: 8 },
-  tile: { width: 120, alignItems: 'center', borderRadius: 16, padding: 12, gap: 2 },
+  tile: { width: 120, alignItems: 'center', borderRadius: 6, padding: 12, gap: 2 },
 });

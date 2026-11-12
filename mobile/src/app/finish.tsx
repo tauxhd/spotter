@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, Stack } from 'expo-router';
 import { CalendarDays, ChevronRight, Eye, Globe, ImagePlus, Lock, Pencil, Users } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { Visibility } from '@shared/data';
 import { baseOf, bests, liftsOf } from '@shared/lifting';
@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/kit';
 import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore, type Media } from '@/lib/store';
+import { Input } from '@/components/ui/input';
 
 const visibilities = [
   { id: 'everyone', label: 'Everyone', hint: 'Anyone on Spotter can see this workout.', icon: Globe },
@@ -93,16 +94,16 @@ export default function Finish() {
       }} />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
         <View style={[row, { paddingTop: 16 }]}>
-          <TextInput value={title} onChangeText={setTitle} maxLength={80} placeholder="Name this workout" placeholderTextColor={theme.textSecondary} style={[styles.title, { color: theme.text }]} />
+          <Input value={title} onChangeText={setTitle} maxLength={80} placeholder="Name this workout" placeholderTextColor={theme.textSecondary} style={[styles.title, { color: theme.text }]} />
           <Pencil size={18} color={theme.textSecondary} />
         </View>
-        <TextInput value={note} onChangeText={setNote} maxLength={500} multiline placeholder="How did it go? Add notes for yourself or your friends…" placeholderTextColor={theme.textSecondary}
+        <Input value={note} onChangeText={setNote} maxLength={500} multiline placeholder="How did it go? Add notes for yourself or your friends…" placeholderTextColor={theme.textSecondary}
           style={[styles.note, { color: theme.text, borderBottomColor: theme.border }]} />
         <View style={[row, { paddingVertical: 16 }]}>
           <View style={{ flex: 1 }}>
             <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Duration</ThemedText>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-              <TextInput value={duration} onChangeText={(v) => setDuration(v.replace(/\D/g, '').slice(0, 3))} keyboardType="number-pad" style={[styles.dur, { borderBottomColor: 'rgba(132,204,22,0.6)' }]} />
+              <Input value={duration} onChangeText={(v) => setDuration(v.replace(/\D/g, '').slice(0, 3))} keyboardType="number-pad" style={[styles.dur, { borderBottomColor: 'rgba(132,204,22,0.6)' }]} />
               <ThemedText type="small" themeColor="textSecondary">min</ThemedText>
             </View>
           </View>
@@ -157,12 +158,12 @@ export default function Finish() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, marginHorizontal: -16, paddingHorizontal: 16 },
-  title: { flex: 1, fontSize: 24, fontWeight: '800', letterSpacing: -0.4 },
+  title: { flex: 1, fontSize: 24, fontWeight: '700', letterSpacing: -0.4 },
   note: { minHeight: 80, fontSize: 16, paddingVertical: 12, textAlignVertical: 'top', borderBottomWidth: StyleSheet.hairlineWidth, marginHorizontal: -16, paddingHorizontal: 16 },
-  dur: { width: 52, fontSize: 20, fontWeight: '800', color: Lime, borderBottomWidth: 1, borderStyle: 'dashed', paddingVertical: 0 },
-  stat: { fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  chip: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  seg: { flexDirection: 'row', borderRadius: 12, padding: 4 },
-  segBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, borderRadius: 9 },
-  save: { backgroundColor: Lime, borderRadius: 6, paddingHorizontal: 14, paddingVertical: 6 },
+  dur: { width: 52, fontSize: 20, fontWeight: '700', color: Lime, borderBottomWidth: 1, borderStyle: 'dashed', paddingVertical: 0 },
+  stat: { fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  chip: { borderRadius: 4, paddingHorizontal: 10, paddingVertical: 5 },
+  seg: { flexDirection: 'row', borderRadius: 5, padding: 4 },
+  segBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, borderRadius: 4 },
+  save: { backgroundColor: Lime, borderRadius: 3, paddingHorizontal: 14, paddingVertical: 6 },
 });

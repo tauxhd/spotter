@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,11 +13,12 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
 import { H2, Icon, Title } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
-import { Plus, X } from 'lucide-react-native';
+import { Plus, Search, Sparkles, Trash2 } from 'lucide-react-native';
 import { BottomTabInset, Lime, Red, Spring } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { img } from '@/lib/web';
+import { Input } from '@/components/ui/input';
 
 type Food = { name: string; kcal: number; p: number; c: number; f: number };
 const ALL = 'All', HP = 'High protein';
@@ -27,15 +28,15 @@ const easeInOut = Easing.bezier(0.65, 0, 0.35, 1);
 
 function Thumb({ name, size = 48 }: { name: string; size?: number }) {
   const src = foods.some((f) => f.name === name) ? img(`/food/${slug(name)}.webp`) : undefined;
-  return src ? <Image source={src} style={{ width: size, height: size, borderRadius: 12, backgroundColor: '#18181b' }} />
-    : <View style={{ width: size, height: size, borderRadius: 12, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center' }}><ThemedText style={{ color: Lime, fontSize: size / 2.6 }}>✦</ThemedText></View>;
+  return src ? <Image source={src} style={{ width: size, height: size, borderRadius: 5, backgroundColor: '#18181b' }} />
+    : <View style={{ width: size, height: size, borderRadius: 5, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center' }}><ThemedText style={{ color: Lime, fontSize: size / 2.6 }}>✦</ThemedText></View>;
 }
 
 function Bar({ pct, color, height, delay = 0 }: { pct: number; color: string; height: number; delay?: number }) {
   const w = useSharedValue(0);
   useEffect(() => { w.set(withDelay(delay, withTiming(Math.min(100, pct), { duration: 700, easing: easeInOut }))); }, [pct, delay, w]);
   const anim = useAnimatedStyle(() => ({ width: `${w.value}%` }));
-  return <Animated.View style={[{ height, borderRadius: 3, backgroundColor: color }, anim]} />;
+  return <Animated.View style={[{ height, borderRadius: 2, backgroundColor: color }, anim]} />;
 }
 
 export default function Eat() {
@@ -114,7 +115,7 @@ export default function Eat() {
 
         <View style={[styles.card, card]}>
           <Press onPress={snap} disabled={busy} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={styles.camera}>{icon('camera') && <Image source={icon('camera')} style={{ width: 34, height: 34, opacity: busy ? 0.5 : 1 }} />}</View>
+            <View style={styles.camera}>{busy ? <Sparkles size={22} color="#a3e635" /> : <Icon name="camera" size={36} />}</View>
             <View style={{ flex: 1 }}>
               <ThemedText type="smallBold" style={{ fontSize: 16 }}>{busy ? 'Estimating macros…' : 'Snap your meal'}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">AI estimates calories and macros from a photo</ThemedText>
@@ -150,7 +151,7 @@ export default function Eat() {
                     <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, fontVariant: ['tabular-nums'] }}>{f.kcal} kcal · P {f.p} · C {f.c} · F {f.f}</ThemedText>
                   </View>
                   <Press onPress={() => removeFood(f.id)} accessibilityLabel={`Remove ${f.name}`} style={{ padding: 6 }}>
-                    <X size={16} strokeWidth={1.75} color={Red} />
+                    <Trash2 size={16} color={theme.textSecondary} />
                   </Press>
                 </Animated.View>
               ))}
@@ -160,8 +161,11 @@ export default function Eat() {
 
         <ThemedText type="smallBold" style={{ fontSize: 16 }}>APU cafeteria</ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: -8, fontSize: 12 }}>Typical portions, estimated. Tap + to log.</ThemedText>
-        <TextInput value={q} onChangeText={setQ} placeholder="Search food…" placeholderTextColor={theme.textSecondary}
-          style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
+        <View style={{ justifyContent: 'center' }}>
+          <Input value={q} onChangeText={setQ} placeholder="Search food…" placeholderTextColor={theme.textSecondary}
+            style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
+          <Search size={16} color={theme.textSecondary} style={{ position: 'absolute', left: 11 }} pointerEvents="none" />
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
           {[ALL, HP, ...stalls].map((x) => {
             const on = pick === x, src = x === ALL ? icon('all') : x === HP ? icon('high-protein') : img(`/stalls/${slug(x)}.webp`);
@@ -209,17 +213,17 @@ export default function Eat() {
 
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 14 },
-  h1: { fontSize: 30, lineHeight: 36, fontWeight: '800', letterSpacing: -0.6 },
-  card: { borderRadius: 20, padding: 16 },
-  big: { fontSize: 30, lineHeight: 34, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  track: { borderRadius: 3, overflow: 'hidden', marginTop: 6 },
+  h1: { fontSize: 30, lineHeight: 36, fontWeight: '700', letterSpacing: -0.6 },
+  card: { borderRadius: 6, padding: 16 },
+  big: { fontSize: 30, lineHeight: 34, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  track: { borderRadius: 2, overflow: 'hidden', marginTop: 6 },
   camera: { width: 50, height: 50, borderRadius: 14, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center' },
-  guess: { borderRadius: 14, padding: 12, marginTop: 12 },
+  guess: { borderRadius: 5, padding: 12, marginTop: 12 },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  search: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 16 },
+  search: { borderRadius: 5, paddingLeft: 36, paddingRight: 12, paddingVertical: 11, fontSize: 16 },
   stall: { width: 56, height: 56, borderRadius: 16, overflow: 'hidden', borderWidth: 2, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center' },
   dish: { flexDirection: 'row', gap: 12, paddingVertical: 12 },
-  tag: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
+  tag: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 2, overflow: 'hidden' },
   plus: { width: 36, height: 36, borderRadius: 12, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' },
-  macro: { flex: 1, alignItems: 'center', borderRadius: 8, paddingVertical: 4 },
+  macro: { flex: 1, alignItems: 'center', borderRadius: 4, paddingVertical: 4 },
 });

@@ -3,7 +3,7 @@
 import { router } from 'expo-router';
 import { Check, ChevronDown } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, LinearTransition, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +18,7 @@ import WorkoutPill from '@/components/workout-pill';
 import { BottomTabInset, Lime, Spring } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore, type Profile } from '@/lib/store';
+import { Input } from '@/components/ui/input';
 
 type Standard = 'open' | 'p4p' | 'class';
 type Who = 'all' | 'faculty' | 'following' | 'followers' | 'friends';
@@ -185,9 +186,9 @@ export default function Ranks() {
                     <ThemedText style={styles.medal}>{['🥇', '🥈', '🥉'][place]}</ThemedText>
                     <ThemedText type="smallBold" numberOfLines={1} style={{ marginTop: 2 }}>{l.name}</ThemedText>
                   </Pressable>
-                  <ThemedText style={{ fontSize: 18, lineHeight: 22, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{show(l.score)}</ThemedText>
+                  <ThemedText style={{ fontSize: 18, lineHeight: 22, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{show(l.score)}</ThemedText>
                   <ThemedText themeColor="textSecondary" style={{ fontSize: 10 }}>{unitLabel || ' '}</ThemedText>
-                  <View style={{ height: first ? 56 : place === 1 ? 40 : 28, alignSelf: 'stretch', marginTop: 8, borderTopLeftRadius: 12, borderTopRightRadius: 12, backgroundColor: first ? 'rgba(251,191,36,0.2)' : place === 1 ? 'rgba(161,161,170,0.15)' : 'rgba(251,146,60,0.15)' }} />
+                  <View style={{ height: first ? 56 : place === 1 ? 40 : 28, alignSelf: 'stretch', marginTop: 8, borderTopLeftRadius: 5, borderTopRightRadius: 5, backgroundColor: first ? 'rgba(251,191,36,0.2)' : place === 1 ? 'rgba(161,161,170,0.15)' : 'rgba(251,146,60,0.15)' }} />
                 </View>
               );
             })}
@@ -201,7 +202,7 @@ export default function Ranks() {
               <ThemedText type="smallBold" style={{ fontSize: 16 }}>You&apos;re #{myRank + 1} of {rows.length}</ThemedText>
               <ThemedText themeColor="textSecondary" style={{ fontSize: 12 }}>{ahead ? `${show(Math.abs(ahead.score - rows[myRank].score))}${unitLabel === 'DOTS' ? ' DOTS' : ''} to pass ${ahead.name}` : 'Top of the board. Defend it 💪'}</ThemedText>
             </View>
-            <ThemedText style={{ fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{show(rows[myRank].score)}</ThemedText>
+            <ThemedText style={{ fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{show(rows[myRank].score)}</ThemedText>
           </View>
         ) : myValue && standard === 'class' ? (
           <ThemedText type="small" themeColor="textSecondary" style={card}>You compete in the {myClass} kg class ({me.sex === 'M' ? 'men' : 'women'}).</ThemedText>
@@ -212,7 +213,7 @@ export default function Ranks() {
             <Icon name={ev.icon} size={40} />
             <View style={{ flex: 1 }}>
               <ThemedText type="smallBold">{myValue ? `Your best: ${fmt(myValue)}` : `Log your ${ev.name.toLowerCase()}`}</ThemedText>
-              <TextInput value={draft} onChangeText={setDraft} placeholder={placeholder[ev.unit]} placeholderTextColor={theme.textSecondary}
+              <Input value={draft} onChangeText={setDraft} placeholder={placeholder[ev.unit]} placeholderTextColor={theme.textSecondary}
                 keyboardType={ev.unit === 'time' ? 'default' : 'decimal-pad'} style={[styles.input, { backgroundColor: theme.backgroundSelected, color: theme.text }]} />
             </View>
             <Button onPress={save} disabled={saving || !parseResult(draft, ev.unit)} style={{ paddingVertical: 9, alignSelf: 'flex-end' }}>{saving ? '…' : 'Save'}</Button>
@@ -242,7 +243,7 @@ export default function Ranks() {
                 </View>
               </Pressable>
               <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                <ThemedText style={{ fontSize: 18, lineHeight: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{show(l.score)}</ThemedText>
+                <ThemedText style={{ fontSize: 18, lineHeight: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{show(l.score)}</ThemedText>
                 {isReal(l.id) && <FollowButton id={l.id} name={l.name} />}
               </View>
             </Animated.View>
@@ -277,18 +278,18 @@ const styles = StyleSheet.create({
   bleed: { marginHorizontal: -16, flexGrow: 0 },
   tabRow: { borderBottomWidth: StyleSheet.hairlineWidth },
   tab: { paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  event: { width: 84, alignItems: 'center', gap: 4, borderRadius: 16, padding: 8, borderWidth: 2 },
-  segment: { flexDirection: 'row', borderRadius: 16, padding: 4, gap: 4 },
-  segBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 6, borderRadius: 12 },
+  event: { width: 84, alignItems: 'center', gap: 4, borderRadius: 6, padding: 8, borderWidth: 2 },
+  segment: { flexDirection: 'row', borderRadius: 6, padding: 4, gap: 4 },
+  segBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 6, borderRadius: 5 },
   who: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 4, paddingBottom: 8 },
-  chip: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 },
+  chip: { borderRadius: 4, paddingHorizontal: 12, paddingVertical: 7 },
   card: { marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   podium: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingTop: 24, paddingBottom: 0 },
   medal: { fontSize: 20, lineHeight: 24, marginTop: -12 },
   rowCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 4, paddingVertical: 2, paddingLeft: 4, paddingRight: 8 },
-  input: { marginTop: 4, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 16 },
+  stat: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 2, paddingVertical: 2, paddingLeft: 4, paddingRight: 8 },
+  input: { marginTop: 4, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 8, fontSize: 16 },
   scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  menu: { width: '100%', maxWidth: 300, borderRadius: 18, paddingVertical: 6 },
+  menu: { width: '100%', maxWidth: 300, borderRadius: 6, paddingVertical: 6 },
   menuRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
 });

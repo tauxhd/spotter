@@ -22,7 +22,7 @@ function Big({ icon, value, label }: { icon: string; value: string | number; lab
   return (
     <View style={{ width: '50%', flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
       <Icon name={icon} size={40} />
-      <View><ThemedText style={{ fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{value}</ThemedText><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{label}</ThemedText></View>
+      <View><ThemedText style={{ fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{value}</ThemedText><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{label}</ThemedText></View>
     </View>
   );
 }
@@ -81,13 +81,13 @@ export default function GymStats() {
       <Stack.Screen options={{ title: own ? 'Your gym stats' : `${p.name}'s stats` }} />
       <Section>
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.kicker}>THIS WEEK</ThemedText>
-        <ThemedText style={{ fontSize: 30, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{week.length} <ThemedText themeColor="textSecondary" style={{ fontSize: 16 }}>workout{week.length === 1 ? '' : 's'}</ThemedText></ThemedText>
+        <ThemedText style={{ fontSize: 30, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{week.length} <ThemedText themeColor="textSecondary" style={{ fontSize: 16 }}>workout{week.length === 1 ? '' : 's'}</ThemedText></ThemedText>
         <ThemedText type="small" themeColor="textSecondary">{Math.round(week.reduce((n, x) => n + x.volume, 0)).toLocaleString()} kg · {hrs(week.reduce((n, x) => n + (x.duration ?? 0), 0))} trained</ThemedText>
         <View style={styles.weeks}>
           {perWeek.map((w, i) => (
             <View key={w.start} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
               <ThemedText style={{ fontSize: 10, fontWeight: '700' }}>{w.n || ' '}</ThemedText>
-              <View style={{ width: '100%', height: Math.max(4, (w.n / maxWeek) * 64), borderRadius: 6, backgroundColor: i === WEEKS - 1 ? Lime : theme.backgroundSelected }} />
+              <View style={{ width: '100%', height: Math.max(4, (w.n / maxWeek) * 64), borderRadius: 3, backgroundColor: i === WEEKS - 1 ? Lime : theme.backgroundSelected }} />
               <ThemedText themeColor="textSecondary" style={{ fontSize: 9 }}>{new Date(w.start).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}</ThemedText>
             </View>
           ))}
@@ -110,7 +110,7 @@ export default function GymStats() {
             {([['squat', 'Squat', lifts.squat], ['bench', 'Bench', lifts.bench], ['deadlift', 'Deadlift', lifts.deadlift], ['ranks', 'Total', sbd]] as const).map(([ic, k, v]) => (
               <View key={k} style={{ flex: 1, alignItems: 'center' }}>
                 <Icon name={ic} size={44} />
-                <ThemedText style={{ fontSize: 18, fontWeight: '800', marginTop: 6, fontVariant: ['tabular-nums'] }}>{Math.round(v * 10) / 10}</ThemedText>
+                <ThemedText style={{ fontSize: 18, fontWeight: '700', marginTop: 6, fontVariant: ['tabular-nums'] }}>{Math.round(v * 10) / 10}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{k} kg</ThemedText>
               </View>
             ))}
@@ -148,7 +148,7 @@ export default function GymStats() {
             {([['qr', monthVisits.length, 'This month'], ['stopwatch', avgVisit ? hrs(avgVisit) : '–', 'Avg visit'], ['bell', favHour !== undefined ? `${favHour.padStart(2, '0')}:00` : '–', 'Usual time']] as const).map(([ic, v, k]) => (
               <View key={k} style={{ flex: 1, alignItems: 'center' }}>
                 <Icon name={ic} size={40} />
-                <ThemedText style={{ fontSize: 18, fontWeight: '800', marginTop: 6 }}>{v}</ThemedText>
+                <ThemedText style={{ fontSize: 18, fontWeight: '700', marginTop: 6 }}>{v}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{k}</ThemedText>
               </View>
             ))}

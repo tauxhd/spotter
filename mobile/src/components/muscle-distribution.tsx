@@ -84,7 +84,7 @@ export default function MuscleDistribution({ logs }: { logs: Log[] }) {
           return (
             <View key={k} style={{ width: '50%' }}>
               <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{k}</ThemedText>
-              <ThemedText style={{ fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{f(v)}</ThemedText>
+              <ThemedText style={{ fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{f(v)}</ThemedText>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                 {d > 0 ? <ArrowUp size={12} color={Lime} /> : d < 0 ? <ArrowDown size={12} color={Red} /> : null}
                 <ThemedText type="smallBold" style={{ fontSize: 12, color: d > 0 ? Lime : d < 0 ? Red : theme.textSecondary }}>{d === 0 ? 'Same as before' : f(Math.abs(d))}</ThemedText>

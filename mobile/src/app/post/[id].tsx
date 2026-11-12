@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Heart, MessageCircle, SendHorizontal, Share2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 import { addSets, findExercise, lifters, oldNames, setTypes } from '@shared/data';
@@ -18,6 +18,7 @@ import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { setTypeColor, supersetHex } from '@/lib/tw';
+import { Input } from '@/components/ui/input';
 
 const dur = (m?: number | null) => (!m ? '—' : m < 60 ? `${m}min` : `${Math.floor(m / 60)}h ${m % 60}min`);
 
@@ -25,7 +26,7 @@ function Grow({ pct, i }: { pct: number; i: number }) {
   const w = useSharedValue(0);
   useEffect(() => { w.set(withDelay(80 + i * 60, withTiming(pct, { duration: 700, easing: Easing.bezier(0.65, 0, 0.35, 1) }))); }, [pct, i, w]);
   const anim = useAnimatedStyle(() => ({ width: `${w.value}%` }));
-  return <Animated.View style={[{ height: '100%', borderRadius: 3, backgroundColor: Lime }, anim]} />;
+  return <Animated.View style={[{ height: '100%', borderRadius: 2, backgroundColor: Lime }, anim]} />;
 }
 function Video({ url }: { url: string }) {
   const player = useVideoPlayer(url, (p) => { p.loop = true; p.muted = true; });
@@ -77,7 +78,7 @@ export default function PostPage() {
           </Pressable>
           <FollowButton id={p.uid} name={p.by} />
         </View>
-        <ThemedText style={{ fontSize: 24, fontWeight: '800', lineHeight: 30 }}>{p.title}</ThemedText>
+        <ThemedText style={{ fontSize: 24, fontWeight: '700', lineHeight: 30 }}>{p.title}</ThemedText>
         {!!p.note && <ThemedText type="small">{p.note}</ThemedText>}
         {p.media && <View style={{ marginHorizontal: -16 }}>{p.media.type === 'video' ? <Video url={p.media.url} /> : <Image source={{ uri: p.media.url }} style={styles.media} contentFit="cover" />}</View>}
         <View style={{ flexDirection: 'row' }}>
@@ -123,13 +124,13 @@ export default function PostPage() {
                 {ex && <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, textTransform: 'capitalize' }}>{ex.muscle} · {ex.equipment}</ThemedText>}
               </View>
             </View>
-            <View style={{ marginTop: 8, borderRadius: 12, overflow: 'hidden' }}>
+            <View style={{ marginTop: 8, borderRadius: 5, overflow: 'hidden' }}>
               <View style={styles.setRow}><ThemedText style={[styles.colHead, { width: 48 }]}>SET</ThemedText><ThemedText style={styles.colHead}>{log.some((x) => x.secs !== undefined) ? (log.some((x) => x.kg) ? 'WEIGHT & TIME' : 'TIME') : log.some((x) => x.kg) ? 'WEIGHT & REPS' : 'REPS'}</ThemedText></View>
               {log.length ? log.map((x, i) => (
                 <View key={i} style={[styles.setRow, i % 2 ? null : { backgroundColor: theme.backgroundElement }]}>
                   <ThemedText type="smallBold" style={{ width: 48, color: setTypeColor(x.type) ?? theme.text }}>{labels[i]}</ThemedText>
                   <ThemedText type="small" style={{ fontVariant: ['tabular-nums'] }}>{x.secs !== undefined ? (x.kg ? `${x.kg} kg × ${mmss(x.secs)}` : mmss(x.secs)) : x.kg ? `${x.kg} kg × ${x.reps}` : `${x.reps} reps`}</ThemedText>
-                  {pr && i === top && <View style={styles.prTag}><Icon name="medal" size={12} /><ThemedText style={{ fontSize: 11, fontWeight: '800', color: '#f59e0b' }}>1RM</ThemedText></View>}
+                  {pr && i === top && <View style={styles.prTag}><Icon name="medal" size={12} /><ThemedText style={{ fontSize: 11, fontWeight: '700', color: '#f59e0b' }}>1RM</ThemedText></View>}
                 </View>
               )) : <View style={[styles.setRow, { backgroundColor: theme.backgroundElement }]}><ThemedText themeColor="textSecondary" style={{ width: 48 }}>—</ThemedText><ThemedText type="small">Best {e.best}</ThemedText></View>}
             </View>
@@ -149,7 +150,7 @@ export default function PostPage() {
         {p.comments.length === 0 && <EmptyState art="comments" size={96} title="No comments yet" text="Hype them up 💪" />}
         {p.comments.map((c, i) => <ThemedText key={i} type="small"><ThemedText type="smallBold">{c.by}</ThemedText> {c.text}</ThemedText>)}
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TextInput value={draft} onChangeText={setDraft} placeholder={`Comment as ${me.name}…`} placeholderTextColor={theme.textSecondary} onSubmitEditing={send} returnKeyType="send"
+          <Input value={draft} onChangeText={setDraft} placeholder={`Comment as ${me.name}…`} placeholderTextColor={theme.textSecondary} onSubmitEditing={send} returnKeyType="send"
             style={[styles.input, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
           <Press onPress={send} disabled={!draft.trim()} style={[styles.send, { opacity: draft.trim() ? 1 : 0.4 }]} accessibilityLabel="Post comment"><SendHorizontal size={16} color="#09090b" /></Press>
         </View>
@@ -162,12 +163,12 @@ const styles = StyleSheet.create({
   media: { width: '100%', aspectRatio: 4 / 5, backgroundColor: '#000' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 20, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 12 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  h3: { fontSize: 18, fontWeight: '800' },
-  track: { flex: 1, height: 12, borderRadius: 3, overflow: 'hidden' },
-  tag: { alignSelf: 'flex-start', fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: '#09090b', paddingHorizontal: 7, borderRadius: 4, overflow: 'hidden', marginBottom: 2 },
+  h3: { fontSize: 18, fontWeight: '700' },
+  track: { flex: 1, height: 12, borderRadius: 2, overflow: 'hidden' },
+  tag: { alignSelf: 'flex-start', fontSize: 10, fontWeight: '700', letterSpacing: 0.5, color: '#09090b', paddingHorizontal: 7, borderRadius: 2, overflow: 'hidden', marginBottom: 2 },
   setRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10 },
   colHead: { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#a1a1aa' },
-  prTag: { flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 8, backgroundColor: 'rgba(251,191,36,0.15)', borderRadius: 4, paddingHorizontal: 6 },
-  input: { flex: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 16 },
-  send: { width: 42, borderRadius: 12, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' },
+  prTag: { flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 8, backgroundColor: 'rgba(251,191,36,0.15)', borderRadius: 2, paddingHorizontal: 6 },
+  input: { flex: 1, borderRadius: 5, paddingHorizontal: 12, paddingVertical: 9, fontSize: 16 },
+  send: { width: 42, borderRadius: 5, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' },
 });

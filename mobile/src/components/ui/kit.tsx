@@ -95,6 +95,6 @@ export function Bone({ w, h, r = 6, style }: { w: number | `${number}%`; h: numb
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 26, lineHeight: 32, fontWeight: '800', letterSpacing: -0.5 },
+  title: { fontSize: 26, lineHeight: 32, fontWeight: '700', letterSpacing: -0.5 },
   section: { marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth },
 });

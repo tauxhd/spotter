@@ -1,7 +1,7 @@
 // Social-style profile (the website's ProfileView): photo, Workouts / Followers / Following, bio, follow or edit, share,
 // then every workout they've posted that you're allowed to see. Used by /u/[id] and /me.
 import { router, Stack } from 'expo-router';
-import { Share2 } from 'lucide-react-native';
+import { Share2, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -62,7 +62,7 @@ export default function ProfileView({ userId }: { userId: string }) {
 
   const stat = (n: number | undefined, label: string, onPress?: () => void) => (
     <Pressable onPress={onPress} disabled={!onPress} style={{ flex: 1, alignItems: 'center' }}>
-      <ThemedText style={{ fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{n ?? '–'}</ThemedText>
+      <ThemedText style={{ fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{n ?? '–'}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{label}</ThemedText>
     </Pressable>
   );
@@ -87,7 +87,7 @@ export default function ProfileView({ userId }: { userId: string }) {
             {stat(stats?.following, 'Following', demo ? undefined : () => openList('following'))}
           </View>
         </View>
-        <ThemedText style={{ fontSize: 18, fontWeight: '800', marginTop: 12 }}>{p.name}</ThemedText>
+        <ThemedText style={{ fontSize: 18, fontWeight: '700', marginTop: 12 }}>{p.name}</ThemedText>
         <ThemedText type="small">
           {p.tp ? <><ThemedText type="smallBold">{p.tp}</ThemedText><ThemedText type="small" themeColor="textSecondary"> · </ThemedText></> : null}
           <ThemedText type="small" themeColor="textSecondary">{p.course || p.faculty}</ThemedText>
@@ -116,8 +116,8 @@ export default function ProfileView({ userId }: { userId: string }) {
       <Modal visible={!!list} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setList(null)}>
         <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
           <View style={styles.sheetHead}>
-            <ThemedText style={{ fontSize: 22, fontWeight: '800' }}>{list?.kind === 'followers' ? 'Followers' : 'Following'}</ThemedText>
-            <Press onPress={() => setList(null)} style={[styles.close, { backgroundColor: theme.backgroundElement }]}><ThemedText type="smallBold">Done</ThemedText></Press>
+            <ThemedText style={{ fontSize: 22, fontWeight: '700' }}>{list?.kind === 'followers' ? 'Followers' : 'Following'}</ThemedText>
+            <Pressable onPress={() => setList(null)} hitSlop={8} accessibilityLabel="Close" style={{ padding: 4 }}><X size={18} color={theme.textSecondary} /></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ paddingHorizontal: 16 }}>
             {list?.people === null && <View style={{ gap: 12 }}>{[0, 1, 2].map((i) => <Bone key={i} w="100%" h={44} />)}</View>}
@@ -142,11 +142,11 @@ export default function ProfileView({ userId }: { userId: string }) {
 const styles = StyleSheet.create({
   head: { marginHorizontal: -16, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 20, borderBottomWidth: StyleSheet.hairlineWidth },
   half: { flex: 1, paddingVertical: 10 },
-  note: { borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  share: { borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  note: { borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
+  share: { borderRadius: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   headBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  statsLink: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, marginTop: 8 },
+  statsLink: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 5, paddingHorizontal: 14, paddingVertical: 10, marginTop: 8 },
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  close: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  close: { borderRadius: 5, paddingHorizontal: 14, paddingVertical: 8 },
   person: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
 });

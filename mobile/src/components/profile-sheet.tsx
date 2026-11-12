@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'lucide-react-native';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { faculties } from '@shared/data';
@@ -15,6 +15,7 @@ import { Icon } from '@/components/ui/kit';
 import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
+import { Input } from '@/components/ui/input';
 
 const lifts = [['bw', 'Body', 'scale'], ['squat', 'Squat', 'squat'], ['bench', 'Bench', 'bench'], ['deadlift', 'Deadlift', 'deadlift']] as const;
 const round = (n: number) => String(Math.round(n * 10) / 10);
@@ -78,9 +79,9 @@ export default function ProfileSheet({ open, onClose }: { open: boolean; onClose
             </Pressable>
 
             <ThemedText type="smallBold" style={styles.label}>Name</ThemedText>
-            <TextInput value={name} onChangeText={setName} style={input} />
+            <Input value={name} onChangeText={setName} style={input} />
             <ThemedText type="smallBold" style={styles.label}>Bio</ThemedText>
-            <TextInput value={bio} onChangeText={setBio} multiline maxLength={150} placeholder="Goals, split, PRs you're chasing…" placeholderTextColor={theme.textSecondary} style={[input, { minHeight: 84, textAlignVertical: 'top' }]} />
+            <Input value={bio} onChangeText={setBio} multiline maxLength={150} placeholder="Goals, split, PRs you're chasing…" placeholderTextColor={theme.textSecondary} style={[input, { minHeight: 84, textAlignVertical: 'top' }]} />
             <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, textAlign: 'right', marginTop: 4, color: bio.length > 135 ? '#f59e0b' : theme.textSecondary }}>{bio.length}/150</ThemedText>
 
             <ThemedText type="smallBold" style={styles.label}>Faculty</ThemedText>
@@ -92,7 +93,7 @@ export default function ProfileSheet({ open, onClose }: { open: boolean; onClose
               ))}
             </View>
             <ThemedText type="smallBold" style={styles.label}>APU intake code</ThemedText>
-            <TextInput value={intake} onChangeText={setIntake} autoCapitalize="characters" placeholder="e.g. APD2F2409CS" placeholderTextColor={theme.textSecondary} style={input} />
+            <Input value={intake} onChangeText={setIntake} autoCapitalize="characters" placeholder="e.g. APD2F2409CS" placeholderTextColor={theme.textSecondary} style={input} />
             <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: 6, fontSize: 12 }}>Used to find your free hours between classes on the Gym tab.</ThemedText>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 10 }}>
@@ -110,7 +111,7 @@ export default function ProfileSheet({ open, onClose }: { open: boolean; onClose
                 <View key={k} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
                   <Icon name={ic} size={36} />
                   <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{label}</ThemedText>
-                  <TextInput value={kg[k]} onChangeText={(v) => setKg((x) => ({ ...x, [k]: v }))} keyboardType="decimal-pad" selectTextOnFocus
+                  <Input value={kg[k]} onChangeText={(v) => setKg((x) => ({ ...x, [k]: v }))} keyboardType="decimal-pad" selectTextOnFocus
                     style={[input, { width: '100%', textAlign: 'center', paddingHorizontal: 4 }]} />
                 </View>
               ))}
@@ -127,13 +128,13 @@ export default function ProfileSheet({ open, onClose }: { open: boolean; onClose
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 4 },
-  h1: { fontSize: 26, lineHeight: 32, fontWeight: '800', letterSpacing: -0.5 },
-  close: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  h1: { fontSize: 26, lineHeight: 32, fontWeight: '700', letterSpacing: -0.5 },
+  close: { borderRadius: 5, paddingHorizontal: 14, paddingVertical: 8 },
   label: { marginTop: 18, marginBottom: 8 },
-  input: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
+  input: { borderRadius: 5, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  chip: { borderRadius: 5, paddingHorizontal: 12, paddingVertical: 8 },
   cam: { position: 'absolute', right: -4, bottom: -4, width: 36, height: 36, borderRadius: 18, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center', borderWidth: 4 },
-  seg: { flexDirection: 'row', borderRadius: 8, padding: 2 },
-  segBtn: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6 },
+  seg: { flexDirection: 'row', borderRadius: 4, padding: 2 },
+  segBtn: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 3 },
 });

@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { BookmarkCheck, BookmarkPlus, Check, Clock, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { Alert, Dimensions, Modal, Platform, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { Alert, Dimensions, Modal, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import Animated, { FadeIn, FadeInDown, FadeOut, FadeOutDown, LinearTransition, useAnimatedStyle, useSharedValue, withSpring, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { setTypeColor, supersetHex } from '@/lib/tw';
 import { art } from '@/lib/art';
+import { Input } from '@/components/ui/input';
 
 const REST_KEY = 'spotter:rest', REST_ON_KEY = 'spotter:rest-on'; // same keys as the website
 const store = typeof localStorage !== 'undefined' ? localStorage : undefined;
@@ -354,14 +355,14 @@ function Workout() {
                             <ThemedText type="smallBold" style={{ color: setTypeColor(st.type) ?? theme.text }}>{labels[j]}</ThemedText>
                             {pr && <Animated.View entering={ZoomIn.springify().dampingRatio(0.8)}><Icon name="trophy" size={16} /></Animated.View>}
                           </Pressable>
-                          <TextInput value={st.kg ? String(st.kg) : ''} placeholder="0" placeholderTextColor={theme.textSecondary} keyboardType="decimal-pad" selectTextOnFocus
+                          <Input value={st.kg ? String(st.kg) : ''} placeholder="0" placeholderTextColor={theme.textSecondary} keyboardType="decimal-pad" selectTextOnFocus
                             onChangeText={(v) => edit((x) => { x[i].sets[j].kg = Math.max(0, Number(v.replace(',', '.')) || 0); })}
                             style={[styles.cNum, styles.num, { color: theme.text, backgroundColor: numBg }]} />
                           {timed ? (
                             <>
                               {running
                                 ? <ThemedText style={[styles.cNum, styles.num, { color: Lime, borderWidth: 2, borderColor: Lime, textAlignVertical: 'center', paddingVertical: 6 }]}>{mmss(hold.target ? Math.max(0, hold.target - heldSecs) : heldSecs)}</ThemedText>
-                                : <TextInput key={`${j}-${st.secs}`} defaultValue={mmss(st.secs ?? 0)} selectTextOnFocus
+                                : <Input key={`${j}-${st.secs}`} defaultValue={mmss(st.secs ?? 0)} selectTextOnFocus
                                     onEndEditing={(e) => { const v = parseResult(e.nativeEvent.text, 'time'); edit((x) => { x[i].sets[j].secs = v ?? 0; }); }}
                                     style={[styles.cNum, styles.num, { color: theme.text, backgroundColor: numBg }]} />}
                               <Press onPress={() => (running ? stopHold() : startHold(i, j))} disabled={!!hold && !running} haptic={false} scaleTo={0.88}
@@ -372,7 +373,7 @@ function Workout() {
                             </>
                           ) : (
                             <>
-                              <TextInput value={String(st.reps)} keyboardType="number-pad" selectTextOnFocus
+                              <Input value={String(st.reps)} keyboardType="number-pad" selectTextOnFocus
                                 onChangeText={(v) => edit((x) => { x[i].sets[j].reps = Number(v.replace(/\D/g, '')) || 0; })}
                                 style={[styles.cNum, styles.num, { color: theme.text, backgroundColor: numBg }]} />
                               <ThemedText style={[styles.cOrm, { fontSize: 12, fontWeight: '700', color: st.done ? theme.text : '#52525b', fontVariant: ['tabular-nums'] }]}>{max > 0 ? `${added ? '+' : ''}${Math.round(max)}` : '–'}</ThemedText>
@@ -425,7 +426,7 @@ function Workout() {
               </View>
               <View style={[styles.clockBox, { backgroundColor: theme.backgroundSelected }]}>
                 <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Workout time</ThemedText>
-                <ThemedText style={{ fontSize: 30, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{hhmmss(elapsed)}</ThemedText>
+                <ThemedText style={{ fontSize: 30, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{hhmmss(elapsed)}</ThemedText>
               </View>
               <View style={styles.trow}>
                 <ThemedText type="smallBold" style={{ flex: 1 }}>Started at</ThemedText>
@@ -473,19 +474,19 @@ function Stepper({ label, onMinus, onPlus }: { label: string; onMinus: () => voi
 }
 
 const styles = StyleSheet.create({
-  bigBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Lime, borderRadius: 14, paddingVertical: 14 },
-  ghostSm: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7 },
+  bigBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Lime, borderRadius: 5, paddingVertical: 14 },
+  ghostSm: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 5, paddingHorizontal: 12, paddingVertical: 7 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  timer: { fontSize: 30, lineHeight: 36, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  timer: { fontSize: 30, lineHeight: 36, fontWeight: '700', fontVariant: ['tabular-nums'] },
   iconBtn: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   card: { marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, backgroundColor: 'transparent' },
-  collapsed: { height: CH, borderRadius: 14, paddingHorizontal: 12, justifyContent: 'center' },
+  collapsed: { height: CH, borderRadius: 5, paddingHorizontal: 12, justifyContent: 'center' },
   held: { zIndex: 10, borderWidth: 1, borderColor: Lime, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 12 },
-  ssTag: { position: 'absolute', top: -8, left: 12, fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: '#09090b', paddingHorizontal: 8, paddingVertical: 1, borderRadius: 4, overflow: 'hidden' },
+  ssTag: { position: 'absolute', top: -8, left: 12, fontSize: 10, fontWeight: '700', letterSpacing: 0.5, color: '#09090b', paddingHorizontal: 8, paddingVertical: 1, borderRadius: 2, overflow: 'hidden' },
   smallAction: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, alignSelf: 'flex-start' },
-  eq: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4, maxWidth: 130 },
+  eq: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 2, paddingHorizontal: 8, paddingVertical: 4, maxWidth: 130 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  setRow: { borderRadius: 8, paddingVertical: 4, paddingHorizontal: 6, marginHorizontal: -6 },
+  setRow: { borderRadius: 4, paddingVertical: 4, paddingHorizontal: 6, marginHorizontal: -6 },
   doneRow: { backgroundColor: 'rgba(132,204,22,0.2)' },
   prRow: { backgroundColor: 'rgba(251,191,36,0.2)', borderWidth: 1, borderColor: 'rgba(251,191,36,0.5)' },
   colHead: { fontSize: 12, color: '#a1a1aa', textAlign: 'center' },
@@ -495,16 +496,16 @@ const styles = StyleSheet.create({
   cPlay: { width: 40 },
   cTick: { width: 40 },
   cX: { width: 24 },
-  num: { borderRadius: 8, paddingVertical: 8, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  tick: { height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  num: { borderRadius: 4, paddingVertical: 8, fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  tick: { height: 36, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   addSet: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, alignSelf: 'flex-start' },
-  addEx: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginTop: 16 },
+  addEx: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 5, paddingVertical: 14, marginTop: 16 },
   restBar: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#27272a', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
-  restBtn: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
-  restTime: { color: '#fff', fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'], minWidth: 52, textAlign: 'center' },
+  restBtn: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 5 },
+  restTime: { color: '#fff', fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'], minWidth: 52, textAlign: 'center' },
   scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 16 },
-  dialog: { width: '100%', maxWidth: 380, borderRadius: 24, padding: 16 },
-  clockBox: { borderRadius: 12, padding: 12, alignItems: 'center' },
+  dialog: { width: '100%', maxWidth: 380, borderRadius: 8, padding: 16 },
+  clockBox: { borderRadius: 5, padding: 12, alignItems: 'center' },
   trow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   step: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 });

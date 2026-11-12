@@ -35,7 +35,7 @@ function GrowBar({ pct, i }: { pct: number; i: number }) {
   const w = useSharedValue(0);
   useEffect(() => { w.set(withDelay(80 + i * 60, withTiming(pct, { duration: 700, easing: Easing.bezier(0.65, 0, 0.35, 1) }))); }, [pct, i, w]);
   const anim = useAnimatedStyle(() => ({ width: `${w.value}%` }));
-  return <Animated.View style={[{ height: 8, borderRadius: 4, backgroundColor: Lime }, anim]} />;
+  return <Animated.View style={[{ height: 8, borderRadius: 2, backgroundColor: Lime }, anim]} />;
 }
 
 export default function MusclesSheet({ open, onClose, hit, areas, ranked }: { open: boolean; onClose: () => void; hit: Record<string, number>; areas: Record<string, number>; ranked: [string, number][] }) {
@@ -75,7 +75,7 @@ export default function MusclesSheet({ open, onClose, hit, areas, ranked }: { op
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 4 },
-  h1: { fontSize: 22, lineHeight: 28, fontWeight: '800' },
+  h1: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 6 },
   dot: { height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(161,161,170,0.5)' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },

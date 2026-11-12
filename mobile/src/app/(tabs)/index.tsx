@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { classes as sample, crowdAt, crowdByHour, fmt, gym, minsOf, toMin } from '@shared/data';
 import { gaps } from '@shared/lifting';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, Dumbbell, LogIn, LogOut, QrCode } from 'lucide-react-native';
 import Avatar from '@/components/avatar';
 import { Icon, Section } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
@@ -43,7 +43,7 @@ function Bar({ pct, color, height = 8, delay = 0 }: { pct: number; color: string
   const w = useSharedValue(0);
   useEffect(() => { w.set(withDelay(delay, withTiming(pct, { duration: 700, easing: easeInOut }))); }, [pct, delay, w]);
   const anim = useAnimatedStyle(() => ({ width: `${w.value}%` }));
-  return <Animated.View style={[{ height, borderRadius: 4, backgroundColor: color }, anim]} />;
+  return <Animated.View style={[{ height, borderRadius: 2, backgroundColor: color }, anim]} />;
 }
 
 function HourBar({ p, now, i }: { p: number; now: boolean; i: number }) {
@@ -51,7 +51,7 @@ function HourBar({ p, now, i }: { p: number; now: boolean; i: number }) {
   const h = useSharedValue(0);
   useEffect(() => { h.set(withDelay(i * 30, withTiming(Math.max(p, 4) * 0.5, { duration: 700, easing: easeInOut }))); }, [p, i, h]);
   const anim = useAnimatedStyle(() => ({ height: h.value }));
-  return <Animated.View style={[{ width: '100%', borderRadius: 3, backgroundColor: now ? level(p).color : theme.backgroundSelected }, anim]} />;
+  return <Animated.View style={[{ width: '100%', borderRadius: 2, backgroundColor: now ? level(p).color : theme.backgroundSelected }, anim]} />;
 }
 
 export default function GymHome() {
@@ -120,13 +120,13 @@ export default function GymHome() {
             <ThemedText type="small" style={{ color: '#09090b', opacity: 0.8 }}>since {new Date(clockedIn).toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit' })} · {me.name}</ThemedText>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
               <Press onPress={() => router.navigate('/train')} style={[styles.dark, { flex: 1 }]}>
-                <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 15 }}>{s.active ? 'Resume workout' : 'Start workout'}</ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Dumbbell size={18} color="#fff" /><ThemedText type="smallBold" style={{ color: '#fff', fontSize: 16 }}>{s.active ? 'Resume workout' : 'Start workout'}</ThemedText></View>
               </Press>
-              <Press onPress={clockOut} style={styles.out}><ThemedText type="smallBold" style={{ color: '#09090b' }}>Out</ThemedText></Press>
+              <Press onPress={clockOut} style={styles.out}><LogOut size={18} color="#09090b" /><ThemedText type="smallBold" style={{ color: '#09090b', fontSize: 16 }}>Out</ThemedText></Press>
             </View>
           </Animated.View>
         ) : (
-          <Animated.View entering={FadeIn.duration(250)} style={[styles.clock, { backgroundColor: '#18181b' }]}>
+          <Animated.View entering={FadeIn.duration(250)} style={[styles.clock, { backgroundColor: '#27272a' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{ flex: 1 }}>
                 <ThemedText type="smallBold" style={[styles.kicker, { color: '#a1a1aa' }]}>SKIP THE ID CHECK AT THE COUNTER</ThemedText>
@@ -135,7 +135,10 @@ export default function GymHome() {
               {icon('qr') && <Image source={icon('qr')} style={{ width: 60, height: 60, opacity: scanning ? 0.5 : 1 }} />}
             </View>
             <Button onPress={scan} disabled={!open || scanning} style={{ marginTop: 14 }}>
-              {scanning ? 'Scanning…' : open ? 'Scan to clock in' : 'Gym is closed'}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {scanning ? <QrCode size={18} color="#09090b" /> : <LogIn size={18} color="#09090b" />}
+                <ThemedText style={{ color: '#09090b', fontWeight: '600' }}>{scanning ? 'Scanning…' : open ? 'Scan to clock in' : 'Gym is closed'}</ThemedText>
+              </View>
             </Button>
           </Animated.View>
         )}
@@ -147,7 +150,7 @@ export default function GymHome() {
             <View style={styles.live}><View style={styles.dot} /><ThemedText type="smallBold" style={{ fontSize: 11, color: Lime }}>LIVE</ThemedText></View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
-            <ThemedText style={styles.big2}>{people}</ThemedText>
+            <ThemedText style={[styles.big2, { fontSize: 30, lineHeight: 36 }]}>{people}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">/ {gym.capacity} people</ThemedText>
             <ThemedText type="smallBold" style={{ marginLeft: 'auto', color: open ? lv.color : theme.textSecondary }}>{open ? lv.label : 'Closed'}</ThemedText>
           </View>
@@ -231,21 +234,21 @@ const styles = StyleSheet.create({
   page: { padding: 16, gap: 14 },
   mapRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
   header: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  h1: { fontSize: 22, lineHeight: 28, fontWeight: '800', letterSpacing: -0.6 },
-  pill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 4 },
-  clock: { borderRadius: 20, padding: 18 },
+  h1: { fontSize: 24, lineHeight: 30, fontWeight: '700', letterSpacing: -0.6 },
+  pill: { borderRadius: 4, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 4 },
+  clock: { borderRadius: 6, padding: 19 },
   kicker: { fontSize: 11, letterSpacing: 1, color: '#09090b', opacity: 0.75 },
-  big: { fontSize: 32, lineHeight: 38, fontWeight: '800', color: '#09090b', fontVariant: ['tabular-nums'], marginTop: 2 },
-  big2: { fontSize: 26, lineHeight: 32, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  dark: { backgroundColor: '#09090b', borderRadius: 14, paddingVertical: 13, alignItems: 'center' },
-  out: { backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 14, paddingHorizontal: 18, justifyContent: 'center' },
-  card: { borderRadius: 20, padding: 16 },
+  big: { fontSize: 32, lineHeight: 38, fontWeight: '700', color: '#09090b', fontVariant: ['tabular-nums'], marginTop: 2 },
+  big2: { fontSize: 24, lineHeight: 30, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  dark: { backgroundColor: '#09090b', borderRadius: 5, paddingVertical: 11, alignItems: 'center' },
+  out: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 5, paddingHorizontal: 18, justifyContent: 'center' },
+  card: { borderRadius: 6, padding: 16 },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   live: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Lime },
-  track: { height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 8 },
+  track: { height: 8, borderRadius: 2, overflow: 'hidden', marginTop: 8 },
   hours: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 70, marginTop: 14, marginBottom: 4 },
   hour: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 3 },
-  friends: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, padding: 10, marginTop: 12, backgroundColor: 'rgba(163,230,53,0.1)' },
+  friends: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 5, padding: 10, marginTop: 12, backgroundColor: 'rgba(163,230,53,0.1)' },
   classes: { marginTop: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, gap: 4 },
 });

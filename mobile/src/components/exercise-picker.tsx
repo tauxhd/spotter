@@ -1,8 +1,9 @@
 // Add exercise: a native page sheet (slides up, swipe down to close on iOS) with search, muscle and equipment filters.
 // Same filters as the website's picker (shared from lib/muscles).
+import { Plus, Search, Slash, X } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { Exercise } from '@shared/data';
@@ -15,6 +16,8 @@ import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { img } from '@/lib/web';
+import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/kit';
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -34,18 +37,21 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
         <View style={styles.head}>
           <ThemedText style={styles.h1}>Add exercise</ThemedText>
           <Press onPress={onClose} style={[styles.close, { backgroundColor: theme.backgroundElement }]} accessibilityLabel="Close">
-            <ThemedText type="smallBold">Done</ThemedText>
+            <X size={18} color={theme.text} />
           </Press>
         </View>
-        <TextInput value={q} onChangeText={setQ} placeholder="Search exercises…" placeholderTextColor={theme.textSecondary} autoCorrect={false}
-          style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
+        <View style={{ justifyContent: 'center' }}>
+          <Input value={q} onChangeText={setQ} placeholder="Search exercises…" placeholderTextColor={theme.textSecondary} autoCorrect={false}
+            style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
+          <Search size={16} color={theme.textSecondary} style={{ position: 'absolute', left: 27 }} pointerEvents="none" />
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groups} style={{ flexGrow: 0 }}>
           {pickerGroups.map(([x]) => {
             const on = g === x, pic = img(`/muscles/${x.replace(' ', '-')}.webp`);
             return (
               <Pressable key={x} onPress={() => setG(x)} style={styles.group} accessibilityState={{ selected: on }}>
                 <View style={[styles.figure, { borderColor: on ? Lime : 'transparent', opacity: on ? 1 : 0.7 }]}>
-                  {x !== 'all' && pic ? <Image source={pic} style={{ width: 44, height: 44 }} /> : <ThemedText style={{ fontSize: 20, color: '#d4d4d8' }}>/</ThemedText>}
+                  {x !== 'all' && pic ? <Image source={pic} style={{ width: 44, height: 44 }} /> : <Slash size={20} strokeWidth={1.75} color="#d4d4d8" />}
                 </View>
                 <ThemedText type="small" style={{ fontSize: 11, color: on ? Lime : theme.textSecondary }}>{cap(x)}</ThemedText>
               </Pressable>
@@ -65,7 +71,7 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
           keyboardShouldPersistTaps="handled"
           initialNumToRender={14}
           ListHeaderComponent={<ThemedText type="small" themeColor="textSecondary" style={{ paddingVertical: 8 }}>{list.length} exercise{list.length === 1 ? '' : 's'}</ThemedText>}
-          ListEmptyComponent={<ThemedText themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 30 }}>No matches. Try another filter.</ThemedText>}
+          ListEmptyComponent={<EmptyState art="search" size={96} title="No matches" text={q ? `Nothing called “${q}” with these filters.` : 'Try another muscle or equipment filter.'} />}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
           renderItem={({ item: e }) => {
             const has = taken.includes(e.name), pic = img(e.image);
@@ -77,7 +83,7 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
                   <ThemedText type="small" themeColor="textSecondary">{cap(e.muscle)} · {cap(e.equipment)}{has ? ' · added' : ''}</ThemedText>
                   {!!logged[e.name] && <ThemedText type="small" style={{ color: Lime }}>1RM {Math.round(logged[e.name] * 10) / 10} kg</ThemedText>}
                 </View>
-                <ThemedText style={{ color: Lime, fontSize: 22, fontWeight: '700' }}>+</ThemedText>
+                <Plus size={18} color="#84cc16" />
               </Press>
             );
           }}
@@ -89,9 +95,9 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 8 },
-  h1: { fontSize: 26, lineHeight: 32, fontWeight: '800', letterSpacing: -0.5 },
-  close: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
-  search: { marginHorizontal: 16, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 16 },
+  h1: { fontSize: 26, lineHeight: 32, fontWeight: '700', letterSpacing: -0.5 },
+  close: { width: 36, height: 36, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
+  search: { marginHorizontal: 16, borderRadius: 5, paddingLeft: 36, paddingRight: 12, paddingVertical: 11, fontSize: 16 },
   groups: { paddingHorizontal: 12, paddingTop: 12, gap: 4 },
   group: { width: 66, alignItems: 'center', gap: 6 },
   figure: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type 
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { Lime, Spring } from '@/constants/theme';
+import { geist } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
 
 const APressable = Animated.createAnimatedComponent(Pressable);
@@ -28,12 +29,12 @@ export function Button({ children, variant = 'primary', style, disabled, ...rest
   return (
     <Press {...rest} disabled={disabled}
       style={[styles.btn, { backgroundColor: primary ? Lime : theme.backgroundElement, opacity: disabled ? 0.4 : 1 }, style]}>
-      <Text style={[styles.label, { color: primary ? '#09090b' : theme.text }]}>{children}</Text>
+      {typeof children === 'string' ? <Text style={[styles.label, { color: primary ? '#09090b' : theme.text }]}>{children}</Text> : children}
     </Press>
   );
 }
 
 const styles = StyleSheet.create({
-  btn: { borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 16, fontWeight: '700' },
+  btn: { borderRadius: 5, paddingVertical: 11, paddingHorizontal: 15, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: 16, lineHeight: 23, ...geist(600) },
 });

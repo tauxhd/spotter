@@ -71,4 +71,4 @@ export default function GymMap() {
   );
 }
 
-const styles = StyleSheet.create({ chip: { borderRadius: 6, paddingHorizontal: 12, paddingVertical: 7 } });
+const styles = StyleSheet.create({ chip: { borderRadius: 3, paddingHorizontal: 12, paddingVertical: 7 } });

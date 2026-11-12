@@ -57,11 +57,11 @@ export default function SetTypeSheet({ open, current, onPick, onClose }: { open:
 
 const styles = StyleSheet.create({
   scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 16 },
-  card: { width: '100%', maxWidth: 380, borderRadius: 24, padding: 16 },
+  card: { width: '100%', maxWidth: 380, borderRadius: 8, padding: 16 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  opt: { width: '48.8%', flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1 },
+  opt: { width: '48.8%', flexDirection: 'row', alignItems: 'center', borderRadius: 5, borderWidth: 1 },
   optMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingLeft: 8 },
   badge: { width: 28, height: 28, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  note: { flexDirection: 'row', gap: 8, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginTop: 8 },
+  note: { flexDirection: 'row', gap: 8, borderRadius: 5, paddingHorizontal: 12, paddingVertical: 8, marginTop: 8 },
 });

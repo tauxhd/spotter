@@ -2,7 +2,7 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Clock, Hash, Link2, Trash2, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { setTypes, templates, timedByDefault, type Exercise, type ExerciseLog } from '@shared/data';
 import { mmss, parseResult, setLabels } from '@shared/lifting';
@@ -16,6 +16,7 @@ import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { setTypeColor, supersetHex } from '@/lib/tw';
+import { Input } from '@/components/ui/input';
 
 export default function Routine() {
   const { id, from } = useLocalSearchParams<{ id?: string; from?: string }>();
@@ -74,7 +75,7 @@ export default function Routine() {
         ),
       }} />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60, gap: 12 }} keyboardShouldPersistTaps="handled">
-        <TextInput value={name} onChangeText={setName} maxLength={60} placeholder="Routine name, e.g. Upper A" placeholderTextColor={theme.textSecondary}
+        <Input value={name} onChangeText={setName} maxLength={60} placeholder="Routine name, e.g. Upper A" placeholderTextColor={theme.textSecondary}
           style={[styles.name, { color: theme.text, backgroundColor: theme.backgroundElement }]} />
         {!!err && <ThemedText type="small" style={{ color: Red }}>{err}</ThemedText>}
         {list.length === 0 && <EmptyState art="exercises" title="No exercises yet" text="Add some below and set the target sets, weight and reps." />}
@@ -115,12 +116,12 @@ export default function Routine() {
                   <Pressable onPress={() => setTyping({ i, j })} style={[styles.setBtn, { backgroundColor: theme.backgroundSelected }]}>
                     <ThemedText type="smallBold" style={{ color: setTypeColor(st.type) ?? theme.text }}>{labels[j]}</ThemedText>
                   </Pressable>
-                  <TextInput value={st.kg ? String(st.kg) : ''} placeholder="0" placeholderTextColor={theme.textSecondary} keyboardType="decimal-pad" selectTextOnFocus
+                  <Input value={st.kg ? String(st.kg) : ''} placeholder="0" placeholderTextColor={theme.textSecondary} keyboardType="decimal-pad" selectTextOnFocus
                     onChangeText={(v) => edit((x) => { x[i].sets[j].kg = Math.max(0, Number(v.replace(',', '.')) || 0); })} style={[styles.flex, input]} />
                   {timed
-                    ? <TextInput key={`${j}-${st.secs}`} defaultValue={mmss(st.secs ?? 0)} selectTextOnFocus style={[styles.flex, input]}
+                    ? <Input key={`${j}-${st.secs}`} defaultValue={mmss(st.secs ?? 0)} selectTextOnFocus style={[styles.flex, input]}
                         onEndEditing={(e) => { const v = parseResult(e.nativeEvent.text, 'time'); edit((x) => { x[i].sets[j].secs = v ?? 0; }); }} />
-                    : <TextInput value={String(st.reps)} keyboardType="number-pad" selectTextOnFocus style={[styles.flex, input]}
+                    : <Input value={String(st.reps)} keyboardType="number-pad" selectTextOnFocus style={[styles.flex, input]}
                         onChangeText={(v) => edit((x) => { x[i].sets[j].reps = Number(v.replace(/\D/g, '')) || 0; })} />}
                   <Pressable onPress={() => edit((x) => { x[i].sets.splice(j, 1); if (!x[i].sets.length) x.splice(i, 1); })} style={{ width: 28, alignItems: 'center' }} accessibilityLabel={`Remove set ${labels[j]}`}>
                     <X size={16} strokeWidth={1.75} color={Red} />
@@ -150,14 +151,14 @@ export default function Routine() {
 }
 
 const styles = StyleSheet.create({
-  save: { backgroundColor: Lime, borderRadius: 6, paddingHorizontal: 14, paddingVertical: 6 },
-  name: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: 18, fontWeight: '600' },
-  ssTag: { position: 'absolute', top: -8, left: 12, fontSize: 10, fontWeight: '800', letterSpacing: 0.5, color: '#09090b', paddingHorizontal: 8, paddingVertical: 1, borderRadius: 4, overflow: 'hidden' },
+  save: { backgroundColor: Lime, borderRadius: 3, paddingHorizontal: 14, paddingVertical: 6 },
+  name: { borderRadius: 5, paddingHorizontal: 12, paddingVertical: 12, fontSize: 18, fontWeight: '600' },
+  ssTag: { position: 'absolute', top: -8, left: 12, fontSize: 10, fontWeight: '700', letterSpacing: 0.5, color: '#09090b', paddingHorizontal: 8, paddingVertical: 1, borderRadius: 2, overflow: 'hidden' },
   small: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, alignSelf: 'flex-start' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   head: { fontSize: 12, color: '#a1a1aa', textAlign: 'center' },
   flex: { flex: 1, minWidth: 0, width: 0, textAlign: 'center' },
   setBtn: { width: 52, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  num: { borderRadius: 8, paddingVertical: 8, fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  addEx: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14 },
+  num: { borderRadius: 4, paddingVertical: 8, fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  addEx: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 5, paddingVertical: 14 },
 });

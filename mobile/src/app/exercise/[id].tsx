@@ -55,7 +55,7 @@ function Plot({ points, k, days, fmt, pick, onPick }: { points: Point[]; k: keyo
   const dates = pts.length === 1 ? [t0] : [t0, t0 + (t1 - t0) / 2, t1];
   return (
     <View>
-      <ThemedText style={{ fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{fmt(pts[sel][k] as number)} <ThemedText type="smallBold" style={{ color: Lime }}>{day(pts[sel].at)}</ThemedText></ThemedText>
+      <ThemedText style={{ fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{fmt(pts[sel][k] as number)} <ThemedText type="smallBold" style={{ color: Lime }}>{day(pts[sel].at)}</ThemedText></ThemedText>
       <Svg viewBox={`0 0 ${W} ${H}`} width="100%" height={170} style={{ marginTop: 8 }}>
         {[y0, (y0 + y1) / 2, y1].map((v) => (
           <G key={v}>
@@ -158,7 +158,7 @@ export default function ExerciseStats() {
           <Section style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             <Image source={img(ex.image)} style={{ width: 112, height: 112, borderRadius: 8, backgroundColor: '#18181b' }} />
             <View style={{ flex: 1 }}>
-              <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>{ex.name}</ThemedText>
+              <ThemedText style={{ fontSize: 18, fontWeight: '700' }}>{ex.name}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: 4 }}>Primary: <ThemedText type="small">{cap(ex.muscle)}</ThemedText></ThemedText>
               {ex.secondary.length > 0 && <ThemedText type="small" themeColor="textSecondary">Secondary: <ThemedText type="small">{ex.secondary.map(cap).join(', ')}</ThemedText></ThemedText>}
               <ThemedText type="small" themeColor="textSecondary">{cap(ex.equipment)}</ThemedText>
@@ -187,8 +187,8 @@ export default function ExerciseStats() {
                 <Section>
                   <View style={styles.h3}><Icon name="ranks" size={22} /><ThemedText type="smallBold" style={{ fontSize: 16 }}>Strength level</ThemedText></View>
                   <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                    <View style={{ flex: 1 }}><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Best 1RM</ThemedText><ThemedText style={{ fontSize: 18, fontWeight: '800' }}>{added ? '+' : ''}{kg(best('orm'))}</ThemedText></View>
-                    <View style={{ flex: 1, paddingLeft: 16, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: theme.border }}><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Level</ThemedText><ThemedText style={{ fontSize: 18, fontWeight: '800', color: Lime }}>{lvl.level}</ThemedText></View>
+                    <View style={{ flex: 1 }}><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Best 1RM</ThemedText><ThemedText style={{ fontSize: 18, fontWeight: '700' }}>{added ? '+' : ''}{kg(best('orm'))}</ThemedText></View>
+                    <View style={{ flex: 1, paddingLeft: 16, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: theme.border }}><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Level</ThemedText><ThemedText style={{ fontSize: 18, fontWeight: '700', color: Lime }}>{lvl.level}</ThemedText></View>
                   </View>
                   <View style={{ marginTop: 16, justifyContent: 'center' }}>
                     <View style={{ flexDirection: 'row', gap: 4 }}>
@@ -249,7 +249,7 @@ export default function ExerciseStats() {
 const styles = StyleSheet.create({
   h3: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   recRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
-  seg: { flex: 1, height: 8, borderRadius: 3, overflow: 'hidden' },
+  seg: { flex: 1, height: 8, borderRadius: 2, overflow: 'hidden' },
   marker: { position: 'absolute', width: 16, height: 16, marginLeft: -8, borderRadius: 8, borderWidth: 2, borderColor: '#09090b', backgroundColor: '#a3e635', shadowColor: Lime, shadowOpacity: 0.7, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } },
   liftRow: { flexDirection: 'row', paddingVertical: 8 },
   liftHead: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 0.8, color: '#a1a1aa' },

@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Heart, Lock, MessageCircle, SendHorizontal, Share2, UserCheck, UserPlus, Users } from 'lucide-react-native';
 import { useState } from 'react';
-import { Dimensions, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
+import { Dimensions, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { findExercise, lifters, timeAgo, type Exercise, type Post } from '@shared/data';
@@ -17,6 +17,7 @@ import { Lime, Red, SpringBounce } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { img } from '@/lib/web';
+import { Input } from '@/components/ui/input';
 
 const SHOWN = 3;
 const dur = (m?: number | null) => (!m ? '—' : m < 60 ? `${m}min` : `${Math.floor(m / 60)}h ${m % 60}min`);
@@ -177,7 +178,7 @@ export default function PostCard({ post, showFollow = true, last }: { post: Post
             <ThemedText key={i} type="small"><ThemedText type="smallBold" onPress={() => toProfile(c.uid)}>{c.by}</ThemedText> {c.text}</ThemedText>
           ))}
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TextInput value={draft} onChangeText={setDraft} placeholder="Add a comment…" placeholderTextColor={theme.textSecondary} returnKeyType="send" onSubmitEditing={send}
+            <Input value={draft} onChangeText={setDraft} placeholder="Add a comment…" placeholderTextColor={theme.textSecondary} returnKeyType="send" onSubmitEditing={send}
               style={[styles.input, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
             <Press onPress={send} disabled={!draft.trim()} accessibilityLabel="Post comment" style={[styles.send, { opacity: draft.trim() ? 1 : 0.4 }]}>
               <SendHorizontal size={16} color="#09090b" />
@@ -191,14 +192,14 @@ export default function PostCard({ post, showFollow = true, last }: { post: Post
 
 const styles = StyleSheet.create({
   thumb: { overflow: 'hidden', backgroundColor: '#18181b', borderWidth: 1, borderColor: 'rgba(63,63,70,0.6)', alignItems: 'center', justifyContent: 'center' },
-  follow: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 5 },
-  title: { fontSize: 20, fontWeight: '800', marginTop: 12, lineHeight: 26 },
+  follow: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 2, paddingHorizontal: 12, paddingVertical: 5 },
+  title: { fontSize: 20, fontWeight: '700', marginTop: 12, lineHeight: 26 },
   exList: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, gap: 12 },
   media: { width: '100%', aspectRatio: 4 / 5, backgroundColor: '#000' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 8 },
   dot: { height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(161,161,170,0.5)' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
   action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  input: { flex: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 16 },
-  send: { width: 42, borderRadius: 12, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' },
+  input: { flex: 1, borderRadius: 5, paddingHorizontal: 12, paddingVertical: 9, fontSize: 16 },
+  send: { width: 42, borderRadius: 5, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' },
 });
