@@ -17,6 +17,8 @@ import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { img } from '@/lib/web';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 type Point = { at: number; heaviest: number; orm: number; setVol: number; vol: number; reps: number; hold: number };
 type Metric = { key: keyof Point; label: string; kind: 'kg' | 'reps' | 'time' };
@@ -185,7 +187,7 @@ export default function ExerciseStats() {
               </Section>
               {lvl && (
                 <Section>
-                  <View style={styles.h3}><Icon name="ranks" size={22} /><ThemedText type="smallBold" style={{ fontSize: 16 }}>Strength level</ThemedText></View>
+                  <View style={styles.h3}><Icon name="ranks" size={22} /><ThemedText type="smallBold" style={{ fontSize: 16 }}>Strength level</ThemedText><InfoTip text={help.strength} /></View>
                   <View style={{ flexDirection: 'row', marginTop: 8 }}>
                     <View style={{ flex: 1 }}><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Best 1RM</ThemedText><ThemedText style={{ fontSize: 18, fontWeight: '700' }}>{added ? '+' : ''}{kg(best('orm'))}</ThemedText></View>
                     <View style={{ flex: 1, paddingLeft: 16, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: theme.border }}><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Level</ThemedText><ThemedText style={{ fontSize: 18, fontWeight: '700', color: Lime }}>{lvl.level}</ThemedText></View>

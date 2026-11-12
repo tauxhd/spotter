@@ -4,6 +4,8 @@ import Icon, { type IconName } from "./Icon";
 import type { Sex } from "@/lib/data";
 import type { Unit } from "@/lib/units";
 import WeightInput from "./WeightInput";
+import InfoTip from "./InfoTip";
+import { help } from "@/lib/help";
 
 type P = { name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit;
   goal?: string | null; activity?: number | null; height?: number | null; age?: number | null; goal_bw?: number | null };
@@ -81,7 +83,7 @@ export default function Onboarding({ initial, onSave }: { initial: P; onSave: (p
 
       <section className="card">
         <div className="flex items-center justify-between">
-          <p className="font-semibold">Body &amp; bests <span className="muted text-sm font-normal">({unit})</span></p>
+          <p className="flex items-center gap-1.5 font-semibold">Body &amp; bests <span className="muted text-sm font-normal">({unit})</span><InfoTip text={help.bodyBests} /></p>
           <div role="radiogroup" aria-label="Preferred weight unit" className="flex rounded-sm bg-zinc-100 p-0.5 text-sm font-semibold dark:bg-zinc-900">
             {(["kg", "lb"] as const).map((x) => (
               <button type="button" key={x} role="radio" aria-checked={unit === x} onClick={() => setP({ ...p, unit: x })}
@@ -89,7 +91,6 @@ export default function Onboarding({ initial, onSave }: { initial: P; onSave: (p
             ))}
           </div>
         </div>
-        <p className="muted text-xs">Bodyweight is needed for DOTS. Lifts are optional, they put you on the leaderboard and update as you log sets. Everyone sees weights in their own unit.</p>
         <div className="mt-4 grid grid-cols-4 gap-2">
           {([["bw", "Body", "scale"], ["squat", "Squat", "squat"], ["bench", "Bench", "bench"], ["deadlift", "Deadlift", "deadlift"]] as const).map(([k, label, icon]) => (
             <label key={k} className="flex flex-col items-center gap-1.5">

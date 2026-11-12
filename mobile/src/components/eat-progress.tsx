@@ -16,6 +16,8 @@ import { Icon } from '@/components/ui/kit';
 import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 const DAYS = 30;
 const fmt = (v: number) => Math.round(v).toLocaleString('en-MY');
@@ -71,7 +73,7 @@ export function EatProgress() {
   return (
     <View>
       <View style={card}>
-        <ThemedText style={styles.eyebrow}>Maintenance calories</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Maintenance calories</ThemedText><InfoTip text={help.maintenance(n.adaptive)} /></View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
           <Icon name="flame" size={44} />
           <ThemedText style={styles.huge}>{fmt(n.kcal)}<ThemedText type="small" themeColor="textSecondary" style={{ fontWeight: '500' }}> kcal/day</ThemedText></ThemedText>
@@ -90,16 +92,11 @@ export function EatProgress() {
             </View>
           ))}
         </View>
-        <ThemedText style={[styles.note, muted]}>
-          {n.adaptive
-            ? 'What you ate over the last 4 weeks, minus the energy in your trend-weight change.'
-            : 'From your weight, height, age and activity. Log meals and weigh in for 2 weeks to personalise it.'}
-        </ThemedText>
       </View>
 
       <View style={card}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <ThemedText style={styles.eyebrow}>Today’s targets</ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Today’s targets</ThemedText><InfoTip text={help.targets} /></View>
           <Pressable onPress={plan} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center' }}>
             <ThemedText type="smallBold" style={{ fontSize: 12, color: Lime }}>{goals[n.goal].label}</ThemedText><ChevronRight size={14} color={Lime} />
           </Pressable>
@@ -115,11 +112,10 @@ export function EatProgress() {
             </View>
           ))}
         </View>
-        <ThemedText style={[styles.note, muted]}>Your maintenance adjusted for your goal, rounded to the nearest 50 kcal. Protein and fat scale with your bodyweight; carbs fill the rest.</ThemedText>
       </View>
 
       <View style={card}>
-        <ThemedText style={styles.eyebrow}>Weight trend ({DAYS} days)</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Weight trend ({DAYS} days)</ThemedText><InfoTip text={help.trend} /></View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 }}>
           <ThemedText style={styles.big}>{n.current.toFixed(1)}<ThemedText type="small" themeColor="textSecondary" style={{ fontWeight: '500' }}> kg</ThemedText></ThemedText>
           {first && <Badge tint={change < 0 ? Sky : Lime}><ThemedText style={[styles.badgeText, { color: change < 0 ? Sky : Lime }]}>{change > 0 ? '+' : ''}{change.toFixed(1)} kg</ThemedText></Badge>}
@@ -163,8 +159,7 @@ export function EatProgress() {
       </View>
 
       <View style={card}>
-        <ThemedText style={styles.eyebrow}>Calorie intake vs maintenance</ThemedText>
-        <ThemedText style={[{ fontSize: 12, marginTop: 4 }, muted]}>Eat under the orange line to lose weight, over it to gain.</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Calorie intake vs maintenance</ThemedText><InfoTip text={help.intake} /></View>
         <Legend items={[[Lime, 'Calorie intake'], ['#f97316', 'Maintenance']]} />
         <TrendChart days={DAYS} label="Calorie intake against maintenance" series={[
           { pts: maintenanceSteps(me, s.food, s.weights, DAYS, now).map((m) => ({ day: m.day, v: m.kcal })), color: '#f97316', step: true, dashed: true },
@@ -178,7 +173,7 @@ export function EatProgress() {
           </View>
           <View style={styles.stat}>
             <Icon name="scale" size={30} />
-            <View><ThemedText style={[{ fontSize: 12 }, muted]}>Energy balance</ThemedText><ThemedText style={[styles.statValue, n.balance !== null && { color: n.balance < 0 ? Sky : Lime }]}>{n.balance === null ? '–' : signed(n.balance)}<ThemedText style={[{ fontSize: 12 }, muted]}> kcal</ThemedText></ThemedText></View>
+            <View><View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><ThemedText style={[{ fontSize: 12 }, muted]}>Energy balance</ThemedText><InfoTip text={help.balance} size={13} /></View><ThemedText style={[styles.statValue, n.balance !== null && { color: n.balance < 0 ? Sky : Lime }]}>{n.balance === null ? '–' : signed(n.balance)}<ThemedText style={[{ fontSize: 12 }, muted]}> kcal</ThemedText></ThemedText></View>
           </View>
         </View>
       </View>

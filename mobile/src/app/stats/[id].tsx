@@ -13,6 +13,8 @@ import { Bone, EmptyState, Icon, Section } from '@/components/ui/kit';
 import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { POST_SELECT, sb, toPost, useStore, type Profile } from '@/lib/store';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 const WEEKS = 8, DAY = 864e5;
 const weekStart = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.getTime(); };
@@ -142,8 +144,7 @@ export default function GymStats() {
 
       {own && (
         <Section>
-          <ThemedText type="smallBold" style={{ fontSize: 16 }}>Gym visits</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, marginBottom: 12 }}>From your clock-ins at the SweatZone door. Only you can see this.</ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}><ThemedText type="smallBold" style={{ fontSize: 16 }}>Gym visits</ThemedText><InfoTip text={help.visits} /></View>
           <View style={{ flexDirection: 'row' }}>
             {([['qr', monthVisits.length, 'This month'], ['stopwatch', avgVisit ? hrs(avgVisit) : '–', 'Avg visit'], ['bell', favHour !== undefined ? `${favHour.padStart(2, '0')}:00` : '–', 'Usual time']] as const).map(([ic, v, k]) => (
               <View key={k} style={{ flex: 1, alignItems: 'center' }}>

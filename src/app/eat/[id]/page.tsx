@@ -9,6 +9,9 @@ import Icon from "@/components/Icon";
 import { useStore } from "@/lib/store";
 import { calSplit, demoNow, foodBySlug, foods, highProtein, slug } from "@/lib/data";
 import { nutrition } from "@/lib/nutrition";
+import MeButton from "@/components/MeButton";
+import InfoTip from "@/components/InfoTip";
+import { help } from "@/lib/help";
 
 const macros = [
   { k: "p", label: "Protein", icon: "protein", bar: "bg-sky-500" },
@@ -43,17 +46,16 @@ export default function FoodPage() {
       <header className="-mx-4 grid grid-cols-[2.5rem_1fr_2.5rem] items-center px-4 pb-2">
         <button onClick={() => router.back()} aria-label="Back" className="grid h-9 w-9 place-items-center"><ArrowLeft size={20} /></button>
         <h1 className="truncate text-center text-base font-semibold">{f.stall}</h1>
-        <span />
+        <MeButton size={32} className="justify-self-end" />
       </header>
 
       <section className="-mx-4 border-b border-zinc-200 px-4 pb-4 dark:border-zinc-800/80">
         <Image src={`/food/${slug(f.name)}.webp`} alt="" width={512} height={512} priority className="mx-auto aspect-square w-full max-w-72 rounded-2xl bg-zinc-900 object-cover" />
-        <h2 className="mt-4 text-2xl font-bold tracking-tight">{f.name}</h2>
+        <h2 className="mt-4 text-2xl font-bold tracking-tight">{f.name} <InfoTip text={help.portion} label="About these numbers" size={17} /></h2>
         <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-bold uppercase tracking-wide">
           <span className="rounded-sm bg-zinc-100 px-2 py-0.5 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{f.stall}</span>
           {highProtein(f) && <span className="rounded-sm bg-lime-100 px-2 py-0.5 text-lime-700 dark:bg-lime-400/10 dark:text-lime-400">High protein</span>}
         </div>
-        <p className="muted mt-2 text-xs">Typical APU cafeteria portion, estimated.</p>
       </section>
 
       <section className="card">

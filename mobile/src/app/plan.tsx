@@ -13,6 +13,8 @@ import { Icon } from '@/components/ui/kit';
 import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 const num = (v: string) => (v.trim() === '' ? null : Number(v.replace(',', '.')));
 
@@ -52,8 +54,7 @@ export default function Plan() {
       <ThemedText style={styles.h1}>Set your nutrition plan</ThemedText>
       <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: 4 }}>Pick a goal and check your details. Your targets update as you go.</ThemedText>
 
-      <ThemedText type="smallBold" style={styles.h3}>Goal</ThemedText>
-      <ThemedText themeColor="textSecondary" style={{ fontSize: 12 }}>The outcome you want to work toward.</ThemedText>
+      <View style={[styles.h3row]}><ThemedText type="smallBold" style={{ fontSize: 16 }}>Goal</ThemedText><InfoTip text={help.goal} /></View>
       <View style={list}>
         {(Object.keys(goals) as Goal[]).map((k, i, all) => (
           <Pressable key={k} onPress={() => setGoal(k)} accessibilityState={{ selected: goal === k }} style={option(goal === k, i === all.length - 1)}>
@@ -63,8 +64,7 @@ export default function Plan() {
         ))}
       </View>
 
-      <ThemedText type="smallBold" style={styles.h3}>Body</ThemedText>
-      <ThemedText themeColor="textSecondary" style={{ fontSize: 12 }}>Used for your starting maintenance estimate. Weight comes from your profile ({me.bw} kg).</ThemedText>
+      <View style={[styles.h3row]}><ThemedText type="smallBold" style={{ fontSize: 16 }}>Body</ThemedText><InfoTip text={help.body(me.bw)} /></View>
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
         {([['Height (cm)', height, setHeight, 'number-pad', ''], ['Age', age, setAge, 'number-pad', ''], ['Goal weight (kg)', goalBw, setGoalBw, 'decimal-pad', 'Optional']] as const).map(([label, v, set, kb, ph]) => (
           <View key={label} style={{ flex: 1 }}>
@@ -105,6 +105,7 @@ export default function Plan() {
 const styles = StyleSheet.create({
   h1: { fontSize: 24, lineHeight: 30, fontWeight: '700', letterSpacing: -0.5 },
   h3: { fontSize: 16, marginTop: 24 },
+  h3row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 24 },
   eyebrow: { fontSize: 12, lineHeight: 16, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
   list: { marginTop: 8, borderRadius: 5, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10 },

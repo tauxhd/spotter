@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Splash } from '@/components/ui/kit';
 import { Colors, Lime } from '@/constants/theme';
 import { StoreProvider, useStatus } from '@/lib/store';
+import { meHeaderRight } from '@/components/me-button';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,15 +43,15 @@ function Gate() {
     <Stack screenOptions={{ headerTintColor: Lime, headerTitleStyle: { color: Colors.dark.text, fontFamily: 'Geist_600SemiBold' }, headerShadowVisible: false, headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: Colors.dark.background } }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="finish" options={{ title: 'Finish workout', presentation: 'modal' }} />
-      <Stack.Screen name="exercise/[id]" options={{ title: '' }} />
-      <Stack.Screen name="post/[id]" options={{ title: 'Workout' }} />
+      <Stack.Screen name="exercise/[id]" options={{ headerRight: meHeaderRight, title: '' }} />
+      <Stack.Screen name="post/[id]" options={{ headerRight: meHeaderRight, title: 'Workout' }} />
       <Stack.Screen name="u/[id]" options={{ title: '' }} />
       <Stack.Screen name="me" options={{ title: 'Profile' }} />
-      <Stack.Screen name="stats/[id]" options={{ title: 'Gym stats' }} />
-      <Stack.Screen name="map" options={{ title: 'Gym map' }} />
+      <Stack.Screen name="stats/[id]" options={{ headerRight: meHeaderRight, title: 'Gym stats' }} />
+      <Stack.Screen name="map" options={{ headerRight: meHeaderRight, title: 'Gym map' }} />
       <Stack.Screen name="routine" options={{ title: 'Routine' }} />
-      <Stack.Screen name="food/[id]" options={{ title: '' }} />
-      <Stack.Screen name="plan" options={{ title: 'Nutrition plan' }} />
+      <Stack.Screen name="food/[id]" options={{ headerRight: meHeaderRight, title: '' }} />
+      <Stack.Screen name="plan" options={{ headerRight: meHeaderRight, title: 'Nutrition plan' }} />
     </Stack>
   );
 }

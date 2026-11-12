@@ -27,6 +27,8 @@ import { useStore } from '@/lib/store';
 import { setTypeColor, supersetHex } from '@/lib/tw';
 import { art } from '@/lib/art';
 import { Input } from '@/components/ui/input';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 const REST_KEY = 'spotter:rest', REST_ON_KEY = 'spotter:rest-on'; // same keys as the website
 const store = typeof localStorage !== 'undefined' ? localStorage : undefined;
@@ -89,8 +91,7 @@ function Routines() {
         {s.routines.map((r, i) => <Card key={r.id} i={i} name={r.name} list={r.exercises} onStart={() => start(r)} onEdit={() => router.push({ pathname: '/routine', params: { id: r.id } })} />)}
       </View>
       <View>
-        <ThemedText type="smallBold" style={{ fontSize: 16 }}>Example routines</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Tap Edit to copy one into your routines and change it.</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText type="smallBold" style={{ fontSize: 16 }}>Example routines</ThemedText><InfoTip text={help.examples} /></View>
         {templates.map((t, i) => <Card key={t.name} i={i} name={`${t.name} day`} list={t.exercises} onStart={() => start({ name: `${t.name} day`, exercises: t.exercises })} onEdit={() => router.push({ pathname: '/routine', params: { from: t.name } })} />)}
       </View>
       {s.sessions.length > 0 && (
@@ -422,7 +423,7 @@ function Workout() {
           <Animated.View entering={ZoomIn.springify().dampingRatio(1).duration(350)} style={[styles.dialog, { backgroundColor: theme.backgroundElement }]}>
             <Pressable style={{ gap: 14 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <ThemedText type="smallBold" style={{ fontSize: 16 }}>Timers</ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText type="smallBold" style={{ fontSize: 16 }}>Timers</ThemedText><InfoTip text={help.hold} /></View>
                 <Pressable onPress={() => setTimers(false)} hitSlop={8}><X size={18} color={theme.textSecondary} /></Pressable>
               </View>
               <View style={[styles.clockBox, { backgroundColor: theme.backgroundSelected }]}>
@@ -443,7 +444,6 @@ function Workout() {
                 <ThemedText type="smallBold" style={{ flex: 1 }}>Rest between sets</ThemedText>
                 <Stepper label={mmss(restSecs)} onMinus={() => changeRest(-15)} onPlus={() => changeRest(15)} />
               </View>
-              <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Hold exercises (planks, hangs, carries…) have a ▶ timer on each set. Switch them to reps with “Log reps instead”.</ThemedText>
             </Pressable>
           </Animated.View>
         </Pressable>

@@ -6,6 +6,9 @@ import { ArrowLeft, Check } from "lucide-react";
 import Icon from "@/components/Icon";
 import { useStore } from "@/lib/store";
 import { activities, bodyOf, goals, nutrition, type Goal } from "@/lib/nutrition";
+import MeButton from "@/components/MeButton";
+import InfoTip from "@/components/InfoTip";
+import { help } from "@/lib/help";
 
 const num = (v: string) => (v.trim() === "" ? null : Number(v));
 
@@ -41,14 +44,13 @@ export default function Plan() {
       <header className="-mx-4 grid grid-cols-[2.5rem_1fr_2.5rem] items-center px-4 pb-2">
         <button onClick={() => router.back()} aria-label="Back" className="grid h-9 w-9 place-items-center"><ArrowLeft size={20} /></button>
         <h1 className="text-center text-base font-semibold">Nutrition plan</h1>
-        <span />
+        <MeButton size={32} className="justify-self-end" />
       </header>
 
       <h2 className="mt-2 text-2xl font-bold tracking-tight">Set your nutrition plan</h2>
       <p className="muted mt-1 text-sm">Pick a goal and check your details. Your targets update as you go.</p>
 
-      <h3 className="mt-6 font-semibold">Goal</h3>
-      <p className="muted text-xs">The outcome you want to work toward.</p>
+      <h3 className="mt-6 flex items-center gap-1.5 font-semibold">Goal<InfoTip text={help.goal} /></h3>
       <div className="mt-2 divide-y divide-zinc-200 overflow-hidden rounded-xl ring-1 ring-zinc-200 dark:divide-zinc-800 dark:ring-zinc-800">
         {(Object.keys(goals) as Goal[]).map((k) => (
           <button key={k} onClick={() => setGoal(k)} aria-pressed={goal === k} className={option(goal === k)}>
@@ -58,8 +60,7 @@ export default function Plan() {
         ))}
       </div>
 
-      <h3 className="mt-6 font-semibold">Body</h3>
-      <p className="muted text-xs">Used for your starting maintenance estimate. Weight comes from your profile ({me.bw} kg).</p>
+      <h3 className="mt-6 flex items-center gap-1.5 font-semibold">Body<InfoTip text={help.body(me.bw)} /></h3>
       <div className="mt-2 grid grid-cols-3 gap-2">
         <label className="text-xs"><span className="muted">Height (cm)</span><input value={height} onChange={(e) => setHeight(e.target.value)} inputMode="numeric" className={`${field} mt-1`} /></label>
         <label className="text-xs"><span className="muted">Age</span><input value={age} onChange={(e) => setAge(e.target.value)} inputMode="numeric" className={`${field} mt-1`} /></label>

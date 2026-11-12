@@ -18,6 +18,9 @@ import OneRM from "@/components/OneRM";
 import { Radar } from "@/components/MuscleDistribution";
 import { muscleFor } from "@/lib/muscles";
 import dynamic from "next/dynamic";
+import InfoTip from "@/components/InfoTip";
+import MeButton from "@/components/MeButton";
+import { help } from "@/lib/help";
 const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-full min-h-10 w-full rounded-xl" /> });
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
@@ -306,8 +309,9 @@ export default function Train() {
 
     return (
       <div className="space-y-5">
-        <header>
+        <header className="flex items-center justify-between gap-3">
           <h1 className="h-title flex items-center gap-2"><Icon name="train" size={34} />Train</h1>
+          <MeButton />
         </header>
 
         <section className="space-y-2">
@@ -327,8 +331,7 @@ export default function Train() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="font-semibold">Example routines</h2>
-          <p className="muted -mt-1 text-xs">Tap Edit to copy one into your routines and change it.</p>
+          <h2 className="flex items-center gap-1.5 font-semibold">Example routines<InfoTip text={help.examples} /></h2>
           {templates.map((t) => (
             <RoutineCard key={t.name} name={`${t.name} day`} list={t.exercises} onStart={() => start({ name: `${t.name} day`, exercises: t.exercises })} editHref={withQ("/train/routine", `from=${t.name}`)} />
           ))}
@@ -402,7 +405,7 @@ export default function Train() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal aria-label="Muscles hit" onClick={() => setShowHit(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm space-y-3 rounded-3xl bg-white p-4 text-sm shadow-2xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-base font-bold"><Icon name="stats" size={20} />Muscles hit</h2>
+              <h2 className="flex items-center gap-2 text-base font-bold"><Icon name="stats" size={20} />Muscles hit<InfoTip text={help.muscles} /></h2>
               <button aria-label="Close" onClick={() => setShowHit(false)} className="muted p-1"><X size={18} /></button>
             </div>
             <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto" onScroll={(e) => setSlide(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
@@ -410,7 +413,6 @@ export default function Train() {
               <div className="w-full shrink-0 snap-center px-4"><Radar cur={areas} className="h-80 w-full" /></div>
             </div>
             <div className="flex justify-center gap-1.5" aria-hidden>{[0, 1].map((k) => <span key={k} className={`h-1.5 rounded-full transition-all duration-[var(--spring-ms)] ease-[var(--spring)] ${slide === k ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}</div>
-            <p className="muted text-xs">Sets this workout. The main muscle counts 1, others worked count ½.</p>
             {ranked.length === 0 ? <p className="muted py-4 text-center">Tick sets to see muscles hit.</p> : ranked.map(([m, n], k) => (
               <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">
                 <span className="truncate capitalize">{m}</span>
@@ -530,7 +532,7 @@ export default function Train() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal aria-label="Timers" onClick={() => setEditingStart(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm space-y-3 rounded-3xl bg-white p-4 shadow-2xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold">Timers</h2>
+              <h2 className="flex items-center gap-1.5 font-bold">Timers<InfoTip text={help.hold} /></h2>
               <button aria-label="Close" onClick={() => setEditingStart(false)} className="muted p-1"><X size={18} /></button>
             </div>
             <div className="rounded-xl bg-zinc-100 p-3 text-center dark:bg-zinc-800/70">
@@ -557,7 +559,6 @@ export default function Train() {
                 <button aria-label="15 seconds more rest" onClick={() => changeRest(15)} className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-100 font-bold dark:bg-zinc-800">+</button>
               </div>
             </div>
-            <p className="muted text-xs">Hold exercises (planks, hangs, carries…) have a {"▶︎"} timer on each set. Switch them to reps with “Log reps instead”.</p>
           </div>
         </div>
       )}

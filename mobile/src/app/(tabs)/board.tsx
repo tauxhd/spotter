@@ -19,6 +19,7 @@ import { BottomTabInset, Lime, Spring } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore, type Profile } from '@/lib/store';
 import { Input } from '@/components/ui/input';
+import { ranksHelp } from '@shared/help';
 
 type Standard = 'open' | 'p4p' | 'class';
 type Who = 'all' | 'faculty' | 'following' | 'followers' | 'friends';
@@ -113,8 +114,7 @@ export default function Ranks() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
-        <Title icon="ranks" sub={standard === 'p4p' ? (ev.p4p === 'dots' ? 'DOTS: total adjusted for bodyweight, so every size competes fairly' : 'Lift divided by bodyweight')
-          : standard === 'class' ? `IPF weight classes, ${classSex === 'M' ? 'men' : 'women'}` : ev.lower ? 'Fastest time wins' : 'Best result, any bodyweight'}>Ranks</Title>
+        <Title icon="ranks" info={ranksHelp(standard, ev.p4p, ev.lower, classSex)}>Ranks</Title>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 20, paddingHorizontal: 16 }} style={[styles.bleed, styles.tabRow, { borderColor: theme.border }]}>
           {eventGroups.map((g) => (
@@ -249,10 +249,6 @@ export default function Ranks() {
             </Animated.View>
           ))}
           {rows.length === 0 && <EmptyState art="podium" title="Nobody here yet" text={['following', 'followers', 'friends'].includes(who) ? 'Follow students from the feed to compare with them.' : 'Log a result and take first place.'} />}
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Icon name="verified" size={14} />
-          <ThemedText themeColor="textSecondary" style={{ fontSize: 12, flex: 1 }}>Verified = checked by a gym rep. Gym lifts come from logged sets; other events are self-reported.</ThemedText>
         </View>
       </ScrollView>
       <WorkoutPill />

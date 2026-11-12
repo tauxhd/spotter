@@ -12,6 +12,9 @@ import { toUnit, w, wNum, wTotal } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
 import { findExercise, lifters, type Post } from "@/lib/data";
 import { baseOf, bests, dots, liftsOf } from "@/lib/lifting";
+import MeButton from "@/components/MeButton";
+import InfoTip from "@/components/InfoTip";
+import { help } from "@/lib/help";
 
 const WEEKS = 8;
 const DAY = 864e5;
@@ -93,7 +96,7 @@ export default function GymStats() {
       <header className="-mx-4 grid grid-cols-[2.5rem_1fr_2.5rem] items-center px-4 pb-2">
         <button onClick={() => router.back()} aria-label="Back" className="grid h-9 w-9 place-items-center"><ArrowLeft size={20} /></button>
         <h1 className="truncate text-center text-base font-semibold">{own ? "Your gym stats" : `${p.name}'s stats`}</h1>
-        <span />
+        <MeButton size={32} className="justify-self-end" />
       </header>
 
       <section className={section}>
@@ -157,8 +160,7 @@ export default function GymStats() {
 
       {own && (
         <section className={section}>
-          <h2 className="mb-1 font-semibold">Gym visits</h2>
-          <p className="muted mb-3 text-xs">From your clock-ins at the SweatZone door. Only you can see this.</p>
+          <h2 className="mb-3 flex items-center gap-1.5 font-semibold">Gym visits<InfoTip text={help.visits} /></h2>
           <div className="grid grid-cols-3 text-center">
             {([["qr", monthVisits.length, "This month"], ["stopwatch", avgVisit ? hrs(avgVisit) : "–", "Avg visit"], ["bell", favHour !== undefined ? `${favHour.padStart(2, "0")}:00` : "–", "Usual time"]] as const).map(([icon, v, k]) => (
               <div key={k} className="flex flex-col items-center">

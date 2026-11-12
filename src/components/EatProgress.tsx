@@ -8,6 +8,8 @@ import Icon from "@/components/Icon";
 import TrendChart from "@/components/TrendChart";
 import { useStore } from "@/lib/store";
 import { dailyIntake, dayOf, goals, maintenanceSteps, nutrition } from "@/lib/nutrition";
+import InfoTip from "@/components/InfoTip";
+import { help } from "@/lib/help";
 
 const DAYS = 30;
 const fmt = (v: number) => Math.round(v).toLocaleString("en-MY");
@@ -33,7 +35,7 @@ export default function EatProgress() {
   return (
     <div>
       <section className="card">
-        <h2 className="eyebrow">Maintenance calories</h2>
+        <h2 className="eyebrow flex items-center gap-1.5">Maintenance calories<InfoTip text={help.maintenance(n.adaptive)} /></h2>
         <div className="mt-2 flex items-center gap-3">
           <Icon name="flame" size={44} />
           <p className="text-4xl font-bold tabular-nums leading-none">{fmt(n.kcal)}<span className="muted ml-1 text-sm font-medium">kcal/day</span></p>
@@ -49,16 +51,11 @@ export default function EatProgress() {
           <div className="px-3"><p className="muted">Days logged</p><p className="mt-0.5 text-sm font-semibold tabular-nums">{n.days} / 28</p></div>
           <div className="pl-3"><p className="muted">Based on</p><p className="mt-0.5 text-sm font-semibold">{n.adaptive ? "Your logs" : "Formula"}</p></div>
         </div>
-        <p className="muted mt-3 text-xs">
-          {n.adaptive
-            ? "What you ate over the last 4 weeks, minus the energy in your trend-weight change."
-            : "From your weight, height, age and activity. Log meals and weigh in for 2 weeks to personalise it."}
-        </p>
       </section>
 
       <section className="card">
         <div className="flex items-center justify-between">
-          <h2 className="eyebrow">Today’s targets</h2>
+          <h2 className="eyebrow flex items-center gap-1.5">Today’s targets<InfoTip text={help.targets} /></h2>
           <Link href={`/eat/plan${q}`} className="flex items-center gap-0.5 text-xs font-semibold text-lime-600 dark:text-lime-400">{goals[n.goal].label}<ChevronRight size={14} /></Link>
         </div>
         <p className="mt-2 flex items-center gap-2"><Icon name="kcal" size={22} /><span className="muted">Calories</span><span className="font-bold tabular-nums">{fmt(n.targets.kcal)}</span><span className="muted text-sm">kcal</span></p>
@@ -67,11 +64,10 @@ export default function EatProgress() {
             <span key={k} className={`rounded-sm px-2 py-1 ${c}`}>{k} {v}<span className="text-xs font-medium">g</span></span>
           ))}
         </div>
-        <p className="muted mt-2 text-xs">Your maintenance adjusted for your goal, rounded to the nearest 50 kcal. Protein and fat scale with your bodyweight; carbs fill the rest.</p>
       </section>
 
       <section className="card">
-        <h2 className="eyebrow">Weight trend ({DAYS} days)</h2>
+        <h2 className="eyebrow flex items-center gap-1.5">Weight trend ({DAYS} days)<InfoTip text={help.trend} /></h2>
         <div className="mt-2 flex items-end justify-between gap-3">
           <p className="text-2xl font-bold tabular-nums">{n.current.toFixed(1)}<span className="muted ml-1 text-sm font-medium">kg</span></p>
           {first && <span className={`rounded-sm px-2 py-1 text-xs font-semibold tabular-nums ${change < 0 ? "bg-sky-500/10 text-sky-600 dark:text-sky-400" : "bg-lime-500/10 text-lime-700 dark:text-lime-400"}`}>{change > 0 ? "+" : ""}{change.toFixed(1)} kg</span>}
@@ -115,8 +111,7 @@ export default function EatProgress() {
       </section>
 
       <section className="card">
-        <h2 className="eyebrow">Calorie intake vs maintenance</h2>
-        <p className="muted mt-1 text-xs">Eat under the orange line to lose weight, over it to gain.</p>
+        <h2 className="eyebrow flex items-center gap-1.5">Calorie intake vs maintenance<InfoTip text={help.intake} /></h2>
         <div className="muted mt-2 flex gap-4 text-xs">
           <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-lime-500" />Calorie intake</span>
           <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-orange-500" />Maintenance</span>
@@ -133,7 +128,7 @@ export default function EatProgress() {
           </div>
           <div className="flex items-center gap-2">
             <Icon name="scale" size={30} />
-            <div><p className="muted text-xs">Energy balance</p><p className={`font-bold tabular-nums ${n.balance === null ? "" : n.balance < 0 ? "text-sky-600 dark:text-sky-400" : "text-lime-600 dark:text-lime-400"}`}>{n.balance === null ? "–" : signed(n.balance)} <span className="muted text-xs font-medium">kcal</span></p></div>
+            <div><p className="muted flex items-center gap-1 text-xs">Energy balance<InfoTip text={help.balance} size={13} /></p><p className={`font-bold tabular-nums ${n.balance === null ? "" : n.balance < 0 ? "text-sky-600 dark:text-sky-400" : "text-lime-600 dark:text-lime-400"}`}>{n.balance === null ? "–" : signed(n.balance)} <span className="muted text-xs font-medium">kcal</span></p></div>
           </div>
         </div>
       </section>

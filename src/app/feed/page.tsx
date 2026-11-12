@@ -6,6 +6,7 @@ import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
 import PostCard from "@/components/PostCard";
 import { sb, useStore } from "@/lib/store";
+import MeButton from "@/components/MeButton";
 
 type Suggestion = { id: string; name: string; faculty: string; avatar_url: string | null };
 
@@ -20,9 +21,12 @@ export default function Feed() {
 
   return (
     <div className="space-y-4">
-      <header>
-        <h1 className="h-title flex items-center gap-2"><Icon name="feed" size={34} />Feed</h1>
-        <p className="muted flex items-center gap-1.5 text-sm"><span className="h-2 w-2 animate-pulse rounded-full bg-lime-500" />What APU is lifting, live</p>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="h-title flex items-center gap-2"><Icon name="feed" size={34} />Feed</h1>
+          <p className="muted flex items-center gap-1.5 text-sm"><span className="h-2 w-2 animate-pulse rounded-full bg-lime-500" />What APU is lifting, live</p>
+        </div>
+        <MeButton />
       </header>
 
       {suggested.length > 0 && (

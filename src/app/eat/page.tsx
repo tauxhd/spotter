@@ -8,6 +8,9 @@ import Icon from "@/components/Icon";
 import { useStore } from "@/lib/store";
 import { demoNow, foods, highProtein, slug, stalls } from "@/lib/data";
 import { goals, nutrition } from "@/lib/nutrition";
+import InfoTip from "@/components/InfoTip";
+import MeButton from "@/components/MeButton";
+import { help } from "@/lib/help";
 
 type Food = Omit<(typeof foods)[number], "stall">;
 
@@ -61,9 +64,12 @@ export default function Eat() {
 
   return (
     <div className="space-y-4">
-      <header>
-        <h1 className="h-title flex items-center gap-2"><Icon name="eat" size={34} />Eat</h1>
-        <Link href={`/eat/plan${location.search}`} className="muted flex items-center gap-0.5 text-sm">{goals[n.goal].label} · {targets.kcal} kcal target<ChevronRight size={14} /></Link>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="h-title flex items-center gap-2"><Icon name="eat" size={34} />Eat</h1>
+          <Link href={`/eat/plan${location.search}`} className="muted flex items-center gap-0.5 text-sm">{goals[n.goal].label} · {targets.kcal} kcal target<ChevronRight size={14} /></Link>
+        </div>
+        <MeButton />
       </header>
 
       <div className="grid grid-cols-2 rounded-lg bg-zinc-100 p-0.5 text-sm font-semibold dark:bg-zinc-900" role="tablist">
@@ -146,8 +152,7 @@ export default function Eat() {
       )}
 
       <section className="space-y-2">
-        <h2 className="font-semibold">APU cafeteria</h2>
-        <p className="muted -mt-1 text-xs">Typical portions, estimated. Tap + to log.</p>
+        <h2 className="flex items-center gap-1.5 font-semibold">APU cafeteria<InfoTip text={help.cafeteria} /></h2>
         <div className="relative">
           <Search size={16} className="muted absolute left-3 top-1/2 -translate-y-1/2" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search food…" aria-label="Search food"

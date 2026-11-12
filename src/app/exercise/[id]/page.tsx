@@ -13,6 +13,9 @@ import { countsPR, countsVolume, e1rm, mmss, setLabels } from "@/lib/lifting";
 import { LEVELS, bodyFor, isLoadedBodyweight, strengthLevel } from "@/lib/strength";
 import { w, wNum } from "@/lib/units";
 import { rankedLifts, repRecords } from "@/lib/workout";
+import MeButton from "@/components/MeButton";
+import InfoTip from "@/components/InfoTip";
+import { help } from "@/lib/help";
 
 type Point = { at: number; heaviest: number; orm: number; setVol: number; vol: number; reps: number; hold: number };
 type Metric = { key: keyof Point; label: string; kind: "kg" | "reps" | "time" };
@@ -92,7 +95,7 @@ export default function ExerciseStats() {
       <header className="-mx-4 grid grid-cols-[2.5rem_1fr_2.5rem] items-center px-4 pb-2">
         <button onClick={() => router.back()} aria-label="Back" className="grid h-9 w-9 place-items-center"><ArrowLeft size={20} /></button>
         <h1 className="truncate text-center text-base font-semibold">{ex.name}</h1>
-        <span />
+        <MeButton size={32} className="justify-self-end" />
       </header>
 
       <nav className="-mx-4 flex gap-6 border-b border-zinc-200 px-4 dark:border-zinc-800">
@@ -140,7 +143,7 @@ export default function ExerciseStats() {
 
               {lvl && (
                 <section className="-mx-4 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800/80">
-                  <h3 className="mb-3 flex items-center gap-2 font-semibold"><Icon name="ranks" size={22} />Strength level</h3>
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold"><Icon name="ranks" size={22} />Strength level<InfoTip text={help.strength} /></h3>
                   <div className="grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800">
                     <div><p className="muted text-xs">Best 1RM</p><p className="text-lg font-bold tabular-nums">{added ? "+" : ""}{w(Math.round(best("orm") * 10) / 10, u)}</p></div>
                     <div className="pl-4"><p className="muted text-xs">Level</p><p className="text-lg font-bold text-lime-600 dark:text-lime-400">{lvl.level}</p></div>

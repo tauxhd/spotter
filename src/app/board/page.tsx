@@ -10,6 +10,9 @@ import ProfileLink from "@/components/ProfileLink";
 import { sb, useStore, type Profile } from "@/lib/store";
 import { eventGroups, events, gymLifts, lifters, mockResults, weightClasses, type Sex } from "@/lib/data";
 import { baseOf, bests, dots, fmtResult, liftsOf, parseResult, weightClass } from "@/lib/lifting";
+import InfoTip from "@/components/InfoTip";
+import MeButton from "@/components/MeButton";
+import { ranksHelp } from "@/lib/help";
 
 type Standard = "open" | "p4p" | "class";
 const standards: { id: Standard; label: string; icon: IconName }[] = [
@@ -101,12 +104,9 @@ export default function Ranks() {
 
   return (
     <div className="space-y-4">
-      <header>
-        <h1 className="h-title flex items-center gap-2"><Icon name="ranks" size={34} />Ranks</h1>
-        <p className="muted text-sm">
-          {standard === "p4p" ? (ev.p4p === "dots" ? "DOTS: total adjusted for bodyweight, so every size competes fairly" : "Lift divided by bodyweight")
-            : standard === "class" ? `IPF weight classes, ${classSex === "M" ? "men" : "women"}` : ev.lower ? "Fastest time wins" : "Best result, any bodyweight"}
-        </p>
+      <header className="flex items-center justify-between gap-3">
+        <h1 className="h-title flex items-center gap-2"><Icon name="ranks" size={34} />Ranks<InfoTip text={ranksHelp(standard, ev.p4p, ev.lower, classSex)} label="How this board is scored" size={17} /></h1>
+        <MeButton />
       </header>
 
       {/* event */}
@@ -242,7 +242,6 @@ export default function Ranks() {
         ))}
         {rows.length === 0 && <li><EmptyState art="podium" title="Nobody here yet" text={["following", "followers", "friends"].includes(who) ? "Follow students from the feed to compare with them." : "Log a result and take first place."} /></li>}
       </ol>
-      <p className="muted flex items-center gap-1 text-xs"><Icon name="verified" size={14} />Verified = checked by a gym rep. Gym lifts come from logged sets; other events are self-reported.</p>
     </div>
   );
 }

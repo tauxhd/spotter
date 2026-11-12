@@ -17,6 +17,8 @@ import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { img } from '@/lib/web';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 const macros = [
   { k: 'p', label: 'Protein', icon: 'protein', color: '#0ea5e9' },
@@ -60,12 +62,11 @@ export default function FoodPage() {
       <Stack.Screen options={{ title: f.stall, headerTitleAlign: 'center' }} />
       <View style={[section, { paddingTop: 4 }]}>
         <Image source={img(`/food/${slug(f.name)}.webp`)} style={{ width: side, height: side, alignSelf: 'center', borderRadius: 6, backgroundColor: '#18181b' }} contentFit="cover" />
-        <ThemedText style={styles.name}>{f.name}</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 15 }}><ThemedText style={[styles.name, { marginTop: 0, flexShrink: 1 }]}>{f.name}</ThemedText><InfoTip text={help.portion} size={17} label="About these numbers" /></View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
           <ThemedText style={[styles.tag, { backgroundColor: theme.backgroundSelected, color: theme.textSecondary }]}>{f.stall.toUpperCase()}</ThemedText>
           {highProtein(f) && <ThemedText style={[styles.tag, { backgroundColor: 'rgba(163,230,53,0.1)', color: Lime }]}>HIGH PROTEIN</ThemedText>}
         </View>
-        <ThemedText themeColor="textSecondary" style={{ fontSize: 12, marginTop: 8 }}>Typical APU cafeteria portion, estimated.</ThemedText>
       </View>
 
       <View style={section}>

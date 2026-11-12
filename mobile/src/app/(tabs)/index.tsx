@@ -20,6 +20,8 @@ import { BottomTabInset, Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore } from '@/lib/store';
 import { img } from '@/lib/web';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 type Class = { code: string; name: string; start: string; end: string; room: string };
 const level = (p: number) => (p >= 80 ? { label: 'Packed', color: '#ef4444' } : p >= 50 ? { label: 'Busy', color: '#f59e0b' } : { label: 'Quiet', color: Lime });
@@ -146,7 +148,7 @@ export default function GymHome() {
         <Section>
           <View style={styles.cardHead}>
             {icon('crowd') && <Image source={icon('crowd')} style={{ width: 28, height: 28 }} />}
-            <ThemedText type="smallBold" style={{ fontSize: 16, flex: 1 }}>Live crowd</ThemedText>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText type="smallBold" style={{ fontSize: 16 }}>Live crowd</ThemedText><InfoTip text={help.crowd} /></View>
             <View style={styles.live}><View style={styles.dot} /><ThemedText type="smallBold" style={{ fontSize: 11, color: Lime }}>LIVE</ThemedText></View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
@@ -185,7 +187,6 @@ export default function GymHome() {
               );
             })}
           </View>
-          <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Typical crowd today, from past clock-ins</ThemedText>
         </Section>
 
         <Section>

@@ -22,6 +22,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { img } from '@/lib/web';
 import { Input } from '@/components/ui/input';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 type Food = { name: string; kcal: number; p: number; c: number; f: number };
 const ALL = 'All', HP = 'High protein';
@@ -181,8 +183,7 @@ export default function Eat() {
           </View>
         )}
 
-        <ThemedText type="smallBold" style={{ fontSize: 16 }}>APU cafeteria</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: -8, fontSize: 12 }}>Typical portions, estimated. Tap + to log.</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText type="smallBold" style={{ fontSize: 16 }}>APU cafeteria</ThemedText><InfoTip text={help.cafeteria} /></View>
         <View style={{ justifyContent: 'center' }}>
           <Input value={q} onChangeText={setQ} placeholder="Search food…" placeholderTextColor={theme.textSecondary}
             style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />

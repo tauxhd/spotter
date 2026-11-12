@@ -10,6 +10,9 @@ import { useClasses, useNow } from "@/lib/useNow";
 import { sb, useStore } from "@/lib/store";
 import { classes as sample, crowdAt, crowdByHour, fmt, gym, minsOf, toMin } from "@/lib/data";
 import { gaps } from "@/lib/lifting";
+import InfoTip from "@/components/InfoTip";
+import MeButton from "@/components/MeButton";
+import { help } from "@/lib/help";
 
 const level = (p: number) =>
   p >= 80 ? { label: "Packed", bar: "bg-red-500", text: "text-red-600 dark:text-red-400" }
@@ -76,7 +79,7 @@ export default function GymHome() {
           <span className={`rounded-sm px-2.5 py-1 text-xs font-semibold ${open ? "bg-lime-100 text-lime-700 dark:bg-lime-400/10 dark:text-lime-400" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
             {open ? `Open until ${gym.close}` : `Opens ${gym.open}`}
           </span>
-          <Link href={"/me" + location.search} aria-label="Your profile"><Avatar id={me.id} url={me.avatar_url} name={me.name} size={38} className="ring-2 ring-lime-400/40" /></Link>
+          <MeButton size={38} />
         </div>
       </header>
 
@@ -111,7 +114,7 @@ export default function GymHome() {
       {/* Live crowd */}
       <section className="card">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 font-semibold"><Icon name="crowd" size={30} />Live crowd</h2>
+          <h2 className="flex items-center gap-2 font-semibold"><Icon name="crowd" size={30} />Live crowd<InfoTip text={help.crowd} /></h2>
           <span className="flex items-center gap-1.5 text-xs font-semibold text-lime-600 dark:text-lime-400"><span className="h-2 w-2 animate-pulse rounded-full bg-lime-500" />LIVE</span>
         </div>
         <div className="mt-2 flex items-baseline gap-2">
@@ -157,7 +160,6 @@ export default function GymHome() {
             );
           })}
         </div>
-        <p className="muted mt-1 text-xs">Typical crowd today, from past clock-ins</p>
       </section>
 
       {/* Best slot from timetable */}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { equipment, exercises, floor } from "@/lib/data";
+import MeButton from "@/components/MeButton";
 
 // ponytail: 2D plan traced from the team's sketch. Swap in the Blender model (.glb via <model-viewer>) later;
 // the equipment ids stay the same and become hotspot names.
@@ -33,6 +34,7 @@ function GymMap() {
           <h1 className="h-title">Gym map</h1>
           <p className="muted text-sm">{picked ? `${picked.name} · ${picked.zone}` : "Tap any equipment"}</p>
         </div>
+        <MeButton className="ml-auto" />
       </header>
 
       <div className="card py-2">

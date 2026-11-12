@@ -15,6 +15,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/kit';
 import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { InfoTip } from '@/components/ui/info-tip';
+import { help } from '@shared/help';
 
 // Sets per fine muscle group (for the list and the 3D body) and per body area (for the spider chart).
 export function musclesHit(exercises: ExerciseLog[], library: Exercise[]) {
@@ -46,7 +48,7 @@ export default function MusclesSheet({ open, onClose, hit, areas, ranked }: { op
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
         <View style={styles.head}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="stats" size={22} /><ThemedText style={styles.h1}>Muscles hit</ThemedText></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="stats" size={22} /><ThemedText style={styles.h1}>Muscles hit</ThemedText><InfoTip text={help.muscles} /></View>
           <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close"><X size={20} color={theme.textSecondary} /></Pressable>
         </View>
         <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
@@ -57,7 +59,6 @@ export default function MusclesSheet({ open, onClose, hit, areas, ranked }: { op
           </ScrollView>
           <View style={styles.dots}>{[0, 1].map((k) => <View key={k} style={[styles.dot, slide === k && { width: 16, backgroundColor: Lime }]} />)}</View>
           <View style={{ paddingHorizontal: 16, gap: 12, marginTop: 8 }}>
-            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Sets this workout. The main muscle counts 1, others worked count ½.</ThemedText>
             {ranked.length === 0 ? <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 16 }}>Tick sets to see muscles hit.</ThemedText>
               : ranked.map(([m, n], i) => (
                 <View key={m} style={styles.row}>

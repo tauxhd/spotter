@@ -14,6 +14,7 @@ import ExerciseThumb from "@/components/ExerciseThumb";
 import { useStore } from "@/lib/store";
 import { addSets, findExercise, lifters, oldNames, setTypes, supersetColor } from "@/lib/data";
 import { countsPR, e1rm, mmss, setLabels } from "@/lib/lifting";
+import MeButton from "@/components/MeButton";
 
 const dur = (m?: number | null) => (!m ? "—" : m < 60 ? `${m}min` : `${Math.floor(m / 60)}h ${m % 60}min`);
 
@@ -53,7 +54,7 @@ export default function WorkoutDetail() {
       <header className="flex items-center gap-3">
         <Link href={back} aria-label="Back to feed" className="grid h-9 w-9 place-items-center rounded-xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"><ArrowLeft size={18} /></Link>
         <h1 className="flex-1 text-center font-semibold">Workout detail</h1>
-        <span className="w-9" />
+        <MeButton size={32} />
       </header>
 
       <section className="space-y-3">
