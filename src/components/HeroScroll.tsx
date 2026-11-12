@@ -577,7 +577,12 @@ const scenes: Scene[] = [
 ];
 const N = scenes.length;
 const L = 2.5; // screens of scrolling per scene (more = slower)
-const U = 1 + L * N; // scroll units: the intro, then the scenes
+const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fading into the page)
+const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
+/** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
+const cut = (x: number) => `polygon(${x}% 0, 140% 0, 140% 100%, ${x - 40}% 100%)`;
+/** the stripe that leads a swipe: a band just ahead of the edge */
+const band = (x: number) => `polygon(${x - 7}% 0, ${x}% 0, ${x - 40}% 100%, ${x - 47}% 100%)`;
 
 export default function HeroScroll({ apk }: { apk: string }) {
   const ref = useRef<HTMLElement>(null);
@@ -603,6 +608,7 @@ export default function HeroScroll({ apk }: { apk: string }) {
   const ek = (k: number) => (k === 0 ? smooth(0.35, 1, p) : smooth(-0.05, 0.14, tk(k))); // its screen's entrance
   const intro = smooth(0, 0.85, p);
   const cur = clamp(Math.floor((p - 1) / L), 0, N - 1);
+  const o = (p - 1 - L * N) / O; // the outro's own time, 0..1
   const swipe = (k: number) => (k ? smooth(-0.1, 0.03, tk(k)) : 1); // how far scene k's colour has swiped across
   const th = THEME[scenes[cur].theme];
 
@@ -626,10 +632,9 @@ export default function HeroScroll({ apk }: { apk: string }) {
           const r = swipe(k);
           if (!k || r <= 0) return null;
           const a = 140 - r * 200, stripe = s.theme === "lime" ? "#fafafa" : LIME;
-          const cut = (x: number) => `polygon(${x}% 0, 140% 0, 140% 100%, ${x - 40}% 100%)`;
           return (
             <div key={s.text} className="pointer-events-none absolute inset-0" aria-hidden>
-              <div className="absolute inset-0" style={{ background: stripe, clipPath: cut(a - 7) }} />
+              <div className="absolute inset-0" style={{ background: stripe, clipPath: band(a) }} />
               <div className="absolute inset-0" style={{ background: THEME[s.theme].bg, clipPath: cut(a) }} />
             </div>
           );
@@ -725,6 +730,28 @@ export default function HeroScroll({ apk }: { apk: string }) {
 
         {/* the lime flash on the big moments */}
         <div className="pointer-events-none absolute inset-0 z-40" style={{ background: th.flash, opacity: flash * 0.45 }} aria-hidden />
+
+        {/* outro: the logo on the signature grey, which then fades into the page below */}
+        {o > -0.1 && (() => {
+          const r = smooth(-0.08, 0.2, o), a = 140 - r * 200, fade = smooth(0.62, 0.95, o);
+          if (r <= 0) return null;
+          return (
+            <div className="pointer-events-none absolute -inset-1 z-50" aria-hidden={o < 0.2}>
+              <div className="absolute inset-0" style={{ background: LIME, clipPath: band(a) }} />
+              <div className="absolute inset-0 grid place-items-center" style={{ background: mix("#27272a", "#09090b", fade), clipPath: cut(a) }}>
+                <div className="flex flex-col items-center" style={{ opacity: 1 - fade, transform: `scale(${1 - fade * 0.08})` }}>
+                  <img src="/icon-512.png" alt="Spotter" className="rounded-[28px] shadow-2xl shadow-black/50"
+                    style={{ width: 120, height: 120, transform: `scale(${back((o - 0.16) / 0.12) * (1 + Math.sin(o * 30) * 0.025)})` }} />
+                  <p className="mt-6 text-2xl font-bold uppercase text-lime-400" style={{ letterSpacing: `${0.3 + (1 - smooth(0.24, 0.44, o)) * 0.6}em`, opacity: smooth(0.24, 0.32, o) }}>Spotter</p>
+                  <p className="mt-2 text-zinc-400" style={{ opacity: smooth(0.32, 0.42, o) }}>Your gym, in your pocket.</p>
+                  <span className="mt-6 block h-0.5 w-32 overflow-hidden rounded-sm bg-zinc-700" style={{ opacity: smooth(0.36, 0.44, o) }}>
+                    <span className="block h-full w-2/5 rounded-sm bg-lime-400" style={{ transform: `translateX(${(((o * 5) % 1) * 3.5 - 1) * 100}%)` }} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* progress */}
         <div className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-2 md:flex" style={{ opacity: intro }} aria-hidden>
