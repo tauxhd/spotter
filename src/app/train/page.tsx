@@ -443,26 +443,26 @@ export default function Train() {
             {ex.superset !== undefined && (
               <span className={`absolute -top-2 left-3 rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sc.tag} ${hide}`}>Superset {letter(ex.superset)}</span>
             )}
-            <div className={`flex gap-3 ${sorting ? "items-center" : "items-start"}`}>
+            <div className={`relative flex gap-3 ${sorting ? "items-center" : "items-start"}`}>
               {sorting && <GripVertical size={18} className="muted shrink-0" />}
               <ExerciseThumb ex={lib.get(ex.name)} size={sorting ? 36 : 48} />
               <div className="min-w-0 flex-1">
-                <h2 {...longPress(i)} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} draggable={false} className="underline-offset-2 hover:underline">{ex.name}</Link> : ex.name}</h2>
+                <h2 {...longPress(i)} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} draggable={false} className={`underline-offset-2 hover:underline ${sorting ? "" : "after:absolute after:inset-0"}`}>{ex.name}</Link> : ex.name}</h2>
                 {!isTimed(ex) && !sorting && <OneRM kg={Math.max(best ?? 0, ...ex.sets.filter((st) => st.done && countsPR(st.type)).map((st) => setMax(ex.name, st)))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
                 {!sorting && (a.exercises[i + 1] || ex.superset !== undefined) && (
                   <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
-                    className={`mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
+                    className={`relative z-10 mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
                     <Link2 size={13} />{ex.superset !== undefined ? "Unlink superset" : "Superset"}
                   </button>
                 )}
                 {!sorting && (ex.timed || timedByDefault(lib.get(ex.name)?.id)) && <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
-                  className="muted mt-1 flex items-center gap-1 text-xs font-semibold">
+                  className="muted relative z-10 mt-1 flex items-center gap-1 text-xs font-semibold">
                   {isTimed(ex) ? <><Hash size={13} />Log reps instead</> : <><Clock size={13} />Log time instead</>}
                 </button>}
               </div>
               {sorting && <span className="muted shrink-0 text-xs">{ex.sets.length} {ex.sets.length === 1 ? "set" : "sets"}</span>}
               {eq && !sorting && (
-                <Link href={`/map${q ? q + "&" : "?"}e=${eq.id}`} className="flex shrink-0 items-center gap-1 rounded-sm bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800">
+                <Link href={`/map${q ? q + "&" : "?"}e=${eq.id}`} className="relative z-10 flex shrink-0 items-center gap-1 rounded-sm bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800">
                   <MapPin size={12} />{eq.name}
                 </Link>
               )}

@@ -300,13 +300,14 @@ function Workout() {
                 style={[sorting ? [styles.collapsed, { backgroundColor: theme.backgroundElement }] : [styles.card, { borderBottomColor: theme.border }],
                   sc ? { borderLeftWidth: 4, borderLeftColor: sc } : null, dragging && [styles.held, held]]}>
                 {sc && !sorting && <ThemedText style={[styles.ssTag, { backgroundColor: sc }]}>SUPERSET {letter(ex.superset)}</ThemedText>}
-                <View style={{ flexDirection: 'row', alignItems: sorting ? 'center' : 'flex-start', gap: 12 }}>
+                {/* the whole head opens the exercise; holding it reorders instead (onLongPress swallows the release) */}
+                <Pressable disabled={!item || sorting} onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item!.id } })}
+                  onLongPress={() => {}} delayLongPress={400} style={({ pressed }) => ({ flexDirection: 'row', alignItems: sorting ? 'center' : 'flex-start', gap: 12, opacity: pressed ? 0.6 : 1 })}>
                   {sorting && <GripVertical size={18} color={theme.textSecondary} />}
                   <ExerciseThumb ex={item} size={sorting ? 36 : 48} />
                   <View style={{ flex: 1 }}>
                     <HoldToSort onStart={(y) => beginSort(i, y)} onMove={moveSort} onEnd={endSort}>
-                      <ThemedText type="smallBold" style={{ fontSize: 16 }} numberOfLines={sorting ? 1 : undefined}
-                        onPress={() => item && !sorting && router.push({ pathname: '/exercise/[id]', params: { id: item.id } })}>{ex.name}</ThemedText>
+                      <ThemedText type="smallBold" style={{ fontSize: 16 }} numberOfLines={sorting ? 1 : undefined}>{ex.name}</ThemedText>
                     </HoldToSort>
                     {!sorting && !timed && top1rm > 0 && (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -333,7 +334,7 @@ function Workout() {
                       <MapPin size={12} color={theme.text} /><ThemedText type="small" style={{ fontSize: 12 }} numberOfLines={1}>{eq.name}</ThemedText>
                     </Pressable>
                   )}
-                </View>
+                </Pressable>
                 {!sorting && (
                   <Animated.View entering={FadeIn.duration(250)}>
                     <View style={[styles.row, { marginTop: 12 }]}>
