@@ -180,12 +180,15 @@ export default function Eat() {
           })}
         </ScrollView>
         {menu.map((f) => (
-          <Animated.View key={f.stall + f.name} layout={layout} style={[styles.card, card, styles.dish]}>
-            <Pressable onPress={() => openFood(f.name)} accessibilityLabel={f.name}><Thumb name={f.name} size={84} /></Pressable>
+          <Animated.View key={f.stall + f.name} layout={layout}>
+          {/* the whole card opens the dish; the + inside adds it without opening */}
+          <Pressable onPress={() => openFood(f.name)} accessibilityRole="link" accessibilityLabel={f.name}
+            style={({ pressed }) => [styles.card, card, styles.dish, pressed && { backgroundColor: theme.backgroundElement }]}>
+            <Thumb name={f.name} size={84} />
             <View style={{ flex: 1, gap: 6 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <View style={{ flex: 1, gap: 4 }}>
-                  <ThemedText type="smallBold" style={{ fontSize: 15 }} onPress={() => openFood(f.name)}>{f.name}</ThemedText>
+                  <ThemedText type="smallBold" style={{ fontSize: 15 }}>{f.name}</ThemedText>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
                     {pick !== f.stall && <ThemedText style={[styles.tag, { backgroundColor: theme.backgroundSelected, color: theme.textSecondary }]}>{f.stall.toUpperCase()}</ThemedText>}
                     {highProtein(f) && <ThemedText style={[styles.tag, { backgroundColor: 'rgba(132,204,22,0.15)', color: Lime }]}>HIGH PROTEIN</ThemedText>}
@@ -205,6 +208,7 @@ export default function Eat() {
                 ))}
               </View>
             </View>
+          </Pressable>
           </Animated.View>
         ))}
       </ScrollView>

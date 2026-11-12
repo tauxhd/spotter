@@ -152,18 +152,19 @@ export default function Eat() {
         </div>
         <ul>
           {foods.filter((f) => (pick === ALL || (pick === HP ? highProtein(f) : f.stall === pick)) && `${f.name} ${f.stall}`.toLowerCase().includes(q.toLowerCase())).map((f) => (
-            <li key={f.stall + f.name} className="card flex gap-3 py-3">
-              <Link href={`/eat/${slug(f.name)}${location.search}`} aria-label={f.name} className="shrink-0 transition active:scale-95"><Thumb name={f.name} size={88} /></Link>
+            <li key={f.stall + f.name} className="card relative flex gap-3 py-3 transition active:bg-zinc-100 dark:active:bg-zinc-900/60">
+              <Thumb name={f.name} size={88} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
-                    <Link href={`/eat/${slug(f.name)}${location.search}`} className="font-semibold leading-snug hover:underline">{f.name}</Link>
+                    {/* the whole card opens the dish: this link stretches over it (the + button sits above) */}
+                    <Link href={`/eat/${slug(f.name)}${location.search}`} className="font-semibold leading-snug after:absolute after:inset-0">{f.name}</Link>
                     <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-bold uppercase tracking-wide">
                       {pick !== f.stall && <span className="rounded-sm bg-zinc-100 px-2 py-0.5 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{f.stall}</span>}
                       {highProtein(f) && <span className="rounded-sm bg-lime-100 px-2 py-0.5 text-lime-700 dark:bg-lime-400/10 dark:text-lime-400">High protein</span>}
                     </div>
                   </div>
-                  <button aria-label={`Add ${f.name}`} onClick={() => add(f)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-lime-500 text-zinc-950 shadow-sm shadow-lime-500/30 active:scale-95"><Plus size={18} strokeWidth={2.5} /></button>
+                  <button aria-label={`Add ${f.name}`} onClick={() => add(f)} className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-lime-500 text-zinc-950 shadow-sm shadow-lime-500/30 active:scale-95"><Plus size={18} strokeWidth={2.5} /></button>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-y-0.5">
                   {([["kcal", f.kcal, "kcal"], ["protein", f.p, "prot"], ["carbs", f.c, "carb"], ["fat", f.f, "fat"]] as const).map(([icon, v, unit]) => (
