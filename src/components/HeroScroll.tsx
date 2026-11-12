@@ -537,8 +537,8 @@ type Data = { n: number; tag?: string; what: string; imgs?: string[] };
 const EX = ["barbell-bench-press", "pull-up", "dumbbell-curl", "kettlebell-swing", "goblet-squat", "lat-pulldown", "push-up", "romanian-deadlift", "cable-crossover", "leg-press", "hip-thrust", "dumbbell-shoulder-press", "plank", "burpee"].map((x) => `/exercises/${x}.webp`);
 const FOOD = ["nasi-lemak-fried-chicken", "chicken-briyani", "roti-canai-dhal", "char-kuey-teow", "chicken-mandi", "chicken-katsu-don", "teh-tarik", "mee-goreng-mamak", "tandoori-chicken-naan", "kaya-toast-2-half-boiled-eggs", "fish-chips", "ayam-penyet"].map((x) => `/food/${x}.webp`);
 /** typing? / counting?: when the screen types or a number counts up (its own time 0..1, matching the typed() / smooth() count-ups
- * in its Screen, pop-outs and dataset counter), for the video's sound effects */
-type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; typing?: [number, number][]; counting?: [number, number][]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
+ * in its Screen, pop-outs and dataset counter), and notify? when a notification arrives, for the video's sound effects */
+type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; typing?: [number, number][]; counting?: [number, number][]; notify?: number[]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
 
 const scenes: Scene[] = [
   {
@@ -577,7 +577,7 @@ const scenes: Scene[] = [
   {
     word: ["Train", "together."], theme: "white", text: "See which friends are in the SweatZone right now, follow your classmates and get a ping when your gym buddy clocks in.",
     floats: [["/icons/crowd.webp", 91, 18, 15, 1.4, -10], ["/icons/bell.webp", 52, 82, 10, 0.8, 12], ["/icons/person.webp", 97, 72, 11, 1.2, -6], ["/icons/heart.webp", 57, 12, 8, 0.6, 8]],
-    Screen: Friends,
+    Screen: Friends, notify: [0.12], // "Hafiz R. just clocked in" drops in
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.18, 240, 96], [0.26, 240, 96], [0.44, 386, 688], [0.56, 386, 688], [0.72, 300, 520], [1, 300, 520]],
       clicks: [0.24, 0.5], flashes: [0.24, 0.5],
@@ -655,6 +655,7 @@ const scenes: Scene[] = [
     word: ["Hype the", "squad."], theme: "dark", text: "Share your sessions, like and comment on your friends' PRs, and keep each other coming back.",
     floats: [["/icons/heart.webp", 91, 18, 15, 1.4, -10], ["/icons/comment.webp", 52, 82, 11, 0.8, 12], ["/icons/flame.webp", 97, 72, 11, 1.2, -6], ["/icons/share.webp", 57, 12, 8, 0.6, 8]],
     Screen: Feed, typing: [[0.37, 0.5]], // the comment
+    notify: [0.62, 0.68], // the notifications pop out, Daniel's reply arrives
     counting: [[0.77, 0.86]], // the streak
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.14, 90, 552], [0.2, 90, 552], [0.27, 200, 552], [0.31, 200, 552], [0.35, 200, 926], [0.5, 200, 926], [0.53, 426, 926], [0.58, 426, 926], [0.75, 300, 450], [1, 300, 450]],
@@ -687,6 +688,7 @@ const scenes: Scene[] = [
     data: { n: 43, what: "dishes from the 9 APU cafeteria stalls: our own food dataset, with macros and art made for the real menu.", imgs: FOOD }, text: "Every dish in the APU cafeteria with its macros, counted against a target tuned to your goal.",
     floats: [["/hero/props/nasi-lemak-fried-chicken.webp", 92, 19, 19, 1.4, 8], ["/hero/props/teh-tarik.webp", 52, 83, 12, 0.8, -10], ["/hero/props/roti-canai-dhal.webp", 97, 74, 14, 1.2, 12], ["/icons/protein.webp", 57, 13, 8, 0.6, 0]],
     Screen: Eat, typing: [[0.17, 0.33]], // the search
+    notify: [0.5], // the "Added" toast
     counting: [[0, 0.1], [0.16, 0.4], [0.55, 0.78]], // kcal as the screen arrives, the 43 dishes, kcal + macros after adding
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.12, 200, 426], [0.16, 200, 426], [0.36, 320, 480], [0.45, 422, 518], [0.55, 422, 518], [0.66, 240, 260], [1, 240, 260]],
@@ -813,6 +815,8 @@ export const heroTyping = () => scenes.map((s) => [[0, 0.12] as [number, number]
 /** every cursor click per scene (its own time 0..1), for the video's click sound */
 /** every count-up per scene (its own time 0..1) */
 export const heroCounting = () => scenes.map((s) => s.counting ?? []);
+/** every notification per scene (its own time 0..1) */
+export const heroNotify = () => scenes.map((s) => s.notify ?? []);
 export const heroClicks = () => scenes.map((s) => s.play(0.5, true).clicks);
 export const heroMoments = () => scenes.map((s) => { const pl = s.play(0.5, true); return [...new Set([...pl.clicks, ...pl.flashes])].sort((a, b) => a - b); });
 /** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
