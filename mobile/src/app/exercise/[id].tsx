@@ -9,7 +9,7 @@ import Svg, { Circle, G, Line, Polyline, Text as SvgText } from 'react-native-sv
 
 import { setTypes, timedByDefault } from '@shared/data';
 import { countsPR, countsVolume, e1rm, mmss, setLabels } from '@shared/lifting';
-import { LEVELS, bodyFor, isLoadedBodyweight, strengthLevel } from '@shared/strength';
+import { LEVELS, bodyFor, isLoadedBodyweight, strengthLevel, volumeShare } from '@shared/strength';
 import { rankedLifts, repRecords, type RankedLift } from '@shared/workout';
 import { ThemedText } from '@/components/themed-text';
 import { EmptyState, Icon, Section } from '@/components/ui/kit';
@@ -115,6 +115,7 @@ export default function ExerciseStats() {
   const [allLifts, setAllLifts] = useState(false);
   const timed = timedByDefault(id), added = isLoadedBodyweight(id);
   const body = bodyFor(s.library, Number(me.bw))(ex?.name ?? '');
+  const volBody = Number(me.bw) * volumeShare(id); // bodyweight a rep moves, counted in volume
 
   const sessions = s.sessions
     .map((x) => ({ at: new Date(x.at).getTime(), title: x.title, sets: x.exercises.filter((e) => e.name === ex?.name).flatMap((e) => e.sets.filter((st) => st.done)) }))
@@ -124,7 +125,7 @@ export default function ExerciseStats() {
     return {
       at, heaviest: Math.max(0, ...work.map((st) => st.kg)),
       orm: Math.max(0, ...work.filter((st) => st.reps > 0 && st.kg + body > 0).map((st) => e1rm(st.kg + body, st.reps) - body)),
-      setVol: Math.max(0, ...vol.map((st) => st.kg * st.reps)), vol: vol.reduce((n, st) => n + st.kg * st.reps, 0),
+      setVol: Math.max(0, ...vol.map((st) => (st.kg + volBody) * st.reps)), vol: vol.reduce((n, st) => n + (st.kg + volBody) * st.reps, 0),
       reps: Math.max(0, ...work.map((st) => st.reps)), hold: Math.max(0, ...sets.map((st) => st.secs ?? 0)),
     };
   });

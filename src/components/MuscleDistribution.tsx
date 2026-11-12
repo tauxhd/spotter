@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { addSets, type Exercise } from "@/lib/data";
 import { countsVolume } from "@/lib/lifting";
+import { volumeShare } from "@/lib/strength";
 import { toUnit, type Unit } from "@/lib/units";
 
 export type Log = { at: number; exercises: { ex?: Exercise; sets: { kg: number; reps: number; type?: string }[] }[] };
@@ -12,7 +13,7 @@ const PERIODS = [["7D", 7], ["30D", 30], ["3M", 91], ["1Y", 365]] as const;
 const DAY = 864e5;
 
 // Sets per body area (secondary muscles count half) plus totals for one window of time.
-function sum(logs: Log[], from: number, to: number) {
+function sum(logs: Log[], from: number, to: number, bw: number) {
   const area: Record<string, number> = {};
   let workouts = 0, sets = 0, reps = 0, volume = 0;
   for (const l of logs) {
@@ -21,7 +22,8 @@ function sum(logs: Log[], from: number, to: number) {
     for (const e of l.exercises) {
       addSets(area, e.ex, e.sets.length);
       sets += e.sets.length;
-      for (const st of e.sets) { reps += st.reps; if (countsVolume(st.type as never)) volume += st.kg * st.reps; }
+      const body = bw * volumeShare(e.ex?.id); // pull-ups, dips, push-ups move bodyweight too
+      for (const st of e.sets) { reps += st.reps; if (countsVolume(st.type as never)) volume += (st.kg + body) * st.reps; }
     }
   }
   return { area, workouts, sets, reps, volume };
@@ -53,11 +55,11 @@ export function Radar({ cur, prev, className = "" }: { cur: Record<string, numbe
 }
 
 // Radar of where your sets went this period vs the one before, and the totals with their change.
-export default function MuscleDistribution({ logs, u }: { logs: Log[]; u: Unit }) {
+export default function MuscleDistribution({ logs, u, bw = 0 }: { logs: Log[]; u: Unit; bw?: number }) {
   const [p, setP] = useState(1);
   const days = PERIODS[p][1], now = Date.now();
-  const cur = sum(logs, now - days * DAY, now + DAY);
-  const prev = sum(logs, now - 2 * days * DAY, now - days * DAY);
+  const cur = sum(logs, now - days * DAY, now + DAY, bw);
+  const prev = sum(logs, now - 2 * days * DAY, now - days * DAY, bw);
   const kVol = (kg: number) => { const v = toUnit(kg, u); return v >= 1000 ? `${(v / 1000).toFixed(1)}k ${u}` : `${Math.round(v)} ${u}`; };
   const cards: [string, number, number, (n: number) => string][] = [
     ["Workouts", cur.workouts, prev.workouts, String], ["Sets", cur.sets, prev.sets, String],

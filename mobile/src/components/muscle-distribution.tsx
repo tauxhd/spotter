@@ -7,6 +7,7 @@ import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 
 import { addSets, type Exercise } from '@shared/data';
 import { countsVolume } from '@shared/lifting';
+import { volumeShare } from '@shared/strength';
 import { ThemedText } from '@/components/themed-text';
 import { Section } from '@/components/ui/kit';
 import { Lime, Red } from '@/constants/theme';
@@ -17,7 +18,7 @@ const AREAS = ['Back', 'Chest', 'Core', 'Shoulders', 'Arms', 'Legs'] as const;
 const PERIODS = [['7D', 7], ['30D', 30], ['3M', 91], ['1Y', 365]] as const;
 const DAY = 864e5;
 
-function sum(logs: Log[], from: number, to: number) {
+function sum(logs: Log[], from: number, to: number, bw: number) {
   const area: Record<string, number> = {};
   let workouts = 0, sets = 0, reps = 0, volume = 0;
   for (const l of logs) {
@@ -26,7 +27,8 @@ function sum(logs: Log[], from: number, to: number) {
     for (const e of l.exercises) {
       addSets(area, e.ex, e.sets.length);
       sets += e.sets.length;
-      for (const st of e.sets) { reps += st.reps; if (countsVolume(st.type as never)) volume += st.kg * st.reps; }
+      const body = bw * volumeShare(e.ex?.id); // pull-ups, dips, push-ups move bodyweight too
+      for (const st of e.sets) { reps += st.reps; if (countsVolume(st.type as never)) volume += (st.kg + body) * st.reps; }
     }
   }
   return { area, workouts, sets, reps, volume };
@@ -50,12 +52,12 @@ export function Radar({ cur, prev, height = 260 }: { cur: Record<string, number>
   );
 }
 
-export default function MuscleDistribution({ logs }: { logs: Log[] }) {
+export default function MuscleDistribution({ logs, bw = 0 }: { logs: Log[]; bw?: number }) {
   const theme = useTheme();
   const [p, setP] = useState(1);
   const [now] = useState(() => Date.now());
   const days = PERIODS[p][1];
-  const cur = sum(logs, now - days * DAY, now + DAY), prev = sum(logs, now - 2 * days * DAY, now - days * DAY);
+  const cur = sum(logs, now - days * DAY, now + DAY, bw), prev = sum(logs, now - 2 * days * DAY, now - days * DAY, bw);
   const kVol = (kg: number) => (kg >= 1000 ? `${(kg / 1000).toFixed(1)}k kg` : `${Math.round(kg)} kg`);
   const cards: [string, number, number, (n: number) => string][] = [
     ['Workouts', cur.workouts, prev.workouts, String], ['Sets', cur.sets, prev.sets, String],

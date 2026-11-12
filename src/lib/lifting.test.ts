@@ -60,3 +60,12 @@ test("timer formatting", () => {
   assert.equal(hhmmss(59 * 60 + 5), "59:05");
   assert.equal(hhmmss(3600 + 61), "1:01:01");
 });
+test("volume: the share of bodyweight a rep moves", async () => {
+  const { volumeBodyFor, volumeShare } = await import("./strength.ts");
+  const body = volumeBodyFor([{ name: "Pull Up", id: "pull-up" }, { name: "Push Up", id: "push-up" }, { name: "Bench", id: "barbell-bench-press" }], 80);
+  assert.equal(body("Pull Up"), 80); // pull-ups / dips: all of it (+ any added kg)
+  assert.equal(body("Push Up"), 48); // push-ups: 60%
+  assert.equal(body("Bench"), 0); // loaded lifts: just the logged kg
+  assert.equal(volumeShare("knee-push-up"), 0.45);
+  assert.equal(volumeShare(undefined), 0);
+});

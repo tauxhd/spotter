@@ -18,12 +18,13 @@ export function rankedLifts(sessions: { at: string; exercises: ExerciseLog[] }[]
 // Best set for each rep count (heaviest weight done for exactly that many reps), strongest 1RM first.
 export const repRecords = (lifts: RankedLift[]) => lifts.filter((l, i) => lifts.findIndex((x) => x.reps === l.reps) === i);
 
-// Session volume: kg × reps over ticked sets, warm-up and assisted sets left out (the live header and the saved post).
-export const sessionVolume = (exs: ExerciseLog[]) =>
-  exs.reduce((v, e) => v + e.sets.filter((x) => x.done && countsVolume(x.type)).reduce((w, x) => w + x.kg * x.reps, 0), 0);
+// Session volume: (kg + the bodyweight a rep moves) × reps over ticked sets, warm-up and assisted sets left out (the live
+// header and the saved post). `body` comes from volumeBodyFor(): your bodyweight for pull-ups/dips, 60% for push-ups.
+export const sessionVolume = (exs: ExerciseLog[], body: (name: string) => number = () => 0) =>
+  exs.reduce((v, e) => v + e.sets.filter((x) => x.done && countsVolume(x.type)).reduce((w, x) => w + (x.kg + body(e.name)) * x.reps, 0), 0);
 
 // Turn the sets ticked in a workout into what gets saved: done exercises, PRs, the post's exercise list, volume and set count.
-export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<string, number>, body: (name: string) => number = () => 0) {
+export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<string, number>, body: (name: string) => number = () => 0, volBody: (name: string) => number = () => 0) {
   const lib = new Map(library.map((e) => [e.name, e]));
   const isTimed = (e: ExerciseLog) => e.timed ?? timedByDefault(lib.get(e.name)?.id);
   const done = exs.map((e) => ({ ...e, sets: e.sets.filter((x) => x.done) })).filter((e) => e.sets.length);
@@ -49,7 +50,7 @@ export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<
     };
   });
 
-  const volume = sessionVolume(done);
+  const volume = sessionVolume(done, volBody);
   const sets = done.reduce((n, e) => n + e.sets.length, 0);
   return { done, prs, exercises, volume, sets };
 }

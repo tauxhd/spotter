@@ -13,7 +13,7 @@ import SetTypeSheet from "@/components/SetTypeSheet";
 import { useStore } from "@/lib/store";
 import { addSets, demoNow, equipment, exercises, setTypes, templates, timeAgo, timedByDefault, supersetColor, type Exercise, type ExerciseLog, type SetType } from "@/lib/data";
 import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from "@/lib/lifting";
-import { bodyFor, isLoadedBodyweight } from "@/lib/strength";
+import { bodyFor, isLoadedBodyweight, volumeBodyFor } from "@/lib/strength";
 import OneRM from "@/components/OneRM";
 import { Radar } from "@/components/MuscleDistribution";
 import { muscleFor } from "@/lib/muscles";
@@ -382,7 +382,7 @@ export default function Train() {
   const areas: Record<string, number> = {}; // same sets by body area, for the spider chart
   for (const e of a.exercises) addSets(areas, lib.get(e.name), e.sets.filter((x) => x.done && countsPR(x.type)).length);
   const q = typeof window !== "undefined" ? location.search : "";
-  const vol = sessionVolume(a.exercises);
+  const vol = sessionVolume(a.exercises, volumeBodyFor(s.library, Number(me.bw)));
 
   return (
     <div className="space-y-4">

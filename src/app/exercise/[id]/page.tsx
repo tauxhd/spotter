@@ -10,7 +10,7 @@ import LiftTable from "@/components/LiftTable";
 import { useStore } from "@/lib/store";
 import { setTypes, timedByDefault } from "@/lib/data";
 import { countsPR, countsVolume, e1rm, mmss, setLabels } from "@/lib/lifting";
-import { LEVELS, bodyFor, isLoadedBodyweight, strengthLevel } from "@/lib/strength";
+import { LEVELS, bodyFor, isLoadedBodyweight, strengthLevel, volumeShare } from "@/lib/strength";
 import { w, wNum } from "@/lib/units";
 import { rankedLifts, repRecords } from "@/lib/workout";
 import MeButton from "@/components/MeButton";
@@ -38,6 +38,7 @@ export default function ExerciseStats() {
   const timed = timedByDefault(id);
   const added = isLoadedBodyweight(id);
   const body = bodyFor(s.library, Number(me.bw))(ex?.name ?? "");
+  const volBody = Number(me.bw) * volumeShare(id); // bodyweight a rep moves, counted in volume
 
   // One point per session that has done sets of this exercise, oldest first.
   const sessions = useMemo(() => s.sessions
@@ -51,8 +52,8 @@ export default function ExerciseStats() {
       at,
       heaviest: Math.max(0, ...work.map((st) => st.kg)),
       orm: Math.max(0, ...work.filter((st) => st.reps > 0 && st.kg + body > 0).map((st) => e1rm(st.kg + body, st.reps) - body)),
-      setVol: Math.max(0, ...vol.map((st) => st.kg * st.reps)),
-      vol: vol.reduce((n, st) => n + st.kg * st.reps, 0),
+      setVol: Math.max(0, ...vol.map((st) => (st.kg + volBody) * st.reps)),
+      vol: vol.reduce((n, st) => n + (st.kg + volBody) * st.reps, 0),
       reps: Math.max(0, ...work.map((st) => st.reps)),
       hold: Math.max(0, ...sets.map((st) => st.secs ?? 0)),
     };

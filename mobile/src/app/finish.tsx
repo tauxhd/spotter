@@ -10,7 +10,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 
 import type { Visibility } from '@shared/data';
 import { baseOf, bests, liftsOf } from '@shared/lifting';
-import { bodyFor } from '@shared/strength';
+import { bodyFor, volumeBodyFor } from '@shared/strength';
 import { summarize } from '@shared/workout';
 import { ThemedText } from '@/components/themed-text';
 import { Press } from '@/components/ui/button';
@@ -42,7 +42,7 @@ export default function Finish() {
   if (!a) return <View style={{ flex: 1, backgroundColor: theme.background }}><EmptyState art="workouts" title="No workout in progress" /></View>;
   const body = bodyFor(s.library, Number(me.bw));
   const prev = bests(baseOf(me), s.sessions, body);
-  const sum = summarize(a.exercises, s.library, prev, body);
+  const sum = summarize(a.exercises, s.library, prev, body, volumeBodyFor(s.library, Number(me.bw)));
   const start = new Date(a.startedAt);
 
   async function pickMedia() {

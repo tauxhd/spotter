@@ -124,7 +124,7 @@ export default function GymStats() {
         </Section>
       )}
 
-      {logs.length > 0 && <MuscleDistribution logs={logs} />}
+      {logs.length > 0 && <MuscleDistribution logs={logs} bw={Number(p.bw)} />}
 
       {favourites.length > 0 && (
         <Section>

@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { equipment, exercises, setTypes, templates, timeAgo, timedByDefault, type Exercise, type ExerciseLog, type SetType } from '@shared/data';
 import { baseOf, bests, countsPR, e1rm, hhmmss, mmss, parseResult, setLabels } from '@shared/lifting';
-import { bodyFor, isLoadedBodyweight } from '@shared/strength';
+import { bodyFor, isLoadedBodyweight, volumeBodyFor } from '@shared/strength';
 import ExercisePicker from '@/components/exercise-picker';
 import MuscleModel from '@/components/muscle-model';
 import MusclesSheet, { musclesHit } from '@/components/muscles-sheet';
@@ -268,7 +268,7 @@ function Workout() {
   const groups = [...new Set(a.exercises.map((e) => e.superset).filter((g) => g !== undefined))];
   const letter = (g?: number) => (g === undefined ? '' : String.fromCharCode(65 + groups.indexOf(g)));
   const { hit, areas, ranked } = musclesHit(a.exercises, s.library);
-  const vol = sessionVolume(a.exercises);
+  const vol = sessionVolume(a.exercises, volumeBodyFor(s.library, Number(me.bw)));
   const typingSet = typing && a.exercises[typing.i]?.sets[typing.j];
   const discard = () => ask('Discard this workout?', 'Your sets won’t be saved.', 'Discard', () => setActive(() => null));
 

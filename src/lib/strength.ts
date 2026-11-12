@@ -194,6 +194,16 @@ const BW_RATIOS = parse(LOADED_BW);
 export const isLoadedBodyweight = (id?: string) => !!id && BW_RATIOS.has(id);
 export const ratioIds = () => [...RATIOS.keys(), ...BW_RATIOS.keys()];
 
+/** Volume: the share of your bodyweight one rep moves, on top of any added kg. Pull-ups, dips and the like lift all of it;
+ *  push-ups about 60% (less on your knees or hands raised, more with feet raised). Everything else: just the logged kg. */
+const PUSH_UP_SHARE: Record<string, number> = { "knee-push-up": 0.45, "incline-push-up": 0.4, "decline-push-up": 0.7 };
+export const volumeShare = (id?: string) => (!id ? 0 : BW_RATIOS.has(id) ? 1 : /push-up$/.test(id) ? PUSH_UP_SHARE[id] ?? 0.6 : 0);
+/** For sessionVolume() / summarize(): kg of bodyweight a rep of this exercise moves. */
+export function volumeBodyFor(library: { name: string; id: string }[], bw: number) {
+  const ids = new Map(library.map((e) => [e.name, e.id]));
+  return (name: string) => bw * volumeShare(ids.get(name));
+}
+
 /** For bests() / summarize(): bodyweight to add for pull-ups, dips etc., 0 for everything else. */
 export function bodyFor(library: { name: string; id: string }[], bw: number) {
   const ids = new Map(library.map((e) => [e.name, e.id]));

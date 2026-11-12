@@ -6,7 +6,7 @@ import { ArrowLeft, CalendarDays, ChevronRight, Eye, Globe, ImagePlus, Lock, Pen
 import { useStore } from "@/lib/store";
 import type { Visibility } from "@/lib/data";
 import { baseOf, bests, liftsOf } from "@/lib/lifting";
-import { bodyFor } from "@/lib/strength";
+import { bodyFor, volumeBodyFor } from "@/lib/strength";
 import { summarize } from "@/lib/workout";
 import { toUnit } from "@/lib/units";
 
@@ -47,7 +47,7 @@ export default function SaveWorkout() {
 
   const body = bodyFor(s.library, Number(me.bw));
   const prev = bests(baseOf(me), s.sessions, body);
-  const sum = summarize(a.exercises, s.library, prev, body);
+  const sum = summarize(a.exercises, s.library, prev, body, volumeBodyFor(s.library, Number(me.bw)));
 
   function pickMedia(f?: File) {
     setErr("");
