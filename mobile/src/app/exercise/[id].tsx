@@ -156,7 +156,7 @@ export default function ExerciseStats() {
       {tab === 0 ? (
         <>
           <Section style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <Image source={img(ex.image)} style={{ width: 112, height: 112, borderRadius: 8, backgroundColor: '#18181b' }} />
+            <Image source={img(ex.image)} style={{ width: 112, height: 112, borderRadius: 4, backgroundColor: '#18181b' }} />
             <View style={{ flex: 1 }}>
               <ThemedText style={{ fontSize: 18, fontWeight: '700' }}>{ex.name}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: 4 }}>Primary: <ThemedText type="small">{cap(ex.muscle)}</ThemedText></ThemedText>

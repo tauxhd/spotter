@@ -112,7 +112,7 @@ export default function Finish() {
         </View>
 
         <Pressable onPress={pickMedia} style={row}>
-          {media ? <Image source={{ uri: media.uri }} style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: '#000' }} /> : <ImagePlus size={22} color={Lime} />}
+          {media ? <Image source={{ uri: media.uri }} style={{ width: 48, height: 48, borderRadius: 4, backgroundColor: '#000' }} /> : <ImagePlus size={22} color={Lime} />}
           <View style={{ flex: 1 }}>
             <ThemedText style={{ fontWeight: '500' }} numberOfLines={1}>{media ? media.name : 'Add photo or video'}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{media ? (media.size ? `${(media.size / 1048576).toFixed(1)} MB` : media.type) : 'Shows first on the feed. Max 50 MB'}</ThemedText>

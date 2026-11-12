@@ -62,6 +62,6 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   opt: { width: '48.8%', flexDirection: 'row', alignItems: 'center', borderRadius: 5, borderWidth: 1 },
   optMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingLeft: 8 },
-  badge: { width: 28, height: 28, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  badge: { width: 28, height: 28, borderRadius: 3, alignItems: 'center', justifyContent: 'center' },
   note: { flexDirection: 'row', gap: 8, borderRadius: 5, paddingHorizontal: 12, paddingVertical: 8, marginTop: 8 },
 });

@@ -166,13 +166,13 @@ export default function Eat() {
             style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
           <Search size={16} color={theme.textSecondary} style={{ position: 'absolute', left: 11 }} pointerEvents="none" />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }} style={{ marginHorizontal: -16, flexGrow: 0 }}>
           {[ALL, HP, ...stalls].map((x) => {
             const on = pick === x, src = x === ALL ? icon('all') : x === HP ? icon('high-protein') : img(`/stalls/${slug(x)}.webp`);
             return (
-              <Pressable key={x} onPress={() => setPick(x)} style={{ width: 64, alignItems: 'center', gap: 4 }}>
-                <View style={[styles.stall, { borderColor: on ? Lime : 'transparent' }]}>{src && <Image source={src} style={{ width: 52, height: 52 }} />}</View>
-                <ThemedText type="small" style={{ fontSize: 11, textAlign: 'center', fontWeight: on ? '800' : '500', color: on ? theme.text : theme.textSecondary }}>{x}</ThemedText>
+              <Pressable key={x} onPress={() => setPick(x)} style={{ width: 60, alignItems: 'center', gap: 4 }}>
+                <View style={[styles.stall, { borderColor: on ? Lime : 'transparent' }]}>{src && <Image source={src} style={x === ALL || x === HP ? { width: 40, height: 40 } : { width: '100%', height: '100%' }} contentFit="cover" />}</View>
+                <ThemedText type="small" style={{ fontSize: 11, lineHeight: 13, textAlign: 'center', fontWeight: on ? '800' : '500', color: on ? theme.text : theme.textSecondary }}>{x}</ThemedText>
               </Pressable>
             );
           })}
@@ -217,13 +217,13 @@ const styles = StyleSheet.create({
   card: { borderRadius: 6, padding: 16 },
   big: { fontSize: 30, lineHeight: 34, fontWeight: '700', fontVariant: ['tabular-nums'] },
   track: { borderRadius: 2, overflow: 'hidden', marginTop: 6 },
-  camera: { width: 50, height: 50, borderRadius: 14, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center' },
+  camera: { width: 45, height: 45, borderRadius: 5, backgroundColor: '#27272a', alignItems: 'center', justifyContent: 'center' },
   guess: { borderRadius: 5, padding: 12, marginTop: 12 },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   search: { borderRadius: 5, paddingLeft: 36, paddingRight: 12, paddingVertical: 11, fontSize: 16 },
-  stall: { width: 56, height: 56, borderRadius: 16, overflow: 'hidden', borderWidth: 2, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center' },
+  stall: { width: 53, height: 53, borderRadius: 6, overflow: 'hidden', borderWidth: 2, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center' },
   dish: { flexDirection: 'row', gap: 12, paddingVertical: 12 },
   tag: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 2, overflow: 'hidden' },
-  plus: { width: 36, height: 36, borderRadius: 12, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' },
+  plus: { width: 34, height: 34, borderRadius: 5, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' },
   macro: { flex: 1, alignItems: 'center', borderRadius: 4, paddingVertical: 4 },
 });

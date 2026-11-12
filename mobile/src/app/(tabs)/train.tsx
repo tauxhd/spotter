@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   ghostSm: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 5, paddingHorizontal: 12, paddingVertical: 7 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   timer: { fontSize: 30, lineHeight: 36, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  iconBtn: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 38, height: 38, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
   card: { marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, backgroundColor: 'transparent' },
   collapsed: { height: CH, borderRadius: 5, paddingHorizontal: 12, justifyContent: 'center' },
   held: { zIndex: 10, borderWidth: 1, borderColor: Lime, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 12 },
@@ -507,5 +507,5 @@ const styles = StyleSheet.create({
   dialog: { width: '100%', maxWidth: 380, borderRadius: 8, padding: 16 },
   clockBox: { borderRadius: 5, padding: 12, alignItems: 'center' },
   trow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  step: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  step: { width: 32, height: 32, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
 });
