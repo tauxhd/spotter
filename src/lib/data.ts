@@ -62,6 +62,14 @@ export const equipment: Equip[] = [
   ...row("tm", "Treadmill", "Treadmill", "Cardio", [[512, 679], [512, 734], [512, 789], [135, 1034], [216, 1034], [288, 1034], [367, 1034], [444, 1034]], 48, 49),
 ];
 
+// Machines of one kind grouped (Treadmill 1-8 -> "Treadmill" with 8 units), in plan order: the map's compact picker.
+export const equipKinds = equipment.reduce<{ zone: string; name: string; items: Equip[] }[]>((a, e) => {
+  const name = e.name.replace(/ \d+$/, "");
+  const k = a.find((g) => g.name === name);
+  if (k) k.items.push(e); else a.push({ zone: e.zone, name, items: [e] });
+  return a;
+}, []);
+
 // Where each exercise is done in the gym (map pin). Names match the exercise library (supabase/exercises.json).
 export const exercises: Record<string, { equip: string }> = {
   "Squat (Barbell)": { equip: "rack" },

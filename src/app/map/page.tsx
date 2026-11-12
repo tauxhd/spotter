@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { equipment, exercises, floor } from "@/lib/data";
+import { equipKinds, equipment, exercises, floor } from "@/lib/data";
 import MeButton from "@/components/MeButton";
 
 const Gym3D = dynamic(() => import("@/components/Gym3D"), { ssr: false }); // three.js only on this page
@@ -21,7 +21,11 @@ function GymMap() {
   const usedFor = picked ? Object.entries(exercises).filter(([, v]) => v.equip === picked.id).map(([k]) => k) : [];
 
   const [plan, setPlan] = useState(false);
+  const [tab, setTab] = useState<string>();
+  const zone = tab ?? picked?.zone ?? zones[0]; // follows the picked machine until you choose a zone yourself
+  const kind = equipKinds.find((k) => k.items.some((e) => e.id === sel));
   const select = (id?: string) => {
+    setTab(undefined);
     const p = new URLSearchParams(params);
     if (id) p.set("e", id); else p.delete("e");
     router.replace(`/map?${p}`, { scroll: false });
@@ -77,18 +81,26 @@ function GymMap() {
         <section className="card"><p className="muted text-sm">Used for: {usedFor.join(", ")}</p></section>
       )}
 
-      {zones.map((z) => (
-        <section key={z}>
-          <h2 className="muted mb-2 text-xs font-semibold uppercase tracking-wider">{z}</h2>
+      {/* compact picker: zone tabs, one scrolling row of machine kinds, then unit numbers for kinds with several */}
+      <section className="space-y-3">
+        <div className="no-scrollbar -mx-4 flex gap-5 overflow-x-auto px-4">
+          {zones.map((z) => <button key={z} className="tab shrink-0" aria-pressed={z === zone} onClick={() => setTab(z)}>{z}</button>)}
+        </div>
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+          {equipKinds.filter((k) => k.zone === zone).map((k) => (
+            <button key={k.name} className="chip" aria-pressed={k === kind} onClick={() => select(k.items[0].id)}>
+              {k.name}{k.items.length > 1 && <span className="ml-1 opacity-60">×{k.items.length}</span>}
+            </button>
+          ))}
+        </div>
+        {kind && kind.items.length > 1 && (
           <div className="flex flex-wrap gap-2">
-            {equipment.filter((e) => e.zone === z).map((e) => (
-              <button key={e.id} aria-pressed={e.id === sel} onClick={() => select(e.id)} className="chip">
-                {e.name}
-              </button>
+            {kind.items.map((e, i) => (
+              <button key={e.id} aria-label={e.name} aria-pressed={e.id === sel} onClick={() => select(e.id)} className="chip grid h-8 w-8 place-items-center px-0">{i + 1}</button>
             ))}
           </div>
-        </section>
-      ))}
+        )}
+      </section>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedProps, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import Svg, { G, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 
-import { equipment, exercises, floor } from '@shared/data';
+import { equipKinds, equipment, exercises, floor } from '@shared/data';
 import Gym3D from '@/components/gym-3d';
 import { ThemedText } from '@/components/themed-text';
 import { Section } from '@/components/ui/kit';
@@ -22,6 +22,16 @@ function Picked({ e }: { e: (typeof equipment)[number] }) {
   return <ARect x={e.x} y={e.y} width={e.w} height={e.h} rx={4} fill="#a3e635" stroke="#65a30d" strokeWidth={2} animatedProps={props} />;
 }
 
+function Chip({ on, label, onPress, a11y, square }: { on: boolean; label: string; onPress: () => void; a11y?: string; square?: boolean }) {
+  const theme = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityLabel={a11y} accessibilityState={{ selected: on }}
+      style={[styles.chip, square && styles.square, { backgroundColor: on ? Lime : theme.backgroundElement }]}>
+      <ThemedText type="smallBold" style={{ fontSize: 12, color: on ? '#09090b' : theme.text }}>{label}</ThemedText>
+    </Pressable>
+  );
+}
+
 export default function GymMap() {
   const params = useLocalSearchParams<{ e?: string }>();
   const theme = useTheme();
@@ -29,6 +39,10 @@ export default function GymMap() {
   const [plan, setPlan] = useState(false);
   const picked = equipment.find((e) => e.id === sel);
   const zones = [...new Set(equipment.map((e) => e.zone))];
+  const [tab, setTab] = useState<string>();
+  const zone = tab ?? picked?.zone ?? zones[0]; // follows the picked machine until you choose a zone yourself
+  const kind = equipKinds.find((k) => k.items.some((e) => e.id === sel));
+  const pickId = (id?: string) => { setTab(undefined); setSel(id); };
   const usedFor = picked ? Object.entries(exercises).filter(([, v]) => v.equip === picked.id).map(([k]) => k) : [];
 
   return (
@@ -45,7 +59,7 @@ export default function GymMap() {
           );
         })}
       </View>
-      {!plan ? <Section style={{ padding: 0, overflow: 'hidden' }}><Gym3D sel={sel} onPick={setSel} /></Section> : <Section style={{ paddingVertical: 8 }}>
+      {!plan ? <Section style={{ padding: 0, overflow: 'hidden' }}><Gym3D sel={sel} onPick={pickId} /></Section> : <Section style={{ paddingVertical: 8 }}>
         <Svg viewBox={floor.viewBox} width="100%" height={560}>
           <Polygon points={floor.outline} fill="#09090b" stroke="#3f3f46" strokeWidth={3} />
           {floor.tables.map(([x, y, w, h], i) => <Rect key={i} x={x} y={y} width={w} height={h} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth={1.5} strokeDasharray="4 3" />)}
@@ -55,7 +69,7 @@ export default function GymMap() {
             const size = Math.min(14, (long * 1.7) / text.length, thin * 0.62);
             const cx = e.x + e.w / 2, cy = e.y + e.h / 2;
             return (
-              <G key={e.id} onPress={() => setSel(e.id)}>
+              <G key={e.id} onPress={() => pickId(e.id)}>
                 {on ? <Picked e={e} /> : <Rect x={e.x} y={e.y} width={e.w} height={e.h} rx={4} fill="#27272a" stroke="#52525b" strokeWidth={2} />}
                 <SvgText x={cx} y={cy + size * 0.35} textAnchor="middle" fontSize={size} fill={on ? '#09090b' : '#a1a1aa'} fontWeight={on ? '700' : '400'}
                   transform={tall ? `rotate(90 ${cx} ${cy})` : undefined}>{text}</SvgText>
@@ -65,20 +79,31 @@ export default function GymMap() {
         </Svg>
       </Section>}
       {picked && usedFor.length > 0 && <ThemedText type="small" themeColor="textSecondary">Used for: {usedFor.join(', ')}</ThemedText>}
-      {zones.map((z) => (
-        <View key={z}>
-          <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 12, letterSpacing: 1, marginBottom: 8 }}>{z.toUpperCase()}</ThemedText>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {equipment.filter((e) => e.zone === z).map((e) => (
-              <Pressable key={e.id} onPress={() => setSel(e.id)} style={[styles.chip, { backgroundColor: e.id === sel ? Lime : theme.backgroundElement }]}>
-                <ThemedText type="smallBold" style={{ fontSize: 12, color: e.id === sel ? '#09090b' : theme.text }}>{e.name}</ThemedText>
-              </Pressable>
-            ))}
-          </View>
+      {/* compact picker: zone tabs, one scrolling row of machine kinds, then unit numbers for kinds with several */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={{ paddingHorizontal: 16, gap: 20 }}>
+        {zones.map((z) => (
+          <Pressable key={z} onPress={() => setTab(z)} accessibilityRole="tab" accessibilityState={{ selected: z === zone }}
+            style={{ paddingBottom: 6, borderBottomWidth: 2, borderBottomColor: z === zone ? Lime : 'transparent' }}>
+            <ThemedText type="smallBold" themeColor={z === zone ? 'text' : 'textSecondary'}>{z}</ThemedText>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+        {equipKinds.filter((k) => k.zone === zone).map((k) => (
+          <Chip key={k.name} on={k === kind} onPress={() => pickId(k.items[0].id)} label={k.items.length > 1 ? `${k.name}  ×${k.items.length}` : k.name} />
+        ))}
+      </ScrollView>
+      {kind && kind.items.length > 1 && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {kind.items.map((e, i) => <Chip key={e.id} on={e.id === sel} onPress={() => pickId(e.id)} label={String(i + 1)} a11y={e.name} square />)}
         </View>
-      ))}
+      )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({ chip: { borderRadius: 3, paddingHorizontal: 12, paddingVertical: 7 } });
+const styles = StyleSheet.create({
+  chip: { borderRadius: 3, paddingHorizontal: 12, paddingVertical: 7 },
+  square: { width: 34, paddingHorizontal: 0, alignItems: 'center' },
+  bleed: { marginHorizontal: -16, flexGrow: 0 },
+});
