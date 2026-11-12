@@ -19,6 +19,8 @@ export const help = {
   hold: "Hold exercises (planks, hangs, carries…) have a ▶ timer on each set. Switch them to reps with “Log reps instead”.",
   visits: "From your clock-ins at the SweatZone door. Only you can see this.",
   bodyBests: "Bodyweight is needed for DOTS. Lifts are optional: they put you on the leaderboard and update as you log sets. Everyone sees weights in their own unit.",
+  heaviest: "The heaviest weight actually lifted for each, from ticked sets of at least 1 rep (warm-ups left out). Swipe for estimated one-rep maxes.",
+  e1rm: "What could probably be lifted for a single rep, estimated from the weight and reps of every set. Swipe back for the heaviest weights actually lifted.",
   verified: "Verified = checked by a gym rep. Gym lifts come from logged sets; other events are self-reported.",
 };
 

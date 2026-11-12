@@ -8,13 +8,14 @@ import ExerciseThumb from "@/components/ExerciseThumb";
 import MuscleDistribution, { type Log } from "@/components/MuscleDistribution";
 import EmptyState from "@/components/EmptyState";
 import { StatsSkeleton } from "@/components/Skeleton";
-import { toUnit, w, wNum, wTotal } from "@/lib/units";
+import { toUnit, wTotal } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
 import { findExercise, lifters, type Post } from "@/lib/data";
-import { baseOf, heaviest, dots, liftsOf } from "@/lib/lifting";
+import { baseOf, bests, heaviest, liftsOf } from "@/lib/lifting";
 import MeButton from "@/components/MeButton";
 import InfoTip from "@/components/InfoTip";
 import { help } from "@/lib/help";
+import BestLifts, { type LiftPage } from "@/components/BestLifts";
 
 const WEEKS = 8;
 const DAY = 864e5;
@@ -72,8 +73,12 @@ export default function GymStats() {
     : posts.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(s.library, e.id, e.name), sets: e.log ?? Array.from({ length: e.sets || 1 }, () => ({ kg: 0, reps: 0 })) })) }));
   const favourites = Object.entries(exSets).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
+  // Best lifts: what was actually lifted, and the estimated one-rep max, from your own sets or the sets in someone's posts.
+  const postSessions = posts.map((x) => ({ exercises: x.exercises.map((e) => ({ name: findExercise(s.library, e.id, e.name)?.name ?? e.name, sets: (e.log ?? []).map((l) => ({ ...l, done: true })) })) }));
   const lifts = own ? liftsOf(heaviest(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
-  const sbd = lifts.squat + lifts.bench + lifts.deadlift;
+  const est = liftsOf(bests(baseOf(p), own ? s.sessions : postSessions));
+  const liftPages: LiftPage[] = [{ title: "Heaviest lifts", info: help.heaviest, lifts }, { title: "Estimated 1RM", info: help.e1rm, lifts: est }];
+  const sbd = Math.max(lifts.squat + lifts.bench + lifts.deadlift, est.squat + est.bench + est.deadlift);
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   const monthVisits = visits.filter((v) => new Date(v.in_at).getTime() >= monthStart);
@@ -123,23 +128,7 @@ export default function GymStats() {
         <Big icon="barbell" value={u === "lb" ? `${Math.round(toUnit(total.volume, u) / 1000)}k lb` : `${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
       </section>
 
-      {sbd > 0 && (
-        <section className={section}>
-          <h2 className="mb-3 font-semibold">Best lifts</h2>
-          <div className="grid grid-cols-4 text-center">
-            {([["squat", "Squat", lifts.squat], ["bench", "Bench", lifts.bench], ["deadlift", "Deadlift", lifts.deadlift], ["ranks", "Total", sbd]] as const).map(([icon, k, v]) => (
-              <div key={k} className="flex flex-col items-center">
-                <Icon name={icon} size={44} />
-                <p className="mt-1.5 text-lg font-bold leading-tight tabular-nums">{wNum(v, u)}</p>
-                <p className="muted text-xs">{k} {u}</p>
-              </div>
-            ))}
-          </div>
-          <p className="muted mt-4 flex items-center justify-center gap-2 border-t border-zinc-100 pt-3 text-xs dark:border-zinc-800/60">
-            <Icon name="p4p" size={24} /><span className="font-semibold text-lime-600 dark:text-lime-400">{dots(sbd, Number(p.bw), p.sex).toFixed(1)} DOTS</span> at {w(Number(p.bw), u)} bodyweight
-          </p>
-        </section>
-      )}
+      {sbd > 0 && <BestLifts pages={liftPages} bw={Number(p.bw)} sex={p.sex} u={u} />}
 
       {logs.length > 0 && <MuscleDistribution logs={logs} u={u} bw={Number(p.bw)} />}
 

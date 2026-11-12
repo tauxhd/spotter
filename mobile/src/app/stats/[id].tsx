@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { findExercise, lifters, type Post } from '@shared/data';
-import { baseOf, heaviest, dots, liftsOf } from '@shared/lifting';
+import { baseOf, bests, heaviest, liftsOf } from '@shared/lifting';
 import MuscleDistribution, { type Log } from '@/components/muscle-distribution';
 import { ExerciseThumb } from '@/components/post-card';
 import { ThemedText } from '@/components/themed-text';
@@ -15,6 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { POST_SELECT, sb, toPost, useStore, type Profile } from '@/lib/store';
 import { InfoTip } from '@/components/ui/info-tip';
 import { help } from '@shared/help';
+import { BestLifts, type LiftPage } from '@/components/best-lifts';
 
 const WEEKS = 8, DAY = 864e5;
 const weekStart = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.getTime(); };
@@ -66,8 +67,12 @@ export default function GymStats() {
     ? s.sessions.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(s.library, undefined, e.name), sets: e.sets.filter((st) => st.done) })) }))
     : posts.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(s.library, e.id, e.name), sets: e.log ?? Array.from({ length: e.sets || 1 }, () => ({ kg: 0, reps: 0 })) })) }));
   const favourites = Object.entries(exSets).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  // Best lifts: what was actually lifted, and the estimated one-rep max, from your own sets or the sets in someone's posts.
+  const postSessions = posts.map((x) => ({ exercises: x.exercises.map((e) => ({ name: findExercise(s.library, e.id, e.name)?.name ?? e.name, sets: (e.log ?? []).map((l) => ({ ...l, done: true })) })) }));
   const lifts = own ? liftsOf(heaviest(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
-  const sbd = lifts.squat + lifts.bench + lifts.deadlift;
+  const est = liftsOf(bests(baseOf(p), own ? s.sessions : postSessions));
+  const liftPages: LiftPage[] = [{ title: 'Heaviest lifts', info: help.heaviest, lifts }, { title: 'Estimated 1RM', info: help.e1rm, lifts: est }];
+  const sbd = Math.max(lifts.squat + lifts.bench + lifts.deadlift, est.squat + est.bench + est.deadlift);
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   const monthVisits = visits.filter((v) => new Date(v.in_at).getTime() >= monthStart);
@@ -105,24 +110,7 @@ export default function GymStats() {
         <Big icon="barbell" value={`${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
       </Section>
 
-      {sbd > 0 && (
-        <Section>
-          <ThemedText type="smallBold" style={{ fontSize: 16, marginBottom: 12 }}>Best lifts</ThemedText>
-          <View style={{ flexDirection: 'row' }}>
-            {([['squat', 'Squat', lifts.squat], ['bench', 'Bench', lifts.bench], ['deadlift', 'Deadlift', lifts.deadlift], ['ranks', 'Total', sbd]] as const).map(([ic, k, v]) => (
-              <View key={k} style={{ flex: 1, alignItems: 'center' }}>
-                <Icon name={ic} size={44} />
-                <ThemedText style={{ fontSize: 18, fontWeight: '700', marginTop: 6, fontVariant: ['tabular-nums'] }}>{Math.round(v * 10) / 10}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{k} kg</ThemedText>
-              </View>
-            ))}
-          </View>
-          <View style={[styles.dots, { borderTopColor: theme.border }]}>
-            <Icon name="p4p" size={24} />
-            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}><ThemedText type="smallBold" style={{ color: Lime, fontSize: 12 }}>{dots(sbd, Number(p.bw), p.sex).toFixed(1)} DOTS</ThemedText> at {Number(p.bw)} kg bodyweight</ThemedText>
-          </View>
-        </Section>
-      )}
+      {sbd > 0 && <BestLifts pages={liftPages} bw={Number(p.bw)} sex={p.sex} />}
 
       {logs.length > 0 && <MuscleDistribution logs={logs} bw={Number(p.bw)} />}
 
@@ -164,5 +152,4 @@ export default function GymStats() {
 const styles = StyleSheet.create({
   kicker: { fontSize: 12, letterSpacing: 1 },
   weeks: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 100, marginTop: 16 },
-  dots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
 });
