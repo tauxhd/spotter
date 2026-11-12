@@ -777,9 +777,25 @@ const N = scenes.length;
 const L = 2.5; // screens of scrolling per scene (more = slower)
 const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fading into the page)
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
-/** the video's opening carousel: [scene, its time], spun through inside the phone, landing on home; and when it stops (0..1 of the hand-off) */
-const CAROUSEL: [number, number][] = [[1, 0.4], [2, 0.62], [3, 0.6], [4, 0.7], [5, 0.8], [0, 0]];
-const CAROUSEL_END = 0.5;
+/** a still phone showing scene k at its own time t (k = -1: the logo screen the Blender phone wakes up to) */
+function PhoneMock({ k, t, style }: { k: number; t: number; style?: CSSProperties }) {
+  const Screen = k >= 0 ? scenes[k].Screen : null;
+  return (
+    <div className="absolute aspect-[390/844] [container-type:inline-size]" style={style}>
+      <div className="relative h-full rounded-[13%/6%] bg-zinc-800 p-[2.6%] shadow-2xl shadow-black/70 ring-1 ring-white/20">
+        <div className="relative h-full overflow-hidden rounded-[11%/5.2%] bg-zinc-950 text-zinc-50">
+          {Screen ? <Screen t={t} e={1} /> : <img src="/video/screen.png" alt="" className="absolute inset-0 h-full w-full object-fill" />}
+          <div className="absolute left-1/2 top-[1.3%] z-50 h-[3.4%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
+        </div>
+      </div>
+    </div>
+  );
+}
+// The video's hand-off (0..1): phones slide out from behind the main one (EMERGE), the row whips left and eases onto the
+// home-screen phone (SWIPE), which becomes the main phone again and snaps right (SNAP).
+// ROW: [scene or -1 for the logo screen, its time], slot 0 = the main phone; the last slot (home) is where it lands.
+const ROW: [number, number][] = [[3, 0.6], [5, 0.8], [-1, 0], [1, 0.4], [2, 0.62], [3, 0.6], [4, 0.7], [5, 0.8], [0, 0]];
+const ROW0 = 2, EMERGE = [0.03, 0.25], SWIPE = [0.27, 0.62], SNAP = [0.64, 0.92];
 /** the hero's timeline in scroll units, for driving it from a clock (the /video page) */
 export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
 /** each scene's big moments (clicks and flashes) in its own time 0..1, so a video can land them on the beat */
@@ -854,6 +870,26 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           style={{ opacity: 0.08, backgroundImage: `linear-gradient(${th.fg} 1px,transparent 1px),linear-gradient(90deg,${th.fg} 1px,transparent 1px)` }} />
 
         {backdrop}
+        {video && wide && p > EMERGE[0] && p < SWIPE[1] && (() => {
+          const H = 0.7 * vh, W = (H * 390) / 844, gap = W * 1.12; // phone size and slot spacing, px
+          const spread = io(clamp((p - EMERGE[0]) / (EMERGE[1] - EMERGE[0])));
+          const x = clamp((p - SWIPE[0]) / (SWIPE[1] - SWIPE[0])), shift = (1 - Math.pow(1 - x, 4)) * (ROW.length - 1 - ROW0); // fast, then easing in
+          const speed = 4 * Math.pow(1 - x, 3) * (x > 0 ? 1 : 0);
+          return (
+            <div className="pointer-events-none absolute inset-0 z-[9]" style={{ filter: speed > 0.05 ? `blur(${(speed * 1.2).toFixed(2)}px)` : undefined }}>
+              {ROW.map(([k, at], i) => {
+                const slot = (i - ROW0) * spread - shift, d = Math.min(1, Math.abs(slot));
+                return (
+                  <PhoneMock key={i} k={k} t={at} style={{
+                    height: H, width: W, left: `calc(50% - ${W / 2}px)`, top: `calc(50% - ${H / 2}px)`,
+                    zIndex: 30 - Math.round(Math.abs(i - ROW0 - shift) * 2), // the one nearest the middle on top, so the rest come out from behind it
+                    transform: `translateX(${slot * gap}px) scale(${1 - 0.14 * d})`, opacity: 0.6 + 0.4 * (1 - d),
+                  }} />
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* intro headline: zooms past you as you scroll */}
         <div className="absolute inset-x-0 top-[13dvh] z-20 px-4 text-center md:top-[16dvh]"
@@ -950,11 +986,11 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
               // the video picks up from the Blender phone: centred and big, it tilts up to face you, then swipes right into place
               transform: video && wide && p < 1
                 ? (() => { // starts exactly over the Blender phone (70% of the height, see tools/intro_phone.py), lifts, swipes
-                  const a = io(clamp(p / 0.15)), lock = bump(p, CAROUSEL_END, 0.06), b = io(clamp((p - 0.6) / 0.3)), s0 = (0.7 * vh) / Math.min(0.8 * vh, 760);
-                  return `translateX(${(1 - b) * -20}vw) rotateY(${Math.sin(b * Math.PI) * -12}deg) scale(${s0 + (1 - s0) * a + lock * 0.04 + kick * 0.04})`;
+                  const b = io(clamp((p - SNAP[0]) / (SNAP[1] - SNAP[0]))), s0 = (0.7 * vh) / Math.min(0.8 * vh, 760);
+                  return `translateX(${(1 - b) * -20}vw) rotateY(${Math.sin(b * Math.PI) * -12}deg) scale(${s0 + (1 - s0) * b + kick * 0.04})`;
                 })()
                 : `translateY(${(1 - intro) * (wide ? 55 : 48)}dvh) rotateX(${(1 - intro) * 28}deg) rotateY(${intro * ((cx - 240) / 240) * -7}deg) scale(${1.1 - intro * 0.1 + kick * 0.04})`,
-              transformOrigin: video ? "50% 50%" : "50% 100%", opacity: phoneIn,
+              transformOrigin: video ? "50% 50%" : "50% 100%", opacity: video && wide && p > EMERGE[0] && p < SWIPE[1] ? 0 : phoneIn,
             }}>
             <div className="absolute inset-0" style={{ transformOrigin: `${ox}% ${oy}%`, transform: `translate(${(50 - ox) * centre}%, ${(46 - oy) * centre}%) scale(${z})` }}>
               <div className="relative h-full rounded-[13%/6%] bg-zinc-800 p-[2.6%] shadow-2xl ring-1 ring-white/20">
@@ -978,16 +1014,8 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
                       </div>
                     );
                   })}
-                  {video && p < CAROUSEL_END && (() => { // the app's screens spin past and decelerate onto home
-                    const k = 1 - Math.pow(1 - clamp((p - 0.04) / (CAROUSEL_END - 0.04)), 3), speed = 3 * Math.pow(1 - clamp((p - 0.04) / (CAROUSEL_END - 0.04)), 2);
-                    return (
-                      <div className="absolute inset-0 z-[44] flex" style={{ transform: `translateX(${-k * (CAROUSEL.length - 1) * 100}%)`, filter: `blur(${(speed * 1.1).toFixed(2)}px)` }}>
-                        {CAROUSEL.map(([i, at]) => { const Screen = scenes[i].Screen; return <div key={i} className="relative h-full w-full shrink-0 overflow-hidden bg-zinc-950"><Screen t={at} e={1} /></div>; })}
-                      </div>
-                    );
-                  })()}
-                  {video && p < 0.12 && ( // the same logo screen the Blender phone wakes up to, giving way to the carousel
-                    <img src="/video/screen.png" alt="" className="absolute inset-0 z-[45] h-full w-full object-fill" style={{ opacity: 1 - smooth(0.03, 0.1, p) }} />
+                  {video && p < SNAP[0] && ( // the same logo screen the Blender phone wakes up to (hidden while the row plays)
+                    <img src="/video/screen.png" alt="" className="absolute inset-0 z-[45] h-full w-full object-fill" style={{ opacity: p < EMERGE[0] ? 1 : 0 }} />
                   )}
                   <div className="absolute left-1/2 top-[1.3%] z-50 h-[3.4%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
                   <div className="pointer-events-none absolute inset-0 z-50 bg-lime-300 mix-blend-overlay" style={{ opacity: flash * 0.8 }} />
