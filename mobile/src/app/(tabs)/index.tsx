@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withDelay, withTiming, Easing } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -60,9 +60,13 @@ export default function GymHome() {
   const [now, setNow] = useState(() => new Date());
   const [scanning, setScanning] = useState(false);
   const [inside, setInside] = useState(0);
+  const [friends, setFriends] = useState<{ id: string; name: string; avatar_url: string | null; in_at: string }[]>([]); // mutual follows clocked in
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 5000); return () => clearInterval(id); }, []);
   useEffect(() => {
-    const load = () => sb.rpc('gym_count').then(({ data }) => typeof data === 'number' && setInside(data));
+    const load = () => {
+      sb.rpc('gym_count').then(({ data }) => typeof data === 'number' && setInside(data));
+      sb.rpc('friends_in_gym').then(({ data }) => data && setFriends(data));
+    };
     load();
     const id = setInterval(load, 15000);
     return () => clearInterval(id);
@@ -101,12 +105,12 @@ export default function GymHome() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <ThemedText type="small" themeColor="textSecondary">Hey {me.name} 👋</ThemedText>
-            <ThemedText style={styles.h1}>{gym.name}</ThemedText>
+            <ThemedText style={styles.h1} numberOfLines={1} adjustsFontSizeToFit>{gym.name}</ThemedText>
           </View>
           <View style={[styles.pill, { backgroundColor: open ? 'rgba(132,204,22,0.15)' : theme.backgroundSelected }]}>
             <ThemedText type="smallBold" style={{ fontSize: 12, color: open ? Lime : theme.textSecondary }}>{open ? `Open until ${gym.close}` : `Opens ${gym.open}`}</ThemedText>
           </View>
-          <Press onPress={() => router.push('/me')} accessibilityLabel="Your profile" scaleTo={0.92}><Avatar url={me.avatar_url} name={me.name} size={38} ring="rgba(132,204,22,0.4)" /></Press>
+          <Press onPress={() => router.push('/me')} accessibilityLabel="Your profile" scaleTo={0.92}><Avatar id={me.id} url={me.avatar_url} name={me.name} size={38} ring="rgba(132,204,22,0.4)" /></Press>
         </View>
 
         {clockedIn ? (
@@ -148,6 +152,25 @@ export default function GymHome() {
             <ThemedText type="smallBold" style={{ marginLeft: 'auto', color: open ? lv.color : theme.textSecondary }}>{open ? lv.label : 'Closed'}</ThemedText>
           </View>
           <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}><Bar pct={pct} color={lv.color} /></View>
+          {friends.length > 0 ? (
+            <View style={styles.friends}>
+              <View style={{ flexDirection: 'row' }}>
+                {friends.slice(0, 4).map((f, i) => (
+                  <Pressable key={f.id} onPress={() => router.push({ pathname: '/u/[id]', params: { id: f.id } })} style={{ marginLeft: i ? -8 : 0, borderRadius: 18, borderWidth: 2, borderColor: '#18181b' }}>
+                    <Avatar id={f.id} url={f.avatar_url} name={f.name} size={32} />
+                  </Pressable>
+                ))}
+              </View>
+              <ThemedText type="small" style={{ flex: 1 }}>
+                <ThemedText type="smallBold">{friends.slice(0, 2).map((f) => f.name).join(friends.length === 2 ? ' & ' : ', ')}{friends.length > 2 ? ` +${friends.length - 2}` : ''}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary"> {friends.length > 1 ? 'are' : 'is'} here · since {new Date(friends[0].in_at).toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit' })}</ThemedText>
+              </ThemedText>
+            </View>
+          ) : (
+            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, marginTop: 10 }}>
+              {s.following.some((id) => s.followers.includes(id)) ? 'None of your friends are in right now.' : 'Follow people on the Feed or Ranks. Once they follow back, you’ll see here when they’re training.'}
+            </ThemedText>
+          )}
           <View style={styles.hours} accessibilityLabel="Typical crowd by hour">
             {Object.entries(crowdByHour).map(([h, p], i) => {
               const isNow = Number(h) === Math.floor(m / 60);
@@ -208,12 +231,12 @@ const styles = StyleSheet.create({
   page: { padding: 16, gap: 14 },
   mapRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
   header: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  h1: { fontSize: 26, lineHeight: 32, fontWeight: '800', letterSpacing: -0.5 },
+  h1: { fontSize: 22, lineHeight: 28, fontWeight: '800', letterSpacing: -0.6 },
   pill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 4 },
   clock: { borderRadius: 20, padding: 18 },
   kicker: { fontSize: 11, letterSpacing: 1, color: '#09090b', opacity: 0.75 },
   big: { fontSize: 32, lineHeight: 38, fontWeight: '800', color: '#09090b', fontVariant: ['tabular-nums'], marginTop: 2 },
-  big2: { fontSize: 28, lineHeight: 34, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  big2: { fontSize: 26, lineHeight: 32, fontWeight: '800', fontVariant: ['tabular-nums'] },
   dark: { backgroundColor: '#09090b', borderRadius: 14, paddingVertical: 13, alignItems: 'center' },
   out: { backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 14, paddingHorizontal: 18, justifyContent: 'center' },
   card: { borderRadius: 20, padding: 16 },
@@ -223,5 +246,6 @@ const styles = StyleSheet.create({
   track: { height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 8 },
   hours: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 70, marginTop: 14, marginBottom: 4 },
   hour: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 3 },
+  friends: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, padding: 10, marginTop: 12, backgroundColor: 'rgba(163,230,53,0.1)' },
   classes: { marginTop: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, gap: 4 },
 });

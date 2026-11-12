@@ -41,7 +41,7 @@ export default function Feed() {
                   {suggested.map((u) => (
                     <View key={u.id} style={[styles.tile, { backgroundColor: theme.backgroundElement }]}>
                       <Pressable onPress={() => router.push({ pathname: '/u/[id]', params: { id: u.id } })} style={{ alignItems: 'center' }}>
-                        <Avatar url={u.avatar_url} name={u.name} size={64} />
+                        <Avatar id={u.id} url={u.avatar_url} name={u.name} size={64} />
                         <ThemedText type="smallBold" numberOfLines={1} style={{ marginTop: 6 }}>{u.name}</ThemedText>
                       </Pressable>
                       <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, marginBottom: 6 }}>{u.faculty}</ThemedText>
@@ -68,5 +68,5 @@ export default function Feed() {
 const styles = StyleSheet.create({
   live: { width: 8, height: 8, borderRadius: 4, backgroundColor: Lime },
   kicker: { fontSize: 12, letterSpacing: 1, marginBottom: 8 },
-  tile: { width: 144, alignItems: 'center', borderRadius: 16, padding: 12, gap: 2 },
+  tile: { width: 120, alignItems: 'center', borderRadius: 16, padding: 12, gap: 2 },
 });

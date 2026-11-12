@@ -1,6 +1,6 @@
 // Social-style profile (the website's ProfileView): photo, Workouts / Followers / Following, bio, follow or edit, share,
 // then every workout they've posted that you're allowed to see. Used by /u/[id] and /me.
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Share2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
@@ -69,9 +69,18 @@ export default function ProfileView({ userId }: { userId: string }) {
 
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }}>
+      <Stack.Screen options={{
+        headerTitleAlign: 'center',
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            <Pressable onPress={() => router.push({ pathname: '/stats/[id]', params: { id: p.id } })} hitSlop={6} accessibilityLabel="Gym stats" style={styles.headBtn}><Icon name="stats" size={26} /></Pressable>
+            {own && <Pressable onPress={() => setEditing(true)} hitSlop={6} accessibilityLabel="Edit profile" style={styles.headBtn}><Icon name="edit" size={26} /></Pressable>}
+          </View>
+        ),
+      }} />
       <View style={[styles.head, { borderBottomColor: theme.border }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-          <Avatar url={p.avatar_url} name={p.name} size={84} ring="rgba(132,204,22,0.4)" />
+          <Avatar id={p.id} url={p.avatar_url} name={p.name} size={84} ring="rgba(132,204,22,0.4)" />
           <View style={{ flex: 1, flexDirection: 'row' }}>
             {stat(stats?.workouts, 'Workouts')}
             {stat(stats?.followers, 'Followers', demo ? undefined : () => openList('followers'))}
@@ -93,9 +102,6 @@ export default function ProfileView({ userId }: { userId: string }) {
             <Share2 size={15} color={theme.text} /><ThemedText type="smallBold">Share profile</ThemedText>
           </Press>
         </View>
-        <Press onPress={() => router.push({ pathname: '/stats/[id]', params: { id: p.id } })} style={[styles.statsLink, { backgroundColor: theme.backgroundElement }]}>
-          <Icon name="stats" size={26} /><ThemedText type="smallBold" style={{ flex: 1 }}>{own ? 'Your gym stats' : 'Gym stats'}</ThemedText><ThemedText themeColor="textSecondary">›</ThemedText>
-        </Press>
       </View>
 
       <ThemedText type="smallBold" style={{ fontSize: 16, paddingTop: 16 }}>Workouts</ThemedText>
@@ -119,7 +125,7 @@ export default function ProfileView({ userId }: { userId: string }) {
             {list?.people?.map((u) => (
               <View key={u.id} style={[styles.person, { borderBottomColor: theme.border }]}>
                 <Pressable style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }} onPress={() => { setList(null); router.push(u.id === me.id ? '/me' : { pathname: '/u/[id]', params: { id: u.id } }); }}>
-                  <Avatar url={u.avatar_url} name={u.name} size={40} />
+                  <Avatar id={u.id} url={u.avatar_url} name={u.name} size={40} />
                   <View><ThemedText type="smallBold">{u.name}</ThemedText><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{u.faculty}</ThemedText></View>
                 </Pressable>
                 <FollowButton id={u.id} name={u.name} />
@@ -138,6 +144,7 @@ const styles = StyleSheet.create({
   half: { flex: 1, paddingVertical: 10 },
   note: { borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   share: { borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  headBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   statsLink: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, marginTop: 8 },
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   close: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },

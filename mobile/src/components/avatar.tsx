@@ -1,19 +1,17 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { Lime } from '@/constants/theme';
 import { img } from '@/lib/web';
 
-// Round profile picture, or the first letter on lime when there isn't one.
-export default function Avatar({ url, name, size = 40, ring }: { url?: string | null; name?: string; size?: number; ring?: string }) {
-  const src = img(url);
-  const frame = { width: size, height: size, borderRadius: size / 2, ...(ring ? { borderWidth: 3, borderColor: ring } : {}) };
-  return src ? <Image source={src} style={frame} /> : (
-    <View style={[frame, styles.initial]}>
-      <ThemedText style={{ color: '#09090b', fontWeight: '800', fontSize: size * 0.4 }}>{name?.[0]?.toUpperCase() ?? '?'}</ThemedText>
-    </View>
-  );
+// Same as the website: uploaded photo if there is one; demo lifters (u1…u10) use their portrait; everyone else gets one of
+// 8 generated default avatars, picked from their id so it never changes.
+export function avatarSrc(id?: string | null, url?: string | null) {
+  if (url) return url;
+  if (id && /^u\d+$/.test(id)) return `/avatars/${id}.webp`;
+  const n = [...(id ?? '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+  return `/avatars/default-${(n % 8) + 1}.webp`;
 }
 
-const styles = StyleSheet.create({ initial: { backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' } });
+export default function Avatar({ id, url, size = 40, ring }: { id?: string | null; url?: string | null; name?: string; size?: number; ring?: string }) {
+  return <Image source={img(avatarSrc(id, url))} contentFit="cover"
+    style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: '#27272a', ...(ring ? { borderWidth: 2, borderColor: ring } : {}) }} />;
+}

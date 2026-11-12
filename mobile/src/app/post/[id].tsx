@@ -67,7 +67,7 @@ export default function PostPage() {
       <View style={{ gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Pressable onPress={() => author && router.push({ pathname: '/u/[id]', params: { id: author } })} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar url={p.avatar} name={p.by} size={52} />
+            <Avatar id={author ?? p.by} url={p.avatar} name={p.by} size={52} />
             <View style={{ flex: 1 }}>
               <ThemedText type="smallBold" style={{ fontSize: 16 }}>{p.mine ? `${p.by} (you)` : p.by}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>

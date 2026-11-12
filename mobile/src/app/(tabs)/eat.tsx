@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { foods, highProtein, slug, stalls, targets } from '@shared/data';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
-import { H2, Title } from '@/components/ui/kit';
+import { H2, Icon, Title } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
 import { Plus, X } from 'lucide-react-native';
 import { BottomTabInset, Lime, Red, Spring } from '@/constants/theme';
@@ -78,9 +78,9 @@ export default function Eat() {
   }
 
   const macros = [
-    { k: 'p', label: 'Protein', color: '#0ea5e9' },
-    { k: 'c', label: 'Carbs', color: '#f59e0b' },
-    { k: 'f', label: 'Fat', color: '#ec4899' },
+    { k: 'p', label: 'Protein', color: '#0ea5e9', icon: 'protein' },
+    { k: 'c', label: 'Carbs', color: '#f59e0b', icon: 'carbs' },
+    { k: 'f', label: 'Fat', color: '#ec4899', icon: 'fat' },
   ] as const;
   const card = { marginHorizontal: -16, paddingHorizontal: 16, borderRadius: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }; // flat sections, like the website's .card
   const icon = (n: string) => img(`/icons/${n}.webp`);
@@ -104,7 +104,7 @@ export default function Eat() {
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 14 }}>
             {macros.map((m, i) => (
               <View key={m.k} style={{ flex: 1 }}>
-                <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{m.label}</ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Icon name={m.icon} size={16} /><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{m.label}</ThemedText></View>
                 <ThemedText type="smallBold" style={{ fontVariant: ['tabular-nums'] }}>{Math.round(sum[m.k])}<ThemedText type="small" themeColor="textSecondary">/{targets[m.k]}g</ThemedText></ThemedText>
                 <View style={[styles.track, { height: 6, backgroundColor: theme.backgroundSelected }]}><Bar pct={(sum[m.k] / targets[m.k]) * 100} color={m.color} height={6} delay={(i + 1) * 60} /></View>
               </View>
@@ -158,7 +158,7 @@ export default function Eat() {
           </View>
         )}
 
-        <H2 icon="plate">APU cafeteria</H2>
+        <ThemedText type="smallBold" style={{ fontSize: 16 }}>APU cafeteria</ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: -8, fontSize: 12 }}>Typical portions, estimated. Tap + to log.</ThemedText>
         <TextInput value={q} onChangeText={setQ} placeholder="Search food…" placeholderTextColor={theme.textSecondary}
           style={[styles.search, { backgroundColor: theme.backgroundElement, color: theme.text }]} />
@@ -190,8 +190,9 @@ export default function Eat() {
                 </Press>
               </View>
               <View style={{ flexDirection: 'row', gap: 4 }}>
-                {([['kcal', f.kcal, ''], ['prot', f.p, 'g'], ['carb', f.c, 'g'], ['fat', f.f, 'g']] as const).map(([k, v, unit]) => (
+                {([['kcal', f.kcal, '', 'kcal'], ['prot', f.p, 'g', 'protein'], ['carb', f.c, 'g', 'carbs'], ['fat', f.f, 'g', 'fat']] as const).map(([k, v, unit, ic]) => (
                   <View key={k} style={[styles.macro, { backgroundColor: theme.backgroundSelected }]}>
+                    <Icon name={ic} size={16} />
                     <ThemedText type="smallBold" style={{ fontSize: 12, fontVariant: ['tabular-nums'] }}>{v}{unit}</ThemedText>
                     <ThemedText themeColor="textSecondary" style={{ fontSize: 9 }}>{k.toUpperCase()}</ThemedText>
                   </View>

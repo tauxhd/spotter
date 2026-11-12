@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Heart, Lock, MessageCircle, SendHorizontal, Share2, Users } from 'lucide-react-native';
+import { Heart, Lock, MessageCircle, SendHorizontal, Share2, UserCheck, UserPlus, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { Dimensions, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -38,7 +38,8 @@ export function FollowButton({ id, name }: { id?: string | null; name: string })
   return (
     <Press onPress={() => (on ? unfollow(id) : follow(id))} accessibilityLabel={on ? `Unfollow ${name}` : `Follow ${name}`}
       style={[styles.follow, on ? { backgroundColor: 'rgba(161,161,170,0.18)' } : { backgroundColor: Lime }]}>
-      <ThemedText type="smallBold" style={{ fontSize: 13, color: on ? '#e4e4e7' : '#09090b' }}>{on ? (back ? 'Friends' : 'Following') : back ? 'Follow back' : 'Follow'}</ThemedText>
+      {on ? <UserCheck size={13} color="#e4e4e7" /> : <UserPlus size={13} color="#09090b" />}
+      <ThemedText type="smallBold" style={{ fontSize: 12, color: on ? '#e4e4e7' : '#09090b' }}>{on ? (back ? 'Friends' : 'Following') : back ? 'Follow back' : 'Follow'}</ThemedText>
     </Press>
   );
 }
@@ -130,7 +131,7 @@ export default function PostCard({ post, showFollow = true, last }: { post: Post
     <Section last={last}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <Pressable onPress={() => toProfile(author)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Avatar url={p.avatar} name={p.by} size={48} />
+          <Avatar id={author ?? p.by} url={p.avatar} name={p.by} size={48} />
           <View style={{ flex: 1 }}>
             <ThemedText type="smallBold" style={{ fontSize: 16 }}>{p.mine ? `${p.by} (you)` : p.by}</ThemedText>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -162,7 +163,7 @@ export default function PostCard({ post, showFollow = true, last }: { post: Post
 
       {p.likes > 0 && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-          {likers.length > 0 && <View style={{ flexDirection: 'row' }}>{likers.slice(0, 3).map((l, i) => <View key={l.id} style={{ marginLeft: i ? -8 : 0, borderRadius: 14, borderWidth: 2, borderColor: theme.background }}><Avatar url={l.avatar} name={l.name} size={24} /></View>)}</View>}
+          {likers.length > 0 && <View style={{ flexDirection: 'row' }}>{likers.slice(0, 3).map((l, i) => <View key={l.id} style={{ marginLeft: i ? -8 : 0, borderRadius: 14, borderWidth: 2, borderColor: theme.background }}><Avatar id={l.id} url={l.avatar} name={l.name} size={24} /></View>)}</View>}
           <ThemedText type="small" style={{ flex: 1 }}>
             {likers[0] ? <>Liked by <ThemedText type="smallBold" onPress={() => toProfile(likers[0].id)}>{likers[0].id === me.id ? 'you' : likers[0].name}</ThemedText>{others > 0 && <> and <ThemedText type="smallBold">{others} other{others > 1 ? 's' : ''}</ThemedText></>}</>
               : <><ThemedText type="smallBold">{p.likes}</ThemedText> like{p.likes > 1 ? 's' : ''}</>}
@@ -190,7 +191,7 @@ export default function PostCard({ post, showFollow = true, last }: { post: Post
 
 const styles = StyleSheet.create({
   thumb: { overflow: 'hidden', backgroundColor: '#18181b', borderWidth: 1, borderColor: 'rgba(63,63,70,0.6)', alignItems: 'center', justifyContent: 'center' },
-  follow: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 },
+  follow: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 5 },
   title: { fontSize: 20, fontWeight: '800', marginTop: 12, lineHeight: 26 },
   exList: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, gap: 12 },
   media: { width: '100%', aspectRatio: 4 / 5, backgroundColor: '#000' },

@@ -71,7 +71,7 @@ export default function ProfileSheet({ open, onClose }: { open: boolean; onClose
           <ScrollView contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
             <Pressable onPress={pickPhoto} style={{ alignItems: 'center', gap: 6 }} accessibilityLabel="Change profile photo">
               <View style={{ opacity: uploading ? 0.5 : 1 }}>
-                <Avatar url={me.avatar_url} name={me.name} size={96} ring="rgba(132,204,22,0.3)" />
+                <Avatar id={me.id} url={me.avatar_url} name={me.name} size={96} ring="rgba(132,204,22,0.3)" />
                 <View style={[styles.cam, { borderColor: theme.background }]}><Camera size={16} color="#09090b" /></View>
               </View>
               <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{uploading ? 'Uploading…' : 'Tap to change your photo'}</ThemedText>
