@@ -536,7 +536,8 @@ const THEME: Record<Theme, { bg: string; fg: string; sub: string; flash: string 
 type Data = { n: number; tag?: string; what: string; imgs?: string[] };
 const EX = ["barbell-bench-press", "pull-up", "dumbbell-curl", "kettlebell-swing", "goblet-squat", "lat-pulldown", "push-up", "romanian-deadlift", "cable-crossover", "leg-press", "hip-thrust", "dumbbell-shoulder-press", "plank", "burpee"].map((x) => `/exercises/${x}.webp`);
 const FOOD = ["nasi-lemak-fried-chicken", "chicken-briyani", "roti-canai-dhal", "char-kuey-teow", "chicken-mandi", "chicken-katsu-don", "teh-tarik", "mee-goreng-mamak", "tandoori-chicken-naan", "kaya-toast-2-half-boiled-eggs", "fish-chips", "ayam-penyet"].map((x) => `/food/${x}.webp`);
-type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
+/** typing?: when the screen types (its own time 0..1, matching the typed() calls in its Screen), for the video's typing sound */
+type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; typing?: [number, number][]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
 
 const scenes: Scene[] = [
   {
@@ -606,7 +607,7 @@ const scenes: Scene[] = [
     word: ["Lift", "more."], theme: "lime",
     data: { n: 450, what: "exercises in our own dataset, built from scratch: every move written up and illustrated for Spotter.", imgs: EX }, text: "Routines, rest timers and every set logged. PRs land with a bang and your progress keeps climbing.",
     floats: [["/hero/props/dumbbell.webp", 90, 16, 24, 1.5, -20], ["/hero/props/plate.webp", 52, 82, 17, 0.8, 25], ["/icons/flame.webp", 97, 64, 9, 1.2, 10], ["/icons/stopwatch.webp", 57, 12, 8, 0.6, -10]],
-    Screen: Train,
+    Screen: Train, typing: [[0.33, 0.41], [0.47, 0.49]], // the weight, then the reps
     play: (t, wide) => {
       const secs = Math.round(90 - clamp((t - 0.72) / 0.24) * 45);
       return {
@@ -651,7 +652,7 @@ const scenes: Scene[] = [
   {
     word: ["Hype the", "squad."], theme: "dark", text: "Share your sessions, like and comment on your friends' PRs, and keep each other coming back.",
     floats: [["/icons/heart.webp", 91, 18, 15, 1.4, -10], ["/icons/comment.webp", 52, 82, 11, 0.8, 12], ["/icons/flame.webp", 97, 72, 11, 1.2, -6], ["/icons/share.webp", 57, 12, 8, 0.6, 8]],
-    Screen: Feed,
+    Screen: Feed, typing: [[0.37, 0.5]], // the comment
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.14, 90, 552], [0.2, 90, 552], [0.27, 200, 552], [0.31, 200, 552], [0.35, 200, 926], [0.5, 200, 926], [0.53, 426, 926], [0.58, 426, 926], [0.75, 300, 450], [1, 300, 450]],
       clicks: [0.18, 0.3, 0.355, 0.55], flashes: [0.18, 0.55],
@@ -682,7 +683,7 @@ const scenes: Scene[] = [
     word: ["Eat", "smart."], theme: "lime",
     data: { n: 43, what: "dishes from the 9 APU cafeteria stalls: our own food dataset, with macros and art made for the real menu.", imgs: FOOD }, text: "Every dish in the APU cafeteria with its macros, counted against a target tuned to your goal.",
     floats: [["/hero/props/nasi-lemak-fried-chicken.webp", 92, 19, 19, 1.4, 8], ["/hero/props/teh-tarik.webp", 52, 83, 12, 0.8, -10], ["/hero/props/roti-canai-dhal.webp", 97, 74, 14, 1.2, 12], ["/icons/protein.webp", 57, 13, 8, 0.6, 0]],
-    Screen: Eat,
+    Screen: Eat, typing: [[0.17, 0.33]], // the search
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.12, 200, 426], [0.16, 200, 426], [0.36, 320, 480], [0.45, 422, 518], [0.55, 422, 518], [0.66, 240, 260], [1, 240, 260]],
       clicks: [0.15, 0.5], flashes: [0.5],
@@ -741,7 +742,7 @@ const scenes: Scene[] = [
     word: ["Find", "anything."], theme: "dark",
     data: { n: equipment.length, tag: "The whole APU SweatZone", what: "machines, racks and benches, every one modelled and placed exactly where it stands on the SweatZone floor." }, text: "The entire APU SweatZone, modelled in 3D, wall to wall. Every exercise points you to the machine that does it.",
     floats: [["/icons/map.webp", 91, 17, 13, 1.4, -8], ["/icons/target.webp", 52, 82, 10, 0.8, 10], ["/hero/props/plate.webp", 97, 72, 14, 1.2, 20], ["/icons/building.webp", 57, 12, 8, 0.6, 0]],
-    Screen: MapScreen,
+    Screen: MapScreen, typing: [[0.24, 0.36]], // "Used for: ..."
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.15, 318, 802], [0.23, 318, 802], [0.4, 250, 440], [1, 250, 440]],
       clicks: [0.2], flashes: [0.2],
@@ -802,6 +803,8 @@ export const HANDOFF = { emerged: EMERGE[1], swipe: SWIPE[0], landed: SWIPE[1] }
 /** the hero's timeline in scroll units, for driving it from a clock (the /video page) */
 export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
 /** each scene's big moments (clicks and flashes) in its own time 0..1, so a video can land them on the beat */
+/** every stretch of typing per scene (its own time 0..1): the headline typing itself, then whatever the screen types */
+export const heroTyping = () => scenes.map((s) => [[0, 0.12] as [number, number], ...(s.typing ?? [])]);
 export const heroMoments = () => scenes.map((s) => { const pl = s.play(0.5, true); return [...new Set([...pl.clicks, ...pl.flashes])].sort((a, b) => a - b); });
 /** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
 const cut = (x: number) => `polygon(${x}% 0, 140% 0, 140% 100%, ${x - 40}% 100%)`;
