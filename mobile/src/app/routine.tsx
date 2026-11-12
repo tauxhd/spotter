@@ -35,9 +35,13 @@ export default function Routine() {
   const isTimed = (e: ExerciseLog) => e.timed ?? timedByDefault(lib.get(e.name)?.id);
   const groups = [...new Set(list.map((e) => e.superset).filter((g) => g !== undefined))];
 
-  const add = (e: Exercise) => {
-    const bw = ['bodyweight', 'cardio', 'other'].includes(e.equipment), timed = timedByDefault(e.id);
-    edit((x) => { x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [0, 1, 2].map(() => (timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bw ? 0 : 20, reps: 10 })) }); });
+  const add = (picked: Exercise[]) => {
+    edit((x) => {
+      for (const e of picked) {
+        const bw = ['bodyweight', 'cardio', 'other'].includes(e.equipment), timed = timedByDefault(e.id);
+        x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [0, 1, 2].map(() => (timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bw ? 0 : 20, reps: 10 })) });
+      }
+    });
     setPicking(false);
   };
   const superset = (i: number) => edit((x) => {

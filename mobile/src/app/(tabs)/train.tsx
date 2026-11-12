@@ -184,9 +184,13 @@ function Workout() {
     edit((x) => { x[i].sets[j].done = !x[i].sets[j].done; });
     if (!st.done) restAfter(i);
   }
-  function addExercise(e: Exercise) {
-    const bw = ['bodyweight', 'cardio', 'other'].includes(e.equipment), timed = timedByDefault(e.id);
-    edit((x) => { x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bw ? 0 : 20, reps: 10 }] }); });
+  function addExercise(picked: Exercise[]) {
+    edit((x) => {
+      for (const e of picked) {
+        const bw = ['bodyweight', 'cardio', 'other'].includes(e.equipment), timed = timedByDefault(e.id);
+        x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bw ? 0 : 20, reps: 10 }] });
+      }
+    });
     setPicking(false);
   }
   function superset(i: number) { // link exercise i with the next one, or unlink it

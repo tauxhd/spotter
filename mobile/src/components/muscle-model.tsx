@@ -2,9 +2,10 @@
 // three.js into an Expo GLView. The model is bundled uncompressed (assets/models/muscles.glb) — phones have no WebAssembly
 // for the website's Draco-compressed copy.
 import { Asset } from 'expo-asset';
+import { File } from 'expo-file-system';
 import { GLView, type ExpoWebGLRenderingContext } from 'expo-gl';
 import { useState } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -16,7 +17,9 @@ function load() {
   return (model ??= (async () => {
     const asset = Asset.fromModule(require('../../assets/models/muscles.glb'));
     await asset.downloadAsync();
-    const buf = await (await fetch(asset.localUri ?? asset.uri)).arrayBuffer();
+    const uri = asset.localUri ?? asset.uri;
+    // Android's fetch() can't read a bundled file:// asset (it hands back text), so read the bytes from disk
+    const buf = Platform.OS === 'web' ? await (await fetch(uri)).arrayBuffer() : await new File(uri).arrayBuffer();
     const gltf = await new GLTFLoader().parseAsync(buf, '');
     return gltf.scene;
   })());
@@ -26,7 +29,14 @@ function load() {
 function rendererFor(gl: ExpoWebGLRenderingContext) {
   const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
   const canvas = { width, height, style: {}, clientWidth: width, clientHeight: height, addEventListener: () => {}, removeEventListener: () => {}, getContext: () => gl } as unknown as HTMLCanvasElement;
-  const r = new THREE.WebGLRenderer({ canvas, context: gl as unknown as WebGL2RenderingContext, antialias: true, alpha: true });
+  // three.js (r163+) refuses anything that is `instanceof WebGLRenderingContext`, and Expo GL registers its (WebGL 2
+  // capable) context under that global name, so hide it while the renderer is built.
+  const g = globalThis as { WebGLRenderingContext?: unknown };
+  const saved = g.WebGLRenderingContext;
+  g.WebGLRenderingContext = undefined;
+  let r: THREE.WebGLRenderer;
+  try { r = new THREE.WebGLRenderer({ canvas, context: gl as unknown as WebGL2RenderingContext, antialias: true, alpha: true }); }
+  finally { g.WebGLRenderingContext = saved; }
   r.setPixelRatio(1);
   r.setSize(width, height, false);
   return r;

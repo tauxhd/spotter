@@ -32,10 +32,14 @@ function Editor() {
   const back = "/train" + (typeof window !== "undefined" ? location.search.replace(/[?&](id|from)=[^&]*/g, "").replace(/^&/, "?") : "");
 
   const edit = (fn: (x: ExerciseLog[]) => void) => setList((l) => { const x = structuredClone(l); fn(x); return x; });
-  const add = (e: Exercise) => {
-    const bw = e.equipment === "bodyweight" || e.equipment === "cardio" || e.equipment === "other";
-    const timed = timedByDefault(e.id);
-    edit((x) => { x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [0, 1, 2].map(() => (timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bw ? 0 : fromUnit(u === "lb" ? 45 : 20, u), reps: 10 })) }); });
+  const add = (picked: Exercise[]) => {
+    edit((x) => {
+      for (const e of picked) {
+        const bw = e.equipment === "bodyweight" || e.equipment === "cardio" || e.equipment === "other";
+        const timed = timedByDefault(e.id);
+        x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [0, 1, 2].map(() => (timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bw ? 0 : fromUnit(u === "lb" ? 45 : 20, u), reps: 10 })) });
+      }
+    });
     setPicking(false);
   };
   const superset = (i: number) => edit((x) => {

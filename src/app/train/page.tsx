@@ -70,10 +70,14 @@ export default function Train() {
     setActive(() => ({ title: r?.name ?? "Workout", startedAt: new Date().toISOString(), exercises: ex }));
   }
 
-  function addExercise(e: Exercise) {
-    const bodyweight = e.equipment === "bodyweight" || e.equipment === "cardio" || e.equipment === "other";
-    const timed = timedByDefault(e.id);
-    edit((x) => { x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bodyweight ? 0 : fromUnit(u === "lb" ? 45 : 20, u), reps: 10 }] }); });
+  function addExercise(picked: Exercise[]) {
+    edit((x) => {
+      for (const e of picked) {
+        const bodyweight = e.equipment === "bodyweight" || e.equipment === "cardio" || e.equipment === "other";
+        const timed = timedByDefault(e.id);
+        x.push({ name: e.name, ...(timed ? { timed } : {}), sets: [timed ? { kg: 0, reps: 0, secs: 30 } : { kg: bodyweight ? 0 : fromUnit(u === "lb" ? 45 : 20, u), reps: 10 }] });
+      }
+    });
     setPicking(false);
   }
 

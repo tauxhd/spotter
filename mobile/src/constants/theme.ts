@@ -1,6 +1,7 @@
 import '@/global.css';
 
 import { Platform } from 'react-native';
+import { initialWindowMetrics } from 'react-native-safe-area-context';
 
 // Spotter palette, matching the website (Tailwind zinc + lime).
 export const Lime = '#84cc16';
@@ -41,5 +42,6 @@ export const Fonts = Platform.select({
 
 export const Spacing = { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 64 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80, web: 72 }) ?? 0; // room for the tab bar under floating UI
+// room for the tab bar under floating UI; on Android the tab bar (js-tabs) also sits above the system navigation bar
+export const BottomTabInset = Platform.select({ ios: 50, android: 80 + (initialWindowMetrics?.insets.bottom ?? 0), web: 72 }) ?? 0;
 export const MaxContentWidth = 800;
