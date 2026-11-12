@@ -121,8 +121,8 @@ const POPS = heroPops().flatMap((ps, k) => ps.map((n) => timeAt(HERO.intro + HER
 
 // Successes: the app's own PR fanfare (public/sounds/record.mp3) whenever something goes through.
 const WINS = heroSuccess().flatMap((ns, k) => ns.map((n) => timeAt(HERO.intro + HERO.scene * (k + n), SONG_CUES)));
-// Logos: a startup chime as the 3D phone's screen wakes to the logo (frame 96 of tools/intro_phone.py = 3.2 s), faded out
-// after the drop; and a chime as the logo springs up on the grey outro screen.
+// Logos: a short bright chime as the 3D phone's screen wakes to the logo (frame 96 of tools/intro_phone.py = 3.2 s), and a
+// chime as the logo springs up on the grey outro screen (both cut from a Windows 7 sound set).
 const STARTUP = { at: 96 / 30, fadeFrom: PLAN.clip, fadeTo: PLAN.clip + 0.8 };
 const END_LOGO = timeAt(O0 + 0.16 * HERO.outro, SONG_CUES);
 const SFX = ["typing", "click", "roulette-end", "counting", "message", "pop1", "pop2", "pop3", "scan", "success", "startup", "logo"].map((n) => `/video/sfx/${n}.mp3`);
