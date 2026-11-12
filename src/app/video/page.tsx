@@ -121,7 +121,11 @@ const POPS = heroPops().flatMap((ps, k) => ps.map((n) => timeAt(HERO.intro + HER
 
 // Successes: the app's own PR fanfare (public/sounds/record.mp3) whenever something goes through.
 const WINS = heroSuccess().flatMap((ns, k) => ns.map((n) => timeAt(HERO.intro + HERO.scene * (k + n), SONG_CUES)));
-const SFX = ["typing", "click", "roulette-end", "counting", "message", "pop1", "pop2", "pop3", "scan", "success"].map((n) => `/video/sfx/${n}.mp3`);
+// Logos: a startup chime as the 3D phone's screen wakes to the logo (frame 96 of tools/intro_phone.py = 3.2 s), faded out
+// after the drop; and a chime as the logo springs up on the grey outro screen.
+const STARTUP = { at: 96 / 30, fadeFrom: PLAN.clip, fadeTo: PLAN.clip + 0.8 };
+const END_LOGO = timeAt(O0 + 0.16 * HERO.outro, SONG_CUES);
+const SFX = ["typing", "click", "roulette-end", "counting", "message", "pop1", "pop2", "pop3", "scan", "success", "startup", "logo"].map((n) => `/video/sfx/${n}.mp3`);
 const SFX_FILES: Record<string, Promise<ArrayBuffer>> = {};
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -190,7 +194,7 @@ export default function Video() {
 
   // the typing sound loops while anything types (Web Audio, started on the first play, which counts as a user gesture)
   useEffect(() => { for (const url of SFX) SFX_FILES[url] ??= fetch(url).then((r) => r.arrayBuffer()); }, []); // download the sounds up front
-  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; pops?: AudioBuffer[]; scan?: AudioBuffer; win?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
+  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; pops?: AudioBuffer[]; scan?: AudioBuffer; win?: AudioBuffer; startup?: AudioBuffer; logo?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
   const typing = own && playing && TYPING.some(([a, b]) => t >= a && t < b);
   useEffect(() => {
     const x = sfx.current;
@@ -206,6 +210,8 @@ export default function Video() {
       void Promise.all(["/video/sfx/pop1.mp3", "/video/sfx/pop2.mp3", "/video/sfx/pop3.mp3"].map(load)).then((bufs) => { x.pops = bufs; });
       void load("/video/sfx/scan.mp3").then((buf) => { x.scan = buf; });
       void load("/video/sfx/success.mp3").then((buf) => { x.win = buf; });
+      void load("/video/sfx/startup.mp3").then((buf) => { x.startup = buf; });
+      void load("/video/sfx/logo.mp3").then((buf) => { x.logo = buf; });
     }
     if (playing && x.ctx?.state === "suspended") void x.ctx.resume();
     if (typing && !x.src && x.ctx && x.typing) {
@@ -224,6 +230,14 @@ export default function Video() {
       if (x.click) for (const c of CLICK_AT) if (c > prev && c <= t) shot(x.click);
       if (x.ping) for (const c of PINGS) if (c > prev && c <= t) shot(x.ping);
       if (x.win) for (const c of WINS) if (c > prev && c <= t) shot(x.win);
+      if (x.logo && END_LOGO > prev && END_LOGO <= t) shot(x.logo);
+      if (x.startup && STARTUP.at > prev && STARTUP.at <= t) {
+        const ctx = x.ctx, one = ctx.createBufferSource(), fade = ctx.createGain(), now = ctx.currentTime;
+        one.buffer = x.startup; one.connect(fade); fade.connect(x.gain!);
+        fade.gain.setValueAtTime(1, now + (STARTUP.fadeFrom - t)); fade.gain.linearRampToValueAtTime(0, now + (STARTUP.fadeTo - t));
+        one.start(0, t - STARTUP.at); one.stop(now + (STARTUP.fadeTo - t) + 0.05);
+        x.spins.push(one);
+      }
       if (x.pops) POPS.forEach((c, i) => { if (c > prev && c <= t) shot(x.pops![i % x.pops!.length]); });
       // the wind-down starts late enough that its last tick lands as the carousel settles
       const [a, b] = SPIN;
