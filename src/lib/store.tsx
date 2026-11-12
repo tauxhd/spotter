@@ -100,6 +100,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (isDemo) { // made-up account; still signs in (anonymously) so the public feed, ranks and people can be read
       const d = demoAccount();
       setDemo(true);
+      // shown in the landing page's phone frame: a phone has no scrollbar
+      document.head.appendChild(Object.assign(document.createElement("style"), { textContent: "html{scrollbar-width:none}html::-webkit-scrollbar{display:none}" }));
       setMe(d.me);
       setS((x) => ({ ...x, sessions: d.sessions, food: d.food, weights: d.weights, routines: d.routines }));
       sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort").then(({ data }) => data && setS((x) => ({ ...x, library: data })));
