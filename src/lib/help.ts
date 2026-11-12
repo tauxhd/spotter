@@ -25,7 +25,7 @@ export const help = {
 };
 
 // Ranks: how the board you're looking at is scored, plus what "verified" means.
-export const ranksHelp = (standard: string, p4p: string | undefined, lower: boolean | undefined, classSex: string) =>
-  `${standard === "p4p" ? (p4p === "dots" ? "DOTS: your total adjusted for bodyweight, so every size competes fairly." : "Your lift divided by your bodyweight.")
+export const ranksHelp = (standard: string, p4p: string | undefined, lower: boolean | undefined, classSex: string, gym = false) =>
+  `${gym ? "Gym lifts rank on the heaviest weight actually lifted for at least 1 rep, not an estimated 1RM, so light weight for lots of reps doesn't win. " : ""}${standard === "p4p" ? (p4p === "dots" ? "DOTS: your total adjusted for bodyweight, so every size competes fairly." : "Your lift divided by your bodyweight.")
     : standard === "class" ? `IPF weight classes, ${classSex === "M" ? "men" : "women"}: you only compete against lifters in your class.`
     : lower ? "Fastest time wins." : "Best result wins, any bodyweight."} ${help.verified}`;

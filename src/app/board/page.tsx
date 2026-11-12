@@ -105,7 +105,7 @@ export default function Ranks() {
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="h-title flex items-center gap-2"><Icon name="ranks" size={34} />Ranks<InfoTip text={ranksHelp(standard, ev.p4p, ev.lower, classSex)} label="How this board is scored" size={17} /></h1>
+        <h1 className="h-title flex items-center gap-2"><Icon name="ranks" size={34} />Ranks<InfoTip text={ranksHelp(standard, ev.p4p, ev.lower, classSex, gym)} label="How this board is scored" size={17} /></h1>
         <MeButton />
       </header>
 

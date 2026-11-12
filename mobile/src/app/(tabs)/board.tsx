@@ -114,7 +114,7 @@ export default function Ranks() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
-        <Title icon="ranks" info={ranksHelp(standard, ev.p4p, ev.lower, classSex)}>Ranks</Title>
+        <Title icon="ranks" info={ranksHelp(standard, ev.p4p, ev.lower, classSex, gym)}>Ranks</Title>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 20, paddingHorizontal: 16 }} style={[styles.bleed, styles.tabRow, { borderColor: theme.border }]}>
           {eventGroups.map((g) => (
