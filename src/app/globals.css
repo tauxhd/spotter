@@ -68,6 +68,11 @@ button, a { transition: opacity 160ms ease-out; }
   @apply text-zinc-500 dark:text-zinc-400;
 }
 
+/* Small all-caps label above a stat block (Eat > Progress). */
+.eyebrow {
+  @apply text-xs font-bold uppercase tracking-wider;
+}
+
 .h-title {
   @apply text-2xl font-bold tracking-tight;
 }

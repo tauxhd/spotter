@@ -8,7 +8,8 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { calSplit, foodBySlug, foods, highProtein, slug, targets } from '@shared/data';
+import { calSplit, foodBySlug, foods, highProtein, slug } from '@shared/data';
+import { nutrition } from '@shared/nutrition';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { EmptyState, Icon } from '@/components/ui/kit';
@@ -32,13 +33,14 @@ function Grow({ pct, color }: { pct: number; color: string }) {
 
 export default function FoodPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { s, addFood } = useStore();
+  const { s, me, addFood } = useStore();
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const [added, setAdded] = useState(false);
   const f = foodBySlug(id);
   if (!f) return <View style={{ flex: 1, backgroundColor: theme.background }}><EmptyState art="not-found" title="Dish not found" text="It may have left the menu." /></View>;
 
+  const { targets } = nutrition(me, s.food, s.weights);
   const split = calSplit(f);
   const today = new Date().toDateString();
   const times = s.food.filter((x) => x.name === f.name && new Date(x.at).toDateString() === today).length;

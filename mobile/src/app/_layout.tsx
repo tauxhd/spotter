@@ -50,6 +50,7 @@ function Gate() {
       <Stack.Screen name="map" options={{ title: 'Gym map' }} />
       <Stack.Screen name="routine" options={{ title: 'Routine' }} />
       <Stack.Screen name="food/[id]" options={{ title: '' }} />
+      <Stack.Screen name="plan" options={{ title: 'Nutrition plan' }} />
     </Stack>
   );
 }

@@ -9,12 +9,14 @@ import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { foods, highProtein, slug, stalls, targets } from '@shared/data';
+import { foods, highProtein, slug, stalls } from '@shared/data';
+import { goals, nutrition } from '@shared/nutrition';
+import { EatProgress } from '@/components/eat-progress';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
 import { H2, Icon, Title } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
-import { Plus, Search, Sparkles, Trash2 } from 'lucide-react-native';
+import { ChevronRight, Plus, Search, Sparkles, Trash2 } from 'lucide-react-native';
 import { BottomTabInset, Lime, Red, Spring } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
@@ -42,7 +44,8 @@ function Bar({ pct, color, height, delay = 0 }: { pct: number; color: string; he
 }
 
 export default function Eat() {
-  const { s, addFood, removeFood } = useStore();
+  const { s, me, addFood, removeFood } = useStore();
+  const [view, setView] = useState<'today' | 'progress'>('today');
   const theme = useTheme();
   const [q, setQ] = useState('');
   const [pick, setPick] = useState<string>(ALL);
@@ -52,6 +55,8 @@ export default function Eat() {
   const today = new Date().toDateString();
   const log = s.food.filter((f) => new Date(f.at).toDateString() === today);
   const sum = log.reduce((t, f) => ({ kcal: t.kcal + f.kcal, p: t.p + f.p, c: t.c + f.c, f: t.f + f.f }), { kcal: 0, p: 0, c: 0, f: 0 });
+  const n = nutrition(me, s.food, s.weights);
+  const targets = n.targets;
   const left = targets.kcal - Math.round(sum.kcal);
   const add = ({ name, kcal, p, c, f }: Food) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); return addFood({ name, kcal, p, c, f }); };
 
@@ -92,7 +97,22 @@ export default function Eat() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
-        <Title icon="eat" sub={`Lean bulk · ${targets.kcal} kcal target`}>Eat</Title>
+        <Title icon="eat" sub={
+          <Pressable onPress={() => router.push('/plan')} hitSlop={6} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <ThemedText type="small" themeColor="textSecondary">{goals[n.goal].label} · {targets.kcal} kcal target</ThemedText><ChevronRight size={14} color={theme.textSecondary} />
+          </Pressable>
+        }>Eat</Title>
+
+        <View style={[styles.seg, { backgroundColor: theme.backgroundElement }]} accessibilityRole="tablist">
+          {(['today', 'progress'] as const).map((v) => (
+            <Pressable key={v} onPress={() => setView(v)} accessibilityRole="tab" accessibilityState={{ selected: view === v }}
+              style={[styles.segBtn, view === v && { backgroundColor: theme.backgroundSelected }]}>
+              <ThemedText type="smallBold" themeColor={view === v ? 'text' : 'textSecondary'}>{v === 'today' ? 'Today' : 'Progress'}</ThemedText>
+            </Pressable>
+          ))}
+        </View>
+
+        {view === 'progress' ? <EatProgress /> : <>
 
         <View style={[styles.card, card]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -211,6 +231,7 @@ export default function Eat() {
           </Pressable>
           </Animated.View>
         ))}
+        </>}
       </ScrollView>
       <WorkoutPill />
     </SafeAreaView>
@@ -218,6 +239,8 @@ export default function Eat() {
 }
 
 const styles = StyleSheet.create({
+  seg: { flexDirection: 'row', padding: 2, borderRadius: 4, marginTop: 12 },
+  segBtn: { flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 3 },
   page: { padding: 16, gap: 14 },
   h1: { fontSize: 30, lineHeight: 36, fontWeight: '700', letterSpacing: -0.6 },
   card: { borderRadius: 6, padding: 16 },

@@ -2,10 +2,12 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Search, Sparkles, Trash2 } from "lucide-react";
+import { ChevronRight, Plus, Search, Sparkles, Trash2 } from "lucide-react";
+import EatProgress from "@/components/EatProgress";
 import Icon from "@/components/Icon";
 import { useStore } from "@/lib/store";
-import { demoNow, foods, highProtein, slug, stalls, targets } from "@/lib/data";
+import { demoNow, foods, highProtein, slug, stalls } from "@/lib/data";
+import { goals, nutrition } from "@/lib/nutrition";
 
 type Food = Omit<(typeof foods)[number], "stall">;
 
@@ -19,7 +21,10 @@ function Thumb({ name, size = 48 }: { name: string; size?: number }) {
 const ALL = "All", HP = "High protein";
 
 export default function Eat() {
-  const { s, addFood, removeFood } = useStore();
+  const { s, me, addFood, removeFood } = useStore();
+  // Today / Progress; the hash keeps Progress open after visiting the plan page and coming back
+  const [view, setViewRaw] = useState<"today" | "progress">(() => (typeof window !== "undefined" && location.hash === "#progress" ? "progress" : "today"));
+  const setView = (v: "today" | "progress") => { setViewRaw(v); history.replaceState(null, "", v === "progress" ? "#progress" : location.pathname + location.search); };
   const [q, setQ] = useState("");
   const [pick, setPick] = useState<string>(ALL);
   const [busy, setBusy] = useState(false);
@@ -50,14 +55,25 @@ export default function Eat() {
     { k: "c", label: "Carbs", unit: "g", bar: "bg-amber-500", icon: "carbs" },
     { k: "f", label: "Fat", unit: "g", bar: "bg-pink-500", icon: "fat" },
   ] as const;
+  const n = nutrition(me, s.food, s.weights);
+  const targets = n.targets;
   const left = targets.kcal - Math.round(sum.kcal);
 
   return (
     <div className="space-y-4">
       <header>
         <h1 className="h-title flex items-center gap-2"><Icon name="eat" size={34} />Eat</h1>
-        <p className="muted text-sm">Lean bulk · {targets.kcal} kcal target</p>
+        <Link href={`/eat/plan${location.search}`} className="muted flex items-center gap-0.5 text-sm">{goals[n.goal].label} · {targets.kcal} kcal target<ChevronRight size={14} /></Link>
       </header>
+
+      <div className="grid grid-cols-2 rounded-lg bg-zinc-100 p-0.5 text-sm font-semibold dark:bg-zinc-900" role="tablist">
+        {(["today", "progress"] as const).map((v) => (
+          <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}
+            className={`rounded-md py-1.5 capitalize transition ${view === v ? "bg-white shadow-sm dark:bg-zinc-700" : "muted"}`}>{v}</button>
+        ))}
+      </div>
+
+      {view === "progress" ? <EatProgress /> : <>
 
       <section className="card">
         <div className="flex items-center gap-3">
@@ -180,6 +196,7 @@ export default function Eat() {
           ))}
         </ul>
       </section>
+      </>}
     </div>
   );
 }

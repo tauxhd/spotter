@@ -23,7 +23,7 @@ export function Title({ icon, children, sub }: { icon?: string; children: React.
         {icon && <Icon name={icon} size={34} />}
         <ThemedText style={styles.title}>{children}</ThemedText>
       </View>
-      {sub ? <ThemedText type="small" themeColor="textSecondary">{sub}</ThemedText> : null}
+      {typeof sub === 'string' ? <ThemedText type="small" themeColor="textSecondary">{sub}</ThemedText> : sub}
     </View>
   );
 }

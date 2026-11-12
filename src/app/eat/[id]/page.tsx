@@ -7,7 +7,8 @@ import { ArrowLeft, Check, ChevronRight, Plus } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import Icon from "@/components/Icon";
 import { useStore } from "@/lib/store";
-import { calSplit, demoNow, foodBySlug, foods, highProtein, slug, targets } from "@/lib/data";
+import { calSplit, demoNow, foodBySlug, foods, highProtein, slug } from "@/lib/data";
+import { nutrition } from "@/lib/nutrition";
 
 const macros = [
   { k: "p", label: "Protein", icon: "protein", bar: "bg-sky-500" },
@@ -19,11 +20,12 @@ const macros = [
 export default function FoodPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { s, addFood } = useStore();
+  const { s, me, addFood } = useStore();
   const [added, setAdded] = useState(false);
   const f = foodBySlug(id);
   if (!f) return <EmptyState art="not-found" title="Dish not found" text="It may have left the menu." className="mt-16" />;
 
+  const { targets } = nutrition(me, s.food, s.weights);
   const split = calSplit(f);
   const today = demoNow().toDateString();
   const times = s.food.filter((x) => x.name === f.name && new Date(x.at).toDateString() === today).length;

@@ -14,15 +14,16 @@ export const sb = createClient(process.env.EXPO_PUBLIC_SUPABASE_URL!, process.en
 // refresh the session only while the app is on screen
 AppState.addEventListener("change", (st) => (st === "active" ? sb.auth.startAutoRefresh() : sb.auth.stopAutoRefresh()));
 
-export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit };
+export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit; height?: number | null; age?: number | null; goal?: string | null; activity?: number | null; goal_bw?: number | null; };
 export type Routine = { id: string; name: string; exercises: ExerciseLog[] };
 export type Session = { id: string; at: string; title: string; exercises: ExerciseLog[] };
 export type FoodEntry = { id: string; name: string; kcal: number; p: number; c: number; f: number; at: string };
+export type WeightEntry = { id: string; kg: number; at: string };
 export type Active = { title: string; startedAt: string; exercises: ExerciseLog[] } | null;
 export type Media = { uri: string; type: "image" | "video"; mime?: string; file?: Blob };
 export type Row = Record<string, any>;
 
-type State = { sessions: Session[]; posts: Post[]; library: Exercise[]; routines: Routine[]; active: Active; clockedIn: string | null; food: FoodEntry[]; following: string[]; followers: string[] };
+type State = { sessions: Session[]; posts: Post[]; library: Exercise[]; routines: Routine[]; active: Active; clockedIn: string | null; food: FoodEntry[]; weights: WeightEntry[]; following: string[]; followers: string[] };
 type Ctx = {
   s: State;
   me: Profile;
@@ -42,6 +43,7 @@ type Ctx = {
   setAvatar: (m: Media) => Promise<void>;
   addFood: (f: Omit<FoodEntry, "id" | "at">) => Promise<void>;
   removeFood: (id: string) => Promise<void>;
+  addWeight: (kg: number) => Promise<void>;
 };
 export type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "onboarding"; save: (p: Omit<Profile, "id">) => Promise<void> } | { kind: "ready" };
 
@@ -75,7 +77,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<State>(() => {
     let active: Active = null;
     try { const a = localStorage.getItem(ACTIVE); if (a) active = JSON.parse(a); } catch {}
-    return { sessions: [], posts: [], library: [], routines: [], active, clockedIn: null, food: [], following: [], followers: [] };
+    return { sessions: [], posts: [], library: [], routines: [], active, clockedIn: null, food: [], weights: [], following: [], followers: [] };
   });
 
   const loadPosts = useCallback(async (id: string) => {
@@ -84,17 +86,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (data) setS((x) => ({ ...x, posts: data.map((r) => toPost(r, id)) }));
   }, []);
   const loadMine = useCallback(async (id: string) => {
-    const [w, ro, v, f, fo] = await Promise.all([
+    const [w, ro, v, f, wl, fo] = await Promise.all([
       sb.from("workouts").select("*").order("created_at", { ascending: false }).limit(400),
       sb.from("routines").select("id, name, exercises").order("updated_at", { ascending: false }),
       sb.from("visits").select("in_at").is("out_at", null).order("in_at", { ascending: false }).limit(1),
-      sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(200),
+      sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(400), // ~5 weeks, for maintenance
+      sb.from("weight_logs").select("id, kg, created_at").order("created_at", { ascending: false }).limit(120),
       sb.from("follows").select("follower, followee"),
     ]);
     setS((x) => ({
       ...x,
       clockedIn: v.data?.[0]?.in_at ?? null,
       food: (f.data ?? []).map((r) => ({ id: r.id, name: r.name, kcal: +r.kcal, p: +r.p, c: +r.c, f: +r.f, at: r.created_at })).reverse(),
+      weights: (wl.data ?? []).map((r) => ({ id: r.id, kg: +r.kg, at: r.created_at })).reverse(),
       sessions: (w.data ?? []).map((r) => ({ id: r.id, at: r.created_at, title: r.title, exercises: r.exercises.map((e: ExerciseLog) => ({ ...e, name: oldNames[e.name] ?? e.name })) })),
       routines: ro.data ?? [],
       following: (fo.data ?? []).filter((r) => r.follower === id).map((r) => r.followee),
@@ -228,6 +232,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     async removeFood(id) {
       setS((x) => ({ ...x, food: x.food.filter((y) => y.id !== id) }));
       await sb.from("food_logs").delete().eq("id", id);
+    },
+    async addWeight(kg) {
+      const { data, error } = await sb.from("weight_logs").insert({ kg, created_at: new Date().toISOString() }).select().single();
+      if (error) throw error;
+      setS((x) => ({ ...x, weights: [...x.weights, { id: data.id, kg: +data.kg, at: data.created_at }] }));
     },
   } : null;
 
