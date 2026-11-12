@@ -121,11 +121,27 @@ const POPS = heroPops().flatMap((ps, k) => ps.map((n) => timeAt(HERO.intro + HER
 
 // Successes: the app's own PR fanfare (public/sounds/record.mp3) whenever something goes through.
 const WINS = heroSuccess().flatMap((ns, k) => ns.map((n) => timeAt(HERO.intro + HERO.scene * (k + n), SONG_CUES)));
-// Logos: a short bright chime as the 3D phone's screen wakes to the logo (frame 96 of tools/intro_phone.py = 3.2 s), and a
-// chime as the logo springs up on the grey outro screen (both cut from a Windows 7 sound set).
+// Logos: the same chime (cut from a Windows 7 sound set) as the 3D phone's screen wakes to the logo (frame 96 of
+// tools/intro_phone.py = 3.2 s) and as the logo springs up on the grey outro screen.
 const STARTUP = { at: 96 / 30, fadeFrom: PLAN.clip, fadeTo: PLAN.clip + 0.8 };
 const END_LOGO = timeAt(O0 + 0.16 * HERO.outro, SONG_CUES);
-const SFX = ["typing", "click", "roulette-end", "counting", "message", "pop1", "pop2", "pop3", "scan", "success", "startup", "logo"].map((n) => `/video/sfx/${n}.mp3`);
+/** Every sound effect as a fixed event, for the offline mix when rendering (tools/render-video.cjs); the same times
+ * live playback uses. offset / dur: where in the file to start, and how long to play (faded out over the last 60 ms). */
+export type SfxEvent = { file: string; at: number; offset?: number; dur?: number };
+function sfxPlan(): SfxEvent[] {
+  const f = (n: string) => `/video/sfx/${n}.mp3`, ev: SfxEvent[] = [];
+  for (const [a, b] of TYPING) ev.push({ file: f("typing"), at: a, offset: Math.min((a * 1.7) % 6.5, Math.max(0, 6.9 - (b - a))), dur: b - a });
+  for (const c of CLICK_AT) ev.push({ file: f("click"), at: c });
+  for (const c of PINGS) ev.push({ file: f("message"), at: c });
+  for (const c of WINS) ev.push({ file: f("success"), at: c });
+  POPS.forEach((c, i) => ev.push({ file: f(`pop${(i % 3) + 1}`), at: c }));
+  ev.push({ file: f("roulette-end"), at: SPIN[0], offset: Math.max(0, 2.8 - (SPIN[1] - SPIN[0])) });
+  for (const [a, b] of COUNTS) ev.push({ file: f("counting"), at: a, dur: b - a });
+  for (const [a, b] of SCANS) ev.push({ file: f("scan"), at: a, dur: b - a });
+  ev.push({ file: f("logo"), at: STARTUP.at }, { file: f("logo"), at: END_LOGO });
+  return ev;
+}
+const SFX = ["typing", "click", "roulette-end", "counting", "message", "pop1", "pop2", "pop3", "scan", "success", "logo"].map((n) => `/video/sfx/${n}.mp3`);
 const SFX_FILES: Record<string, Promise<ArrayBuffer>> = {};
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -139,7 +155,7 @@ export default function Video() {
   const [ui, setUi] = useState(true);
   const clock = useRef({ start: 0, from: 0 });
 
-  useEffect(() => { if (new URLSearchParams(location.search).has("clean")) setUi(false); }, []);
+  useEffect(() => { if (new URLSearchParams(location.search).has("clean") || new URLSearchParams(location.search).has("render")) setUi(false); }, []);
 
   // the clock: the song's own time when there is one, else wall time
   useEffect(() => {
@@ -194,7 +210,7 @@ export default function Video() {
 
   // the typing sound loops while anything types (Web Audio, started on the first play, which counts as a user gesture)
   useEffect(() => { for (const url of SFX) SFX_FILES[url] ??= fetch(url).then((r) => r.arrayBuffer()); }, []); // download the sounds up front
-  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; pops?: AudioBuffer[]; scan?: AudioBuffer; win?: AudioBuffer; startup?: AudioBuffer; logo?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
+  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; pops?: AudioBuffer[]; scan?: AudioBuffer; win?: AudioBuffer; logo?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
   const typing = own && playing && TYPING.some(([a, b]) => t >= a && t < b);
   useEffect(() => {
     const x = sfx.current;
@@ -210,7 +226,6 @@ export default function Video() {
       void Promise.all(["/video/sfx/pop1.mp3", "/video/sfx/pop2.mp3", "/video/sfx/pop3.mp3"].map(load)).then((bufs) => { x.pops = bufs; });
       void load("/video/sfx/scan.mp3").then((buf) => { x.scan = buf; });
       void load("/video/sfx/success.mp3").then((buf) => { x.win = buf; });
-      void load("/video/sfx/startup.mp3").then((buf) => { x.startup = buf; });
       void load("/video/sfx/logo.mp3").then((buf) => { x.logo = buf; });
     }
     if (playing && x.ctx?.state === "suspended") void x.ctx.resume();
@@ -231,9 +246,9 @@ export default function Video() {
       if (x.ping) for (const c of PINGS) if (c > prev && c <= t) shot(x.ping);
       if (x.win) for (const c of WINS) if (c > prev && c <= t) shot(x.win);
       if (x.logo && END_LOGO > prev && END_LOGO <= t) shot(x.logo);
-      if (x.startup && STARTUP.at > prev && STARTUP.at <= t) {
+      if (x.logo && STARTUP.at > prev && STARTUP.at <= t) {
         const ctx = x.ctx, one = ctx.createBufferSource(), fade = ctx.createGain(), now = ctx.currentTime;
-        one.buffer = x.startup; one.connect(fade); fade.connect(x.gain!);
+        one.buffer = x.logo; one.connect(fade); fade.connect(x.gain!);
         fade.gain.setValueAtTime(1, now + (STARTUP.fadeFrom - t)); fade.gain.linearRampToValueAtTime(0, now + (STARTUP.fadeTo - t));
         one.start(0, t - STARTUP.at); one.stop(now + (STARTUP.fadeTo - t) + 0.05);
         x.spins.push(one);
@@ -262,6 +277,26 @@ export default function Video() {
   const phoneIn = own ? Math.max(0, Math.min(1, (t - PLAN.clip) / 0.15)) : 1;
   // keep the Blender clip on the song's clock: play along, re-sync when it drifts or after a seek
   const clip = useRef<HTMLVideoElement>(null);
+  // ?render: tools/render-video.cjs steps the page frame by frame through window.__render.seek, then mixes the sounds offline
+  useEffect(() => {
+    if (!new URLSearchParams(location.search).has("render")) return;
+    const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    Object.assign(window, {
+      __render: {
+        end: PLAN.end, song: SONG.url, sfx: sfxPlan(),
+        seek: async (s: number) => {
+          setT(s);
+          await frames();
+          const v = clip.current;
+          if (v && s < PLAN.clip + 0.7) { // the Blender clip shows this frame exactly
+            const want = Math.min(s, v.duration ? v.duration - 0.01 : s);
+            if (Math.abs(v.currentTime - want) > 0.001) await new Promise((r) => { v.addEventListener("seeked", r, { once: true }); v.currentTime = want; setTimeout(r, 1500); });
+          }
+          await frames();
+        },
+      },
+    });
+  }, []);
   useEffect(() => {
     const v = clip.current;
     if (!v) return;

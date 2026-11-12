@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# rendered ad videos (tools/render-video.cjs)
+video/out/
