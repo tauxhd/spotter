@@ -797,6 +797,8 @@ function PhoneMock({ k, t, style }: { k: number; t: number; style?: CSSPropertie
 // LAND is the home phone it lands on; the ones after it are just there so the row runs on past the middle.
 const ROW: [number, number][] = [[3, 0.6], [5, 0.8], [-1, 0], [1, 0.4], [2, 0.62], [3, 0.6], [4, 0.7], [5, 0.8], [0, 0], [1, 0.4], [4, 0.7], [2, 0.62]];
 const ROW0 = 2, LAND = 8, LEAVE = 0.22, EMERGE = [0.03, 0.25], SWIPE = [0.27, 0.62], SNAP = [0.64, 0.92];
+/** the hand-off's beats (0..1 of it), for the video page's cursor */
+export const HANDOFF = { emerged: EMERGE[1], swipe: SWIPE[0], landed: SWIPE[1] };
 /** the hero's timeline in scroll units, for driving it from a clock (the /video page) */
 export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
 /** each scene's big moments (clicks and flashes) in its own time 0..1, so a video can land them on the beat */

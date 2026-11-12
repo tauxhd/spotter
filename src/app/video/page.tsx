@@ -6,7 +6,7 @@
 // just spreads the hero evenly over its length.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import HeroScroll, { HERO, heroMoments } from "@/components/HeroScroll";
+import HeroScroll, { HANDOFF, HERO, heroMoments } from "@/components/HeroScroll";
 import { BEATS } from "./beats";
 
 const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
@@ -65,6 +65,28 @@ function progressAt(t: number, cues: [number, number][]) {
   }
   return cues[cues.length - 1][1];
 }
+// The opening's cursor (x vw, y vh over the whole frame): it glides in over the 3D phone and clicks its logo on the drop,
+// rides along as the phones fan out and whip past, then picks the home phone as the row settles, and drifts off.
+const handoffAt = (k: number) => PLAN.hold + k * (PLAN.intro - PLAN.hold);
+const LANDED = handoffAt(HANDOFF.landed);
+const CURSOR: [number, number, number][] = [
+  [PLAN.clip - 1.3, 84, 104], [PLAN.clip - 0.2, 51, 46], [PLAN.clip + 0.3, 51, 46], // in, onto the logo, click on the drop
+  [handoffAt(HANDOFF.emerged), 60, 52], [handoffAt(HANDOFF.swipe) + 0.25, 66, 56], // drifts toward the phones on the right as they fan out
+  [LANDED - 0.15, 51, 50], [LANDED + 0.25, 51, 50], [LANDED + 0.7, 58, 74], // onto the home phone, click, away
+];
+const CLICKS = [PLAN.clip, LANDED + 0.02];
+const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+function cursorAt(t: number) {
+  if (t < CURSOR[0][0] || t > CURSOR[CURSOR.length - 1][0]) return null;
+  let i = 0;
+  while (i + 2 < CURSOR.length && CURSOR[i + 1][0] < t) i++;
+  const [t0, x0, y0] = CURSOR[i], [t1, x1, y1] = CURSOR[i + 1], k = ease(Math.min(1, Math.max(0, (t - t0) / (t1 - t0))));
+  const fade = Math.min(1, (t - CURSOR[0][0]) / 0.2, (CURSOR[CURSOR.length - 1][0] - t) / 0.3);
+  const press = Math.max(0, ...CLICKS.map((c) => 1 - Math.abs(t - c) / 0.08));
+  const ring = Math.max(0, ...CLICKS.map((c) => (t >= c && t < c + 0.4 ? (t - c) / 0.4 : 0)));
+  return { x: x0 + (x1 - x0) * k, y: y0 + (y1 - y0) * k, fade, press, ring };
+}
+
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 export default function Video() {
@@ -146,6 +168,17 @@ export default function Video() {
         backdrop={own && <video ref={clip} src={CLIP} muted playsInline preload="auto" className="absolute inset-0 z-[5] h-full w-full bg-black object-cover" style={{ opacity: inClip ? clipFade : 0 }} />} />
       {song && <audio ref={audio} src={song.url} preload="auto" onLoadedMetadata={(e) => setLen(song.url === SONG.url ? PLAN.end : e.currentTarget.duration)} onEnded={() => setPlaying(false)} />}
 
+      {own && (() => {
+        const c = cursorAt(t);
+        return c && (
+          <div className="pointer-events-none fixed inset-0 z-[57]" aria-hidden>
+            {c.ring > 0 && <div className="absolute rounded-full border-4 border-lime-300" style={{ left: `${c.x}vw`, top: `${c.y}vh`, width: 90, height: 90, transform: `translate(-50%,-50%) scale(${0.3 + c.ring * 1.8})`, opacity: 1 - c.ring }} />}
+            <svg viewBox="0 0 24 24" className="absolute drop-shadow-[0_6px_10px_rgba(0,0,0,.6)]" style={{ left: `${c.x}vw`, top: `${c.y}vh`, width: 40, opacity: c.fade, transform: `translate(-18%,-8%) scale(${1 - c.press * 0.2})` }}>
+              <path d="M4 2.5 20 11l-7 2.2-3.4 7.3z" fill="#fff" stroke="#09090b" strokeWidth="1.6" strokeLinejoin="round" />
+            </svg>
+          </div>
+        );
+      })()}
       {ui && (
         <div className="fixed inset-x-0 bottom-0 z-[60] flex items-center gap-3 bg-zinc-950/80 px-4 py-3 text-sm backdrop-blur">
           <button onClick={() => play(!playing)} className="w-20 rounded-lg bg-lime-400 py-1.5 font-semibold text-zinc-950">{playing ? "Pause" : "Play"}</button>
