@@ -80,5 +80,6 @@ test("heaviest: the weight actually lifted, not an estimated 1RM", async () => {
   ] }] }];
   assert.equal(heaviest({}, log).Bench, 100);
   assert.ok(bests({}, log).Bench > 130);
-  assert.equal(heaviest({ Bench: 102.5 }, log).Bench, 102.5); // a higher starting value stays
+  assert.equal(heaviest({ Bench: 132.5, Squat: 120 }, log).Bench, 100); // logged sets win over a stored value
+  assert.equal(heaviest({ Bench: 132.5, Squat: 120 }, log).Squat, 120); // which only fills in lifts not logged yet
 });

@@ -22,16 +22,20 @@ export function e1rm(kg: number, reps: number) {
 
 type Logged = { exercises: { name: string; sets: { kg: number; reps: number; done?: boolean; type?: string }[] }[] };
 
-// Heaviest weight actually lifted per exercise (not an estimate): starting values merged with every full-effort set
-// ticked since, at least 1 rep. Pull-ups / dips: the added weight. This is what "Best" and best lifts show.
+// Heaviest weight actually lifted per exercise (not an estimate): the heaviest full-effort set ticked, at least 1 rep.
+// Pull-ups / dips: the added weight. Logged sets win; the starting values (e.g. lifts typed in at sign-up) only fill in
+// exercises with nothing logged yet. This is what "Best" and "Heaviest lifts" show.
 export function heaviest(base: Record<string, number>, sessions: Logged[]) {
-  const out = { ...base };
+  const logged: Record<string, number> = {};
   for (const s of sessions)
     for (const ex of s.exercises)
       for (const set of ex.sets)
-        if (set.done && set.reps > 0 && countsPR(set.type as T)) out[ex.name] = Math.max(out[ex.name] ?? 0, set.kg);
-  return out;
+        if (set.done && set.reps > 0 && countsPR(set.type as T)) logged[ex.name] = Math.max(logged[ex.name] ?? 0, set.kg);
+  return { ...base, ...logged };
 }
+
+// Estimated one-rep max per exercise from logged sets, the same way: logged sets win, starting values fill the gaps.
+export const estimated = (base: Record<string, number>, sessions: Logged[], body?: (name: string) => number) => ({ ...base, ...bests({}, sessions, body) });
 
 // Best estimated 1RM per exercise (used to spot PRs and for strength levels): starting values merged with every completed set.
 // body(name) = bodyweight for pull-ups / dips, where kg is added weight: the 1RM is worked out on the total, then shown as added.

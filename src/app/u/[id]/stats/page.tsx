@@ -11,7 +11,7 @@ import { StatsSkeleton } from "@/components/Skeleton";
 import { toUnit, wTotal } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
 import { findExercise, lifters, type Post } from "@/lib/data";
-import { baseOf, bests, heaviest, liftsOf } from "@/lib/lifting";
+import { baseOf, estimated, heaviest, liftsOf } from "@/lib/lifting";
 import MeButton from "@/components/MeButton";
 import InfoTip from "@/components/InfoTip";
 import { help } from "@/lib/help";
@@ -75,8 +75,8 @@ export default function GymStats() {
 
   // Best lifts: what was actually lifted, and the estimated one-rep max, from your own sets or the sets in someone's posts.
   const postSessions = posts.map((x) => ({ exercises: x.exercises.map((e) => ({ name: findExercise(s.library, e.id, e.name)?.name ?? e.name, sets: (e.log ?? []).map((l) => ({ ...l, done: true })) })) }));
-  const lifts = own ? liftsOf(heaviest(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
-  const est = liftsOf(bests(baseOf(p), own ? s.sessions : postSessions));
+  const lifts = liftsOf(heaviest(baseOf(p), own ? s.sessions : postSessions));
+  const est = liftsOf(estimated(baseOf(p), own ? s.sessions : postSessions));
   const liftPages: LiftPage[] = [{ title: "Heaviest lifts", info: help.heaviest, lifts }, { title: "Estimated 1RM", info: help.e1rm, lifts: est }];
   const sbd = Math.max(lifts.squat + lifts.bench + lifts.deadlift, est.squat + est.bench + est.deadlift);
 

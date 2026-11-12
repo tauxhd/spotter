@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { findExercise, lifters, type Post } from '@shared/data';
-import { baseOf, bests, heaviest, liftsOf } from '@shared/lifting';
+import { baseOf, estimated, heaviest, liftsOf } from '@shared/lifting';
 import MuscleDistribution, { type Log } from '@/components/muscle-distribution';
 import { ExerciseThumb } from '@/components/post-card';
 import { ThemedText } from '@/components/themed-text';
@@ -69,8 +69,8 @@ export default function GymStats() {
   const favourites = Object.entries(exSets).sort((a, b) => b[1] - a[1]).slice(0, 5);
   // Best lifts: what was actually lifted, and the estimated one-rep max, from your own sets or the sets in someone's posts.
   const postSessions = posts.map((x) => ({ exercises: x.exercises.map((e) => ({ name: findExercise(s.library, e.id, e.name)?.name ?? e.name, sets: (e.log ?? []).map((l) => ({ ...l, done: true })) })) }));
-  const lifts = own ? liftsOf(heaviest(baseOf(me), s.sessions)) : { squat: Number(p.squat), bench: Number(p.bench), deadlift: Number(p.deadlift) };
-  const est = liftsOf(bests(baseOf(p), own ? s.sessions : postSessions));
+  const lifts = liftsOf(heaviest(baseOf(p), own ? s.sessions : postSessions));
+  const est = liftsOf(estimated(baseOf(p), own ? s.sessions : postSessions));
   const liftPages: LiftPage[] = [{ title: 'Heaviest lifts', info: help.heaviest, lifts }, { title: 'Estimated 1RM', info: help.e1rm, lifts: est }];
   const sbd = Math.max(lifts.squat + lifts.bench + lifts.deadlift, est.squat + est.bench + est.deadlift);
 
