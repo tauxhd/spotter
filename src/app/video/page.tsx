@@ -6,7 +6,7 @@
 // just spreads the hero evenly over its length.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import HeroScroll, { HANDOFF, HERO, heroClicks, heroCounting, heroMoments, heroNotify, heroPops, heroTyping } from "@/components/HeroScroll";
+import HeroScroll, { HANDOFF, HERO, heroClicks, heroCounting, heroMoments, heroNotify, heroPops, heroScans, heroTyping } from "@/components/HeroScroll";
 import { BEATS } from "./beats";
 
 const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
@@ -105,17 +105,21 @@ const TYPING = heroTyping().flatMap((spans, k) => spans.map(([a, b]) => {
 const CLICK_AT = [...CLICKS, ...heroClicks().flatMap((cs, k) => cs.map((c) => timeAt(HERO.intro + HERO.scene * (k + c), SONG_CUES)))].sort((a, b) => a - b);
 // The carousel: the roulette's wind-down, ending exactly as the row settles on home.
 const SPIN: readonly [number, number] = [handoffAt(HANDOFF.swipe), LANDED];
-// Count-ups: a data-loading blip run from its start while each number counts, faded out as it lands.
-const COUNTS = heroCounting().flatMap((spans, k) => spans.map(([a, b]) => {
+/** per-scene spans (their own time 0..1) as seconds in the song */
+const spansIn = (all: [number, number][][]) => all.flatMap((spans, k) => spans.map(([a, b]) => {
   const p0 = HERO.intro + HERO.scene * k;
   return [timeAt(p0 + HERO.scene * a, SONG_CUES), timeAt(p0 + HERO.scene * b, SONG_CUES)] as const;
 }));
+// Count-ups: a data-loading blip run from its start while each number counts, faded out as it lands.
+const COUNTS = spansIn(heroCounting());
+// Scans: a sci-fi scanner whir while the QR scanner reads, and while the 3D map sweeps to the rack.
+const SCANS = spansIn(heroScans());
 // Notifications: a message ping as each one arrives (a banner, a toast, the notifications card, a reply).
 const PINGS = heroNotify().flatMap((ns, k) => ns.map((n) => timeAt(HERO.intro + HERO.scene * (k + n), SONG_CUES)));
 // Pops: everything popping into view, taking turns between three pop sounds so neighbours don't sound the same.
 const POPS = heroPops().flatMap((ps, k) => ps.map((n) => timeAt(HERO.intro + HERO.scene * (k + n), SONG_CUES))).sort((a, b) => a - b);
 
-const SFX = ["typing", "click", "roulette-end", "counting", "message", "pop1", "pop2", "pop3"].map((n) => `/video/sfx/${n}.mp3`);
+const SFX = ["typing", "click", "roulette-end", "counting", "message", "pop1", "pop2", "pop3", "scan"].map((n) => `/video/sfx/${n}.mp3`);
 const SFX_FILES: Record<string, Promise<ArrayBuffer>> = {};
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -184,7 +188,7 @@ export default function Video() {
 
   // the typing sound loops while anything types (Web Audio, started on the first play, which counts as a user gesture)
   useEffect(() => { for (const url of SFX) SFX_FILES[url] ??= fetch(url).then((r) => r.arrayBuffer()); }, []); // download the sounds up front
-  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; pops?: AudioBuffer[]; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
+  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; count?: AudioBuffer; ping?: AudioBuffer; pops?: AudioBuffer[]; scan?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
   const typing = own && playing && TYPING.some(([a, b]) => t >= a && t < b);
   useEffect(() => {
     const x = sfx.current;
@@ -198,6 +202,7 @@ export default function Video() {
       void load("/video/sfx/counting.mp3").then((buf) => { x.count = buf; });
       void load("/video/sfx/message.mp3").then((buf) => { x.ping = buf; });
       void Promise.all(["/video/sfx/pop1.mp3", "/video/sfx/pop2.mp3", "/video/sfx/pop3.mp3"].map(load)).then((bufs) => { x.pops = bufs; });
+      void load("/video/sfx/scan.mp3").then((buf) => { x.scan = buf; });
     }
     if (playing && x.ctx?.state === "suspended") void x.ctx.resume();
     if (typing && !x.src && x.ctx && x.typing) {
@@ -219,14 +224,18 @@ export default function Video() {
       // the wind-down starts late enough that its last tick lands as the carousel settles
       const [a, b] = SPIN;
       if (x.spin && a > prev && a <= t) x.spins.push(shot(x.spin, Math.max(0, x.spin.duration - (b - a)) + (t - a)));
-      // each count-up: the loading blips from the top, faded out over the last 60 ms as the number lands
-      if (x.count) for (const [c0, c1] of COUNTS) if (c0 > prev && c0 <= t) {
-        const ctx = x.ctx, one = ctx.createBufferSource(), fade = ctx.createGain(), now = ctx.currentTime, left = Math.max(0.08, c1 - t);
-        one.buffer = x.count; one.connect(fade); fade.connect(x.gain!);
-        fade.gain.setValueAtTime(1, now + left - 0.06); fade.gain.linearRampToValueAtTime(0, now + left);
-        one.start(0, t - c0); one.stop(now + left + 0.01);
-        x.spins.push(one);
-      }
+      // count-ups and scans: their sound from the top, faded out over the last 60 ms as the moment ends
+      const span = (buf: AudioBuffer | undefined, spans: (readonly [number, number])[]) => {
+        if (buf) for (const [c0, c1] of spans) if (c0 > prev && c0 <= t) {
+          const ctx = x.ctx!, one = ctx.createBufferSource(), fade = ctx.createGain(), now = ctx.currentTime, left = Math.max(0.08, c1 - t);
+          one.buffer = buf; one.connect(fade); fade.connect(x.gain!);
+          fade.gain.setValueAtTime(1, now + left - 0.06); fade.gain.linearRampToValueAtTime(0, now + left);
+          one.start(0, t - c0); one.stop(now + left + 0.01);
+          x.spins.push(one);
+        }
+      };
+      span(x.count, COUNTS);
+      span(x.scan, SCANS);
     }
     if (!playing && x.spins.length) { for (const one of x.spins) one.stop(); x.spins = []; } // paused or seeking: hush
   }, [typing, playing, t, own]);

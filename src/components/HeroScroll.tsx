@@ -538,8 +538,9 @@ const EX = ["barbell-bench-press", "pull-up", "dumbbell-curl", "kettlebell-swing
 const FOOD = ["nasi-lemak-fried-chicken", "chicken-briyani", "roti-canai-dhal", "char-kuey-teow", "chicken-mandi", "chicken-katsu-don", "teh-tarik", "mee-goreng-mamak", "tandoori-chicken-naan", "kaya-toast-2-half-boiled-eggs", "fish-chips", "ayam-penyet"].map((x) => `/food/${x}.webp`);
 /** typing? / counting?: when the screen types or a number counts up (its own time 0..1, matching the typed() / smooth() count-ups
  * in its Screen, pop-outs and dataset counter), notify? when a notification arrives and popIns?
- * when something pops into view (each pop-out card's pop() start, plus pop-ins inside the phone), for the video's sound effects */
-type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; typing?: [number, number][]; counting?: [number, number][]; notify?: number[]; popIns?: number[]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
+ * when something pops into view (each pop-out card's pop() start, plus pop-ins inside the phone), and scanning? while something
+ * scans or searches, for the video's sound effects */
+type Scene = { word: [string, string]; theme: Theme; text: string; data?: Data; points?: string[]; typing?: [number, number][]; counting?: [number, number][]; notify?: number[]; popIns?: number[]; scanning?: [number, number][]; floats: Float[]; Screen: (p: { t: number; e: number }) => ReactNode; play: (t: number, wide: boolean) => Play };
 
 const scenes: Scene[] = [
   {
@@ -547,6 +548,7 @@ const scenes: Scene[] = [
     floats: [["/hero/props/kettlebell.webp", 91, 20, 17, 1.4, -12], ["/icons/qr.webp", 52, 80, 10, 0.7, 10], ["/icons/crowd.webp", 96, 76, 11, 1.2, -8], ["/icons/gym.webp", 57, 14, 8, 0.6, 6]],
     Screen: Home, counting: [[0.6, 0.7]], // the crowd peak in the pop-out
     popIns: [0.33, 0.52, 0.72], // the "You're in" check, the two pop-outs
+    scanning: [[0.23, 0.33]], // the QR scanner, until it reads the code
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.1, 400, 600], [0.2, 240, 289], [0.36, 240, 289], [0.48, 110, 440], [0.56, 110, 440], [0.68, 200, 700], [1, 200, 700]],
       clicks: [0.23, 0.52, 0.72], flashes: [0.34],
@@ -757,6 +759,7 @@ const scenes: Scene[] = [
     floats: [["/icons/map.webp", 91, 17, 13, 1.4, -8], ["/icons/target.webp", 52, 82, 10, 0.8, 10], ["/hero/props/plate.webp", 97, 72, 14, 1.2, 20], ["/icons/building.webp", 57, 12, 8, 0.6, 0]],
     Screen: MapScreen, typing: [[0.24, 0.36]], // "Used for: ..."
     counting: [[0.16, 0.4]], // the 34 machines
+    scanning: [[0.21, 0.36]], // the 3D map sweeping over to the Squat Rack
     popIns: [0.58, 0.7], // the route, the rack card
     play: (t, wide) => ({
       cursor: [[0, 520, 900], [0.15, 318, 802], [0.23, 318, 802], [0.4, 250, 440], [1, 250, 440]],
@@ -827,6 +830,8 @@ export const heroCounting = () => scenes.map((s) => s.counting ?? []);
 export const heroNotify = () => scenes.map((s) => s.notify ?? []);
 /** everything popping into view per scene (its own time 0..1) */
 export const heroPops = () => scenes.map((s) => s.popIns ?? []);
+/** everything scanning per scene (its own time 0..1) */
+export const heroScans = () => scenes.map((s) => s.scanning ?? []);
 export const heroClicks = () => scenes.map((s) => s.play(0.5, true).clicks);
 export const heroMoments = () => scenes.map((s) => { const pl = s.play(0.5, true); return [...new Set([...pl.clicks, ...pl.flashes])].sort((a, b) => a - b); });
 /** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
