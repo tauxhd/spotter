@@ -6,7 +6,7 @@
 // just spreads the hero evenly over its length.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import HeroScroll, { HANDOFF, HERO, heroClicks, heroMoments, heroTyping } from "@/components/HeroScroll";
+import HeroScroll, { HANDOFF, HERO, heroClicks, heroCounting, heroMoments, heroTyping } from "@/components/HeroScroll";
 import { BEATS } from "./beats";
 
 const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
@@ -103,6 +103,15 @@ const TYPING = heroTyping().flatMap((spans, k) => spans.map(([a, b]) => {
 
 // Clicks: the opening cursor's two (the logo on the drop, the home phone) and every click of the cursor inside the phone.
 const CLICK_AT = [...CLICKS, ...heroClicks().flatMap((cs, k) => cs.map((c) => timeAt(HERO.intro + HERO.scene * (k + c), SONG_CUES)))].sort((a, b) => a - b);
+// Spins: the roulette's wind-down, ending exactly as each one lands: the phone carousel settling on home, and every
+// number counting up.
+const SPINS: (readonly [number, number])[] = [
+  [handoffAt(HANDOFF.swipe), LANDED],
+  ...heroCounting().flatMap((spans, k) => spans.map(([a, b]) => {
+    const p0 = HERO.intro + HERO.scene * k;
+    return [timeAt(p0 + HERO.scene * a, SONG_CUES), timeAt(p0 + HERO.scene * b, SONG_CUES)] as const;
+  })),
+];
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
@@ -169,7 +178,7 @@ export default function Video() {
   const own = song?.url === SONG.url, cues = own ? SONG_CUES : evenCues(len);
 
   // the typing sound loops while anything types (Web Audio, started on the first play, which counts as a user gesture)
-  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number }>({});
+  const sfx = useRef<{ ctx?: AudioContext; typing?: AudioBuffer; click?: AudioBuffer; spin?: AudioBuffer; src?: AudioBufferSourceNode; gain?: GainNode; last?: number; spins: AudioBufferSourceNode[] }>({ spins: [] });
   const typing = own && playing && TYPING.some(([a, b]) => t >= a && t < b);
   useEffect(() => {
     const x = sfx.current;
@@ -179,6 +188,7 @@ export default function Video() {
       const load = (url: string) => fetch(url).then((r) => r.arrayBuffer()).then((b) => x.ctx!.decodeAudioData(b));
       void load("/video/sfx/typing.mp3").then((buf) => { x.typing = buf; });
       void load("/video/sfx/click.mp3").then((buf) => { x.click = buf; });
+      void load("/video/sfx/roulette-end.mp3").then((buf) => { x.spin = buf; });
     }
     if (playing && x.ctx?.state === "suspended") void x.ctx.resume();
     if (typing && !x.src && x.ctx && x.typing) {
@@ -192,12 +202,13 @@ export default function Video() {
     // a click for every click time passed since the last frame (not across a seek or a pause)
     const prev = x.last;
     x.last = playing ? t : undefined;
-    if (own && playing && prev !== undefined && t > prev && t - prev < 0.3 && x.ctx && x.click) {
-      for (const c of CLICK_AT) if (c > prev && c <= t) {
-        const one = x.ctx.createBufferSource();
-        one.buffer = x.click; one.connect(x.gain!); one.start();
-      }
+    if (own && playing && prev !== undefined && t > prev && t - prev < 0.3 && x.ctx) {
+      const shot = (buf: AudioBuffer, offset = 0) => { const one = x.ctx!.createBufferSource(); one.buffer = buf; one.connect(x.gain!); one.start(0, offset); return one; };
+      if (x.click) for (const c of CLICK_AT) if (c > prev && c <= t) shot(x.click);
+      // the wind-down starts late enough that its last tick lands on the stop (a short spin gets just the slowest ticks)
+      if (x.spin) for (const [a, b] of SPINS) if (a > prev && a <= t) x.spins.push(shot(x.spin, Math.max(0, x.spin.duration - (b - a)) + (t - a)));
     }
+    if (!playing && x.spins.length) { for (const one of x.spins) one.stop(); x.spins = []; } // paused or seeking: hush
   }, [typing, playing, t, own]);
   // the Blender shot sits behind our phone: ours fades in exactly on top of its phone, then the set around it fades to black
   const inClip = own && t < PLAN.clip + 0.7, clipFade = 1 - Math.max(0, Math.min(1, (t - PLAN.clip - 0.1) / 0.6));
