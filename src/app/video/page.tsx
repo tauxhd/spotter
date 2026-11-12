@@ -2,13 +2,43 @@
 // The ad video, as a web page: the landing page's hero animation (components/HeroScroll) driven by a clock instead of
 // the scroll, played to music. Drop an audio file anywhere (or pick one) and the animation stretches to the song.
 // Space plays / pauses, ← → skip a second, H hides the controls (or ?clean for recording).
-// CUES map seconds to the hero's progress; until we tune them to the song's beats they spread evenly over its length.
+// With the default song (public/video/song.mp3) the hero is cut to its beats (SONG, songCues); any other song you drop
+// just spreads the hero evenly over its length.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import HeroScroll, { HERO } from "@/components/HeroScroll";
+import HeroScroll, { HERO, heroMoments } from "@/components/HeroScroll";
+import { BEATS } from "./beats";
 
-/** [second, progress] pairs, eased linearly between; null = spread the hero evenly over the song */
-const CUES: [number, number][] | null = null;
+const SONG = { url: "/video/song.mp3", name: "Dance Baby · Infraction" };
+// Where each part sits in the song (s), all on bar lines: a quiet sax intro, the beat drops at 5.2 s, a softer stretch
+// from ~24 s (the Eat scene's typing), the energy back at ~44 s (Ranks climbing), and the drop-off at ~64 s for the logo.
+const PLAN = { hold: 2.6, intro: 5.18, scenes: [5.18, 17.95, 28.26, 41.12, 51.46, 62.95], logo: 64.25, end: 69.06 };
+
+const nearestBeat = (s: number) => BEATS.reduce((a, b) => (Math.abs(b - s) < Math.abs(a - s) ? b : a));
+/** [second, progress] pairs for the default song: scenes start on bars, their clicks and flashes land on the nearest beat */
+function songCues(): [number, number][] {
+  const cues: [number, number][] = [[0, 0], [PLAN.hold, 0], [PLAN.intro, HERO.intro]];
+  heroMoments().forEach((moments, k) => {
+    const s = PLAN.scenes[k], e = PLAN.scenes[k + 1], p0 = HERO.intro + HERO.scene * k;
+    for (const m of moments) {
+      const at = nearestBeat(s + m * (e - s));
+      if (at > cues[cues.length - 1][0] + 0.15 && at < e - 0.15) cues.push([at, p0 + HERO.scene * m]);
+    }
+    cues.push([e, p0 + HERO.scene]);
+  });
+  const o0 = HERO.intro + HERO.scene * HERO.scenes;
+  cues.push([PLAN.logo, o0 + 0.2 * HERO.outro], [PLAN.end, HERO.total]);
+  return cues;
+}
+const SONG_CUES = songCues();
+/** 1 on a beat, decaying: a big kick on each bar (every 8th beat), a small one on every other beat, only while scenes play */
+function beatAt(t: number) {
+  if (t < PLAN.intro || t > PLAN.scenes[PLAN.scenes.length - 1]) return 0;
+  let i = 0;
+  while (i + 1 < BEATS.length && BEATS[i + 1] <= t) i++;
+  const bar = Math.floor(i / 8) * 8, beat = i - (i % 2);
+  return Math.max(Math.exp(-(t - BEATS[bar]) * 7), 0.35 * Math.exp(-(t - BEATS[beat]) * 9));
+}
 
 function evenCues(len: number): [number, number][] {
   return [[0, 0], [len, HERO.total]];
@@ -25,8 +55,8 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).
 
 export default function Video() {
   const audio = useRef<HTMLAudioElement>(null);
-  const [song, setSong] = useState<{ url: string; name: string } | null>(null);
-  const [len, setLen] = useState(60); // the song's length, or 60 s with no song
+  const [song, setSong] = useState<{ url: string; name: string } | null>(SONG);
+  const [len, setLen] = useState(PLAN.end); // the song's length (60 s with no song)
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [ui, setUi] = useState(true);
@@ -65,7 +95,7 @@ export default function Video() {
 
   const load = (f?: File | null) => {
     if (!f || !f.type.startsWith("audio")) return;
-    if (song) URL.revokeObjectURL(song.url);
+    if (song && song.url !== SONG.url) URL.revokeObjectURL(song.url);
     setSong({ url: URL.createObjectURL(f), name: f.name });
     setPlaying(false); setT(0);
   };
@@ -83,10 +113,10 @@ export default function Video() {
     return () => { removeEventListener("keydown", key); removeEventListener("dragover", over); removeEventListener("drop", drop); };
   });
 
-  const cues = CUES ?? evenCues(len);
+  const own = song?.url === SONG.url, cues = own ? SONG_CUES : evenCues(len);
   return (
     <div className="relative h-dvh overflow-hidden bg-zinc-950 text-zinc-100 [color-scheme:dark]">
-      <HeroScroll apk="#" progress={progressAt(t, cues)} video />
+      <HeroScroll apk="#" progress={progressAt(t, cues)} video beat={own ? beatAt(t) : 0} />
       {song && <audio ref={audio} src={song.url} preload="auto" onLoadedMetadata={(e) => setLen(e.currentTarget.duration)} onEnded={() => setPlaying(false)} />}
 
       {ui && (

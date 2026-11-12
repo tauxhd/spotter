@@ -589,13 +589,16 @@ const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fad
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
 /** the hero's timeline in scroll units, for driving it from a clock (the /video page) */
 export const HERO = { scenes: N, intro: 1, scene: L, outro: O, total: U };
+/** each scene's big moments (clicks and flashes) in its own time 0..1, so a video can land them on the beat */
+export const heroMoments = () => scenes.map((s) => { const pl = s.play(0.5, true); return [...new Set([...pl.clicks, ...pl.flashes])].sort((a, b) => a - b); });
 /** the swipe edge: everything right of x% at the top (slanted 40% across to the bottom) */
 const cut = (x: number) => `polygon(${x}% 0, 140% 0, 140% 100%, ${x - 40}% 100%)`;
 /** the stripe that leads a swipe: a band just ahead of the edge */
 const band = (x: number) => `polygon(${x - 7}% 0, ${x}% 0, ${x - 40}% 100%, ${x - 47}% 100%)`;
 
-/** `progress` (0..HERO.total) drives it from outside instead of the scroll position; `video` drops the scroll hint and the tall section. */
-export default function HeroScroll({ apk, progress, video = false }: { apk: string; progress?: number; video?: boolean }) {
+/** `progress` (0..HERO.total) drives it from outside instead of the scroll position; `video` drops the scroll hint and the tall
+ * section; `beat` (1 on a beat, decaying to 0) gives the phone a kick in time with music. */
+export default function HeroScroll({ apk, progress, video = false, beat = 0 }: { apk: string; progress?: number; video?: boolean; beat?: number }) {
   const ref = useRef<HTMLElement>(null);
   const [scrolled, setP] = useState(0);
   const p = progress ?? scrolled;
@@ -633,7 +636,7 @@ export default function HeroScroll({ apk, progress, video = false }: { apk: stri
   const z = 1 + ((live?.cam ? tr(t, ...live.cam.z) : 1) - 1) * (wide ? 1 : 0.25); // gentler on a phone, where the copy sits right above
   const [ox, oy] = at(live?.cam ? tr(t, ...live.cam.x) : 240, live?.cam ? tr(t, ...live.cam.y) : 500);
   const centre = clamp((z - 1) / 0.5) * 0.9;
-  const kick = live ? Math.max(0, ...live.clicks.map((c) => bump(t, c, 0.03))) : 0;
+  const kick = Math.max(live ? Math.max(0, ...live.clicks.map((c) => bump(t, c, 0.03))) : 0, beat * 0.5);
 
   return (
     <section ref={ref} style={{ height: video ? "100dvh" : `${U * 100}dvh` }} className="relative">
