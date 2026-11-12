@@ -24,6 +24,7 @@ const FRAMES = fs.mkdtempSync(path.join(os.tmpdir(), "spotter-frames-"));
   const page = await browser.newPage();
   await page.goto("http://localhost:3000/video?render", { waitUntil: "networkidle0", timeout: 120000 });
   await page.waitForFunction("window.__render", { timeout: 60000 });
+  await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" }); // the dev server's badge stays out of the frame
   const all = await page.evaluate(() => ({ end: window.__render.end, song: window.__render.song, sfx: window.__render.sfx }));
   const end = Math.min(all.end, Number(process.env.LIMIT) || Infinity), song = all.song, sfx = all.sfx.filter((e) => e.at < end); // LIMIT=s: a quick test
   const seek = (s) => page.evaluate((s) => window.__render.seek(s), s);
@@ -55,6 +56,6 @@ const FRAMES = fs.mkdtempSync(path.join(os.tmpdir(), "spotter-frames-"));
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...inputs, "-filter_complex", filters.join(";"), "-map", "0:v", "-map", "[mix]",
     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "slow", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", OUT], { stdio: "inherit" });
-  fs.rmSync(FRAMES, { recursive: true, force: true });
+  try { fs.rmSync(FRAMES, { recursive: true, force: true }); } catch { /* Windows can hold a frame file a moment longer; the temp folder is harmless */ }
   console.log(`done: ${OUT} (${n} frames, ${sfx.length} sound effects)`);
 })().catch((e) => { console.error(e); process.exit(1); });
