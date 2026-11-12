@@ -50,6 +50,9 @@ export default function Train() {
   const [editingStart, setEditingStart] = useState(false);
   const [showHit, setShowHit] = useState(false);
   const [slide, setSlide] = useState(0);
+  const [hitBuilt, setHitBuilt] = useState(false); // the big body model stays built once opened (rebuilding it is slow)
+  const slides = useRef<HTMLDivElement>(null);
+  const goSlide = (k: number) => { const el = slides.current; if (el) el.scrollTo({ left: Math.min(1, Math.max(0, k)) * el.clientWidth, behavior: "smooth" }); };
   const [picking, setPicking] = useState(false);
   const [typing, setTyping] = useState<{ i: number; j: number } | null>(null); // set-type sheet
   const lib = new Map(s.library.map((e) => [e.name, e]));
@@ -396,7 +399,7 @@ export default function Train() {
           </span>
         </button>
         <div className="flex shrink-0 items-center gap-2">
-          <button onClick={() => { setSlide(0); setShowHit(true); }} aria-haspopup="dialog" aria-label="Muscles hit"
+          <button onClick={() => { slides.current?.scrollTo({ left: 0 }); setSlide(0); setShowHit(true); setHitBuilt(true); }} aria-haspopup="dialog" aria-label="Muscles hit"
             className="h-16 w-20 transition active:scale-[0.97]">
             <MuscleModel hit={hit} compact />
           </button>
@@ -411,18 +414,23 @@ export default function Train() {
           <button onClick={openPost} disabled={!ranked.length} className="btn py-2 text-sm">Finish<span className="hidden sm:inline"> & share</span></button>
         </div>
       </header>
-      {showHit && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal aria-label="Muscles hit" onClick={() => setShowHit(false)}>
+      {hitBuilt && (
+        <div className={`fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 ${showHit ? "" : "pointer-events-none invisible"}`} role="dialog" aria-modal aria-hidden={!showHit} aria-label="Muscles hit" onClick={() => setShowHit(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm space-y-3 rounded-3xl bg-white p-4 text-sm shadow-2xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-base font-bold"><Icon name="stats" size={20} />Muscles hit<InfoTip text={help.muscles} /></h2>
               <button aria-label="Close" onClick={() => setShowHit(false)} className="muted p-1"><X size={18} /></button>
             </div>
-            <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto" onScroll={(e) => setSlide(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
+            <div ref={slides} className="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto" onScroll={(e) => setSlide(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
+              onWheel={(e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) goSlide(slide + Math.sign(e.deltaY)); }}>
               <div className="min-h-[21rem] w-full shrink-0 snap-center px-4"><MuscleModel hit={hit} /></div>
               <div className="w-full shrink-0 snap-center px-4"><Radar cur={areas} className="h-80 w-full" /></div>
             </div>
-            <div className="flex justify-center gap-1.5" aria-hidden>{[0, 1].map((k) => <span key={k} className={`h-1.5 rounded-full transition-all duration-[var(--spring-ms)] ease-[var(--spring)] ${slide === k ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />)}</div>
+            <div className="flex justify-center gap-1">{[0, 1].map((k) => (
+              <button key={k} onClick={() => goSlide(k)} aria-label={k ? "Muscle balance chart" : "Body model"} className="p-1.5">
+                <span className={`block h-1.5 rounded-full transition-all duration-[var(--spring-ms)] ease-[var(--spring)] ${slide === k ? "w-4 bg-lime-500" : "w-1.5 bg-zinc-400/50"}`} />
+              </button>
+            ))}</div>
             {ranked.length === 0 ? <p className="muted py-4 text-center">Tick sets to see muscles hit.</p> : ranked.map(([m, n], k) => (
               <div key={m} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2">
                 <span className="truncate capitalize">{m}</span>

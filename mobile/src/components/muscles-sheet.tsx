@@ -1,7 +1,7 @@
 // Muscles hit this workout (the website's Muscles pop-up): swipe between the 3D body and the spider chart, then sets per
 // muscle, most first (main muscle 1 set, others ½; warm-ups don't count).
 import { X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,6 +44,7 @@ export default function MusclesSheet({ open, onClose, hit, areas, ranked }: { op
   const theme = useTheme();
   const w = Dimensions.get('window').width;
   const [slide, setSlide] = useState(0);
+  const pager = useRef<React.ComponentRef<typeof ScrollView>>(null);
   return (
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
@@ -52,12 +53,16 @@ export default function MusclesSheet({ open, onClose, hit, areas, ranked }: { op
           <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close"><X size={20} color={theme.textSecondary} /></Pressable>
         </View>
         <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
-          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} scrollEventThrottle={64}
+          <ScrollView ref={pager} horizontal pagingEnabled showsHorizontalScrollIndicator={false} scrollEventThrottle={64}
             onScroll={(e) => setSlide(Math.round(e.nativeEvent.contentOffset.x / w))}>
             <View style={{ width: w, paddingHorizontal: 16 }}>{open && <MuscleModel hit={hit} />}</View>
             <View style={{ width: w, paddingHorizontal: 16, justifyContent: 'center' }}><Radar cur={areas} height={320} /></View>
           </ScrollView>
-          <View style={styles.dots}>{[0, 1].map((k) => <View key={k} style={[styles.dot, slide === k && { width: 16, backgroundColor: Lime }]} />)}</View>
+          <View style={styles.dots}>{[0, 1].map((k) => (
+            <Pressable key={k} onPress={() => pager.current?.scrollTo({ x: k * w })} hitSlop={8} accessibilityLabel={k ? 'Muscle balance chart' : 'Body model'}>
+              <View style={[styles.dot, slide === k && { width: 16, backgroundColor: Lime }]} />
+            </Pressable>
+          ))}</View>
           <View style={{ paddingHorizontal: 16, gap: 12, marginTop: 8 }}>
             {ranked.length === 0 ? <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 16 }}>Tick sets to see muscles hit.</ThemedText>
               : ranked.map(([m, n], i) => (
