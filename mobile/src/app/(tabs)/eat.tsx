@@ -193,12 +193,12 @@ export default function Eat() {
                   <Plus size={20} strokeWidth={2.5} color="#09090b" />
                 </Press>
               </View>
-              <View style={{ flexDirection: 'row', gap: 4 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 }}>
                 {([['kcal', f.kcal, '', 'kcal'], ['prot', f.p, 'g', 'protein'], ['carb', f.c, 'g', 'carbs'], ['fat', f.f, 'g', 'fat']] as const).map(([k, v, unit, ic]) => (
-                  <View key={k} style={[styles.macro, { backgroundColor: theme.backgroundSelected }]}>
-                    <Icon name={ic} size={16} />
-                    <ThemedText type="smallBold" style={{ fontSize: 12, fontVariant: ['tabular-nums'] }}>{v}{unit}</ThemedText>
-                    <ThemedText themeColor="textSecondary" style={{ fontSize: 9 }}>{k.toUpperCase()}</ThemedText>
+                  <View key={k} style={styles.macro}>
+                    <Icon name={ic} size={14} />
+                    <ThemedText type="smallBold" style={{ fontSize: 12, lineHeight: 16, fontVariant: ['tabular-nums'] }}>{v}{unit}</ThemedText>
+                    <ThemedText themeColor="textSecondary" style={{ fontSize: 11, lineHeight: 16 }}>{k}</ThemedText>
                   </View>
                 ))}
               </View>
@@ -225,5 +225,5 @@ const styles = StyleSheet.create({
   dish: { flexDirection: 'row', gap: 12, paddingVertical: 12 },
   tag: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 2, overflow: 'hidden' },
   plus: { width: 34, height: 34, borderRadius: 5, backgroundColor: Lime, alignItems: 'center', justifyContent: 'center' },
-  macro: { flex: 1, alignItems: 'center', borderRadius: 4, paddingVertical: 4 },
+  macro: { width: '50%', flexDirection: 'row', alignItems: 'center', gap: 3 },
 });
