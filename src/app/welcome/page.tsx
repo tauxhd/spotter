@@ -102,7 +102,7 @@ export default function Welcome() {
               <li>Open Spotter and start the quest.</li>
             </ol>
           </div>
-          <div>
+          <div id="expo" className="scroll-mt-20">
             {/* Expo Go: the same app, loaded from EAS Update (channel "main" always serves the newest publish) */}
             <h3 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">Or open in Expo (iPhone + Android)<Info text="No install file. Works on Android and iPhone, on any network." /></h3>
             <div className="mt-5 flex items-center gap-5">

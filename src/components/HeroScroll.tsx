@@ -945,6 +945,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <a href="#demo" className="rounded-full bg-lime-400 px-6 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">Try the live demo</a>
             <a href={apk} className="rounded-full bg-white/10 px-6 py-3 font-semibold ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">Download for Android</a>
+            <a href="#expo" className="rounded-full bg-white/10 px-6 py-3 font-semibold ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">Open on iPhone</a>
           </div>
           {!video && <p className="mt-10 text-sm text-zinc-500 motion-safe:animate-bounce">Scroll ↓</p>}
         </div>
