@@ -19,7 +19,7 @@ const APK = process.env.NEXT_PUBLIC_APK_URL ?? "https://github.com/tauxhd/spotte
 const features: [icon: string, title: string, text: string][] = [
   ["qr", "Clock in with a scan", "Skip the ID check at the counter: scan the QR at the door and you're in."],
   ["crowd", "Know how busy it is", "Live headcount and the quietest hour to train around your classes."],
-  ["barbell", "Log every set", "Routines, supersets, rest timers, PRs and a 3D body showing what you worked."],
+  ["plate", "Log every set", "Routines, supersets, rest timers, PRs and a 3D body showing what you worked."],
   ["eat", "Eat smart on campus", "Macros for every dish in the APU cafeteria, tuned to your goal."],
   ["ranks", "Climb the ranks", "Leaderboards by lift, faculty and bodyweight class. Heaviest lift wins, not reps."],
   ["map", "Find any machine", "A 3D map of the SweatZone. Every exercise points to the machine you need."],
@@ -47,7 +47,7 @@ export default function Welcome() {
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(([icon, title, text]) => (
             <div key={title} className="rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10">
-              <Image src={`/icons/${icon}.webp`} alt="" width={44} height={44} />
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-lime-400/10 ring-1 ring-lime-400/20"><Image src={`/icons/${icon}.webp`} alt="" width={40} height={40} className="h-10 w-10 object-contain" /></div>
               <h3 className="mt-4 text-lg font-semibold">{title}</h3>
               <p className="mt-1 text-zinc-400">{text}</p>
             </div>
