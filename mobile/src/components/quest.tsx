@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { courses, isTp, newStudent } from '@shared/apu';
+import { authMsg, courses, isTp, newStudent, tpEmail } from '@shared/apu';
 import { activities, goals, nutrition, type Goal } from '@shared/nutrition';
 import { activityReply, bwReply, goalReply, questArt, steps, totalXp, type Pose } from '@shared/quest';
 import { fromUnit, toUnit, type Unit } from '@shared/units';
@@ -24,7 +24,7 @@ import { Icon } from '@/components/ui/kit';
 import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { art } from '@/lib/art';
-import type { Profile } from '@/lib/store';
+import { sb, type Profile } from '@/lib/store';
 import { img } from '@/lib/web';
 
 type P = Omit<Profile, 'id'>;
@@ -165,6 +165,8 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
   const [p, setP] = useState<P | null>(null);
   const [reply, setReply] = useState<string | null>(null);
   const [tp, setTp] = useState('');
+  const [pw, setPw] = useState('');
+  const [signin, setSignin] = useState(false);
   const [name, setName] = useState('');
   const [course, setCourse] = useState('');
   const [intake, setIntake] = useState('');
@@ -197,11 +199,23 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
   const statsOk = h >= 120 && h <= 230 && Number.isInteger(a) && a >= 13 && a <= 90 && g >= 30 && g <= 250;
   const plan = p && p.goal && p.activity && statsOk ? nutrition({ ...p, height: h, age: a }, [], []).targets : null;
 
-  function login() {
+  // sign-up: the anonymous session becomes a real account (TP email + password), same user id, so nothing moves
+  async function login() {
     const s = newStudent({ tp, name, course, intake, sex });
     if (typeof s === 'string') return setErr(s);
+    if (pw.length < 6) return setErr('Password needs at least 6 characters');
+    setBusy(true);
+    const { error } = await sb.auth.updateUser({ email: tpEmail(s.tp), password: pw });
+    setBusy(false);
+    if (error) return setErr(authMsg(error));
     setP({ ...s, bw: 70, squat: 0, bench: 0, deadlift: 0 });
     next();
+  }
+  // the store hears SIGNED_IN and loads the account, which closes the quest
+  async function signIn() {
+    setBusy(true); setErr('');
+    const { error } = await sb.auth.signInWithPassword({ email: tpEmail(tp), password: pw });
+    if (error) { setBusy(false); setErr(authMsg(error)); }
   }
   async function finish() {
     if (!p) return;
@@ -223,7 +237,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
     stats: { label: 'Finish quest', ok: statsOk, run: next },
     done: { label: busy ? 'Saving…' : 'Start training', ok: !busy, run: finish },
   };
-  const action = cta[step.id];
+  const action = signin ? null : cta[step.id];
   const enter = (dir > 0 ? FadeInRight : FadeInLeft).springify().dampingRatio(1).duration(450);
 
   return (
@@ -241,11 +255,23 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
           {/* Spot + what he's saying */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 12 }}>
             <Spot pose={pose} />
-            <View style={{ flex: 1, flexDirection: 'row', marginBottom: 24 }}><Say key={`${i}-${reply ?? ''}`} text={reply ?? step.say(first)} /></View>
+            <View style={{ flex: 1, flexDirection: 'row', marginBottom: 24 }}><Say key={`${i}-${reply ?? ''}`} text={reply ?? (signin ? 'Welcome back! Sign in with your TP number.' : step.say(first))} /></View>
           </View>
 
           <Animated.View key={i} entering={enter} style={{ marginTop: 16 }}>
-            {step.id === 'hello' && (
+            {signin && (
+              <View style={{ gap: 12 }}>
+                <View><ThemedText themeColor="textSecondary" style={styles.label}>TP number</ThemedText>
+                  <Input autoFocus value={tp} onChangeText={(v) => { setTp(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); setErr(''); }} placeholder="TP012345"
+                    placeholderTextColor={theme.textSecondary} autoCapitalize="characters" autoCorrect={false} autoComplete="username" style={field} /></View>
+                <View><ThemedText themeColor="textSecondary" style={styles.label}>Password</ThemedText>
+                  <Input value={pw} onChangeText={(v) => { setPw(v); setErr(''); }} secureTextEntry autoComplete="current-password" style={field} onSubmitEditing={signIn} /></View>
+                {!!err && <ThemedText type="small" style={{ color: Red }}>{err}</ThemedText>}
+                <Button onPress={signIn} disabled={!isTp(tp) || !pw || busy}>{busy ? 'Signing in…' : 'Sign in'}</Button>
+                <Pressable onPress={() => { setSignin(false); setErr(''); }} style={{ alignSelf: 'center' }}><ThemedText type="small" themeColor="textSecondary">New here? Create an account</ThemedText></Pressable>
+              </View>
+            )}
+            {step.id === 'hello' && !signin && (
               <View>
                 <Image source={img('/welcome.webp')} style={{ width: '100%', aspectRatio: 1.5, borderRadius: 6 }} contentFit="cover" />
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
@@ -266,6 +292,8 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
                 <View><ThemedText themeColor="textSecondary" style={styles.label}>TP number</ThemedText>
                   <Input value={tp} onChangeText={(v) => { setTp(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); setErr(''); }} placeholder="TP012345"
                     placeholderTextColor={theme.textSecondary} autoCapitalize="characters" autoCorrect={false} autoComplete="username" style={field} /></View>
+                <View><ThemedText themeColor="textSecondary" style={styles.label}>Password (6+ characters, to sign in later)</ThemedText>
+                  <Input value={pw} onChangeText={(v) => { setPw(v); setErr(''); }} secureTextEntry autoComplete="new-password" style={field} /></View>
                 <View><ThemedText themeColor="textSecondary" style={styles.label}>Course</ThemedText>
                   <View style={{ gap: 6, marginTop: 4 }}>
                     {courses.map((c) => (
@@ -286,7 +314,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
                     ))}
                   </View></View>
                 {!!err && <ThemedText type="small" style={{ color: Red }}>{err}</ThemedText>}
-                <Button onPress={login} disabled={!name.trim() || !isTp(tp) || !course || !sex}>
+                <Button onPress={login} disabled={!name.trim() || !isTp(tp) || pw.length < 6 || !course || !sex || busy}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><UserPlus size={18} color="#09090b" /><ThemedText style={{ color: '#09090b', fontWeight: '700' }}>Create my account</ThemedText></View>
                 </Button>
               </View>
@@ -420,6 +448,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
           <View style={styles.bottom}>
             <Breathe on={action.ok && (done || step.id === 'hello')}><Button onPress={action.run} disabled={!action.ok}>{action.label}</Button></Breathe>
             {step.id === 'found' && <Pressable onPress={() => go(1)} style={{ alignSelf: 'center', marginTop: 10 }}><ThemedText type="small" themeColor="textSecondary">Fix my details</ThemedText></Pressable>}
+            {step.id === 'hello' && <Pressable onPress={() => { setSignin(true); setErr(''); }} style={{ alignSelf: 'center', marginTop: 12 }}><ThemedText type="smallBold" style={{ color: Lime }}>I already have an account</ThemedText></Pressable>}
           </View>
         )}
         {done && <Confetti />}

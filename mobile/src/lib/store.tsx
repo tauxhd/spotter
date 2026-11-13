@@ -142,6 +142,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       .then(({ data }) => { if (!data) return; setS((x) => ({ ...x, library: data })); try { localStorage.setItem(LIB, JSON.stringify(data)); } catch {} });
     Promise.resolve().then(boot); // async: the state it sets lands after the first render
   }, [boot]);
+  // signing in to an existing account (the quest's sign-in form): load that account
+  useEffect(() => sb.auth.onAuthStateChange((e, session) => { if (e === 'SIGNED_IN' && session && !session.user.is_anonymous) setTimeout(boot, 0); }).data.subscription.unsubscribe, [boot]);
 
   // feed stays live (same channel as the website)
   useEffect(() => {

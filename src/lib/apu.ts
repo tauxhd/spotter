@@ -24,6 +24,11 @@ const names: Record<Sex, string[]> = {
 const surnames = ["Rahman", "Tan", "Lim", "Kumar", "Ismail", "Wong", "Abdullah", "Lee", "Nair", "Hassan", "Ong", "Yusof"];
 
 export const isTp = (tp: string) => /^TP\d{6}$/.test(tp);
+// The account's sign-in address: the student's APU email, so they sign in with TP number + password.
+export const tpEmail = (tp: string) => `${tp.trim().toLowerCase()}@mail.apu.edu.my`;
+export const authMsg = (e: { code?: string; message: string }) =>
+  e.code === "email_exists" || e.code === "user_already_exists" ? "That TP number already has an account. Sign in instead."
+  : e.code === "invalid_credentials" ? "Wrong TP number or password" : e.message;
 export const courses = programmes.map(([faculty, course]) => ({ faculty, course }));
 
 // Sign-up: the student types their own details. Returns the student, or what to fix.

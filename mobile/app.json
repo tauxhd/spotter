@@ -2,7 +2,7 @@
   "expo": {
     "name": "Spotter",
     "slug": "spotter",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/spotter-icon.png",
     "scheme": "spotter",
@@ -17,7 +17,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "my.apu.spotter",
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "output": "single",

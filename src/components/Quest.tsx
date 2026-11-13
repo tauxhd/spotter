@@ -7,7 +7,8 @@ import Image from "next/image";
 import { ArrowLeft, Minus, Plus, Sparkles, UserPlus } from "lucide-react";
 import Icon, { type IconName } from "./Icon";
 import WeightInput from "./WeightInput";
-import { courses, isTp, newStudent } from "@/lib/apu";
+import { authMsg, courses, isTp, newStudent, tpEmail } from "@/lib/apu";
+import { sb } from "@/lib/store";
 import { activities, goals, nutrition, type Goal } from "@/lib/nutrition";
 import { activityReply, bwReply, goalReply, questArt, steps, totalXp } from "@/lib/quest";
 import { toUnit, type Unit } from "@/lib/units";
@@ -86,6 +87,8 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
   const [reply, setReply] = useState<string | null>(null);
   const [wiggle, setWiggle] = useState(0);
   const [tp, setTp] = useState("");
+  const [pw, setPw] = useState("");
+  const [signin, setSignin] = useState(false);
   const [name, setName] = useState("");
   const [course, setCourse] = useState("");
   const [intake, setIntake] = useState("");
@@ -109,12 +112,25 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
   const statsOk = h >= 120 && h <= 230 && Number.isInteger(a) && a >= 13 && a <= 90 && g >= 30 && g <= 250;
   const plan = p && p.goal && p.activity && statsOk ? nutrition({ ...p, height: h, age: a }, [], []).targets : null;
 
-  function login(e: React.FormEvent) {
+  // sign-up: the anonymous session becomes a real account (TP email + password), same user id, so nothing moves
+  async function login(e: React.FormEvent) {
     e.preventDefault();
     const s = newStudent({ tp, name, course, intake, sex });
     if (typeof s === "string") return setErr(s);
+    if (pw.length < 6) return setErr("Password needs at least 6 characters");
+    setBusy(true);
+    const { error } = await sb.auth.updateUser({ email: tpEmail(s.tp), password: pw });
+    setBusy(false);
+    if (error) return setErr(authMsg(error));
     setP({ ...s, bw: 70, squat: 0, bench: 0, deadlift: 0 });
     next();
+  }
+  async function signIn(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setErr("");
+    const { error } = await sb.auth.signInWithPassword({ email: tpEmail(tp), password: pw });
+    if (error) { setBusy(false); return setErr(authMsg(error)); }
+    location.reload(); // the store loads the signed-in account
   }
   async function finish() {
     setBusy(true); setErr("");
@@ -136,7 +152,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
     stats: { label: "Finish quest", ok: statsOk, run: next },
     done: { label: busy ? "Saving…" : "Start training", ok: !busy, run: finish },
   };
-  const action = cta[step.id];
+  const action = signin ? null : cta[step.id];
 
   return (
     <div className="flex min-h-dvh flex-col pb-4 pt-3">
@@ -165,12 +181,24 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
             <Image src={questArt(`spot-${pose}`)} alt="" width={104} height={104} priority className="anim-bob drop-shadow-[0_8px_12px_rgb(132_204_22/0.25)]" />
           </span>
         </button>
-        <div className="mb-6 flex flex-1"><Say key={`${i}-${reply ?? ""}`} text={reply ?? step.say(first)} /></div>
+        <div className="mb-6 flex flex-1"><Say key={`${i}-${reply ?? ""}`} text={reply ?? (signin ? "Welcome back! Sign in with your TP number." : step.say(first))} /></div>
       </div>
 
       {/* the step */}
       <div key={i} className="anim-quest-in mt-4 flex-1" style={{ "--dir": dir } as React.CSSProperties}>
-        {step.id === "hello" && (
+        {signin && (
+          <form onSubmit={signIn} className="space-y-3">
+            <label className="block"><span className="muted text-xs font-semibold">TP number</span>
+              <input required autoFocus value={tp} onChange={(e) => { setTp(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)); setErr(""); }}
+                placeholder="TP012345" autoComplete="username" autoCapitalize="characters" autoCorrect="off" spellCheck={false} className={`${field} uppercase tabular-nums placeholder:normal-case`} /></label>
+            <label className="block"><span className="muted text-xs font-semibold">Password</span>
+              <input required type="password" value={pw} onChange={(e) => { setPw(e.target.value); setErr(""); }} autoComplete="current-password" className={field} /></label>
+            {err && <p className="text-sm text-red-600">{err}</p>}
+            <button disabled={!isTp(tp) || !pw || busy} className="btn flex w-full items-center justify-center gap-2 py-3.5 text-base disabled:opacity-50">{busy ? "Signing in…" : "Sign in"}</button>
+            <button type="button" onClick={() => { setSignin(false); setErr(""); }} className="muted w-full text-center text-sm">New here? Create an account</button>
+          </form>
+        )}
+        {step.id === "hello" && !signin && (
           <div>
             <Image src="/welcome.webp" alt="Students training, sipping a shake and scanning in at the gym door" width={1200} height={800} priority className="w-full rounded-2xl" />
             <div className="stagger mt-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
@@ -188,6 +216,8 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
             <label className="block"><span className="muted text-xs font-semibold">TP number</span>
               <input required value={tp} onChange={(e) => { setTp(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)); setErr(""); }}
                 placeholder="TP012345" autoComplete="username" autoCapitalize="characters" autoCorrect="off" spellCheck={false} className={`${field} uppercase tabular-nums placeholder:normal-case`} /></label>
+            <label className="block"><span className="muted text-xs font-semibold">Password <span className="font-normal">(6+ characters, to sign in later)</span></span>
+              <input required type="password" value={pw} onChange={(e) => { setPw(e.target.value); setErr(""); }} autoComplete="new-password" className={field} /></label>
             <label className="block"><span className="muted text-xs font-semibold">Course</span>
               <select required value={course} onChange={(e) => { setCourse(e.target.value); setErr(""); }} className={field}>
                 <option value="" disabled>Pick your course</option>
@@ -202,7 +232,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
                 ))}
               </div></div>
             {err && <p className="text-sm text-red-600">{err}</p>}
-            <button disabled={!name.trim() || !isTp(tp) || !course || !sex} className="btn flex w-full items-center justify-center gap-2 py-3.5 text-base disabled:opacity-50"><UserPlus size={18} />Create my account</button>
+            <button disabled={!name.trim() || !isTp(tp) || pw.length < 6 || !course || !sex || busy} className="btn flex w-full items-center justify-center gap-2 py-3.5 text-base disabled:opacity-50"><UserPlus size={18} />Create my account</button>
           </form>
         )}
 
@@ -320,6 +350,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
           <button type="button" onClick={action.run} disabled={!action.ok}
             className={`btn w-full py-3.5 text-base font-bold transition disabled:opacity-40 ${action.ok && (done || step.id === "hello") ? "anim-breathe" : ""}`}>{action.label}</button>
           {step.id === "found" && <button type="button" onClick={() => go(1)} className="muted mt-2 w-full text-center text-sm">Fix my details</button>}
+          {step.id === "hello" && <button type="button" onClick={() => { setSignin(true); setErr(""); }} className="mt-3 w-full text-center text-sm font-semibold text-lime-600 dark:text-lime-400">I already have an account</button>}
         </div>
       )}
     </div>
