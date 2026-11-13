@@ -274,11 +274,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setS((x) => ({ ...x, sessions: [], posts: [], routines: [], active: null, clockedIn: null, food: [], weights: [], following: [], followers: [] }));
       await boot(); // a fresh session with no profile -> the sign-in quest
     },
-    // Import from Hevy: save converted workouts + posts, skipping any already here (same start time), then raise best lifts
+    // Import from Hevy: save converted workouts + posts, skipping any already here (same start minute), then raise best lifts
     async importHevy(items, lifts) {
       const { data: have } = await sb.from("posts").select("created_at").eq("user_id", me.id);
-      const seen = new Set((have ?? []).map((r) => new Date(r.created_at).getTime()));
-      const todo = items.filter((x) => !seen.has(new Date(x.at).getTime()));
+      const min = (t: string) => Math.floor(new Date(t).getTime() / 60000); // Hevy's CSV keeps minutes, not seconds
+      const seen = new Set((have ?? []).map((r) => min(r.created_at)));
+      const todo = items.filter((x) => !seen.has(min(x.at)));
       for (let i = 0; i < todo.length; i += 50) {
         const part = todo.slice(i, i + 50);
         const w = await sb.from("workouts").insert(part.map((x) => ({ ...x.workout, created_at: x.at })));
