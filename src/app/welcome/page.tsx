@@ -83,40 +83,43 @@ export default function Welcome() {
               <span className="font-semibold text-lime-400"><span className="hidden md:inline">← </span>The phone is live.</span> It&apos;s the real app, signed in to a demo student with eight weeks of training. Log a workout, add a meal, check the ranks or find a machine on the 3D map. Nothing you do here is saved; to make your own account, open Me, then Settings, then Create my own account.
             </p>
 
-            <div id="download" className="mt-14 max-w-md scroll-mt-20">
-              <h3 className="text-2xl font-semibold tracking-tight">Try it yourself on Android</h3>
-              <p className="mt-1 text-zinc-400">Your own account, your own data, plus clock-in with your camera and haptics.</p>
-              <a href={APK} className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-5 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
-                Download the APK
-              </a>
-              {/* ponytail: hand-kept; update with each release (Actions > Android APK) */}
-              <table className="mt-4 w-full text-sm">
-                <tbody className="divide-y divide-white/10">
-                  {[["Size", "78 MB"], ["Version", "1.0.3"], ["Requires", "Android 7.0 or newer"], ["Works on", "64-bit phones (almost every phone since 2017)"], ["Price", "Free, no ads"]].map(([k, v]) => (
-                    <tr key={k}><th scope="row" className="py-2 pr-4 text-left font-medium text-zinc-500">{k}</th><td className="py-2 text-right text-zinc-200">{v}</td></tr>
-                  ))}
-                </tbody>
-              </table>
+          </div>
+        </div>
+        <div className="mx-auto grid max-w-6xl gap-14 px-4 pb-20 md:grid-cols-2 md:gap-16">
+          <div id="download" className="scroll-mt-20">
+            <h3 className="text-2xl font-semibold tracking-tight">Try it yourself on Android</h3>
+            <p className="mt-1 text-zinc-400">Your own account, your own data, plus clock-in with your camera and haptics.</p>
+            <a href={APK} className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-5 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
+              Download the APK
+            </a>
+            {/* ponytail: hand-kept; update with each release (Actions > Android APK) */}
+            <table className="mt-4 w-full text-sm">
+              <tbody className="divide-y divide-white/10">
+                {[["Size", "78 MB"], ["Version", "1.0.3"], ["Requires", "Android 7.0 or newer"], ["Works on", "64-bit phones (almost every phone since 2017)"], ["Price", "Free, no ads"]].map(([k, v]) => (
+                  <tr key={k}><th scope="row" className="py-2 pr-4 text-left font-medium text-zinc-500">{k}</th><td className="py-2 text-right text-zinc-200">{v}</td></tr>
+                ))}
+              </tbody>
+            </table>
 
-              <p className="mt-3 text-sm text-zinc-400">Download not starting? <a href="/download" download="spotter.apk" className="font-medium text-lime-400 underline underline-offset-4">Get it straight from this site</a></p>
-              <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
-                <li>Open the downloaded file on your phone.</li>
-                <li>Allow installs from your browser if Android asks.</li>
-                <li>Open Spotter and start the quest.</li>
+            <p className="mt-3 text-sm text-zinc-400">Download not starting? <a href="/download" download="spotter.apk" className="font-medium text-lime-400 underline underline-offset-4">Get it straight from this site</a></p>
+            <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
+              <li>Open the downloaded file on your phone.</li>
+              <li>Allow installs from your browser if Android asks.</li>
+              <li>Open Spotter and start the quest.</li>
+            </ol>
+          </div>
+          <div>
+            {/* Expo Go: the same app, loaded from EAS Update (channel "main" always serves the newest publish) */}
+            <h3 className="text-2xl font-semibold tracking-tight">Or open it in Expo Go</h3>
+            <p className="mt-1 text-zinc-400">No install file. Works on Android and iPhone, on any network.</p>
+            <div className="mt-5 flex items-center gap-5">
+              <Image src="/expo-go-qr.svg" alt="QR code that opens Spotter in Expo Go" width={128} height={128} className="h-32 w-32 shrink-0 rounded-lg" unoptimized />
+              <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-400">
+                <li>Get Expo Go from the <a href="https://play.google.com/store/apps/details?id=host.exp.exponent" className="text-lime-400 underline underline-offset-4">Play Store</a> or <a href="https://apps.apple.com/app/expo-go/id982107779" className="text-lime-400 underline underline-offset-4">App Store</a>.</li>
+                <li>Scan the code with your camera (iPhone) or inside Expo Go (Android).</li>
+                <li>On your phone already? <a href={EXPO_GO} className="text-lime-400 underline underline-offset-4">Open in Expo Go</a></li>
               </ol>
-
-              {/* Expo Go: the same app, loaded from EAS Update (channel "main" always serves the newest publish) */}
-              <h3 className="mt-12 text-2xl font-semibold tracking-tight">Or open it in Expo Go</h3>
-              <p className="mt-1 text-zinc-400">No install file. Works on Android and iPhone, on any network.</p>
-              <div className="mt-5 flex items-center gap-5">
-                <Image src="/expo-go-qr.svg" alt="QR code that opens Spotter in Expo Go" width={128} height={128} className="h-32 w-32 shrink-0 rounded-lg" unoptimized />
-                <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-400">
-                  <li>Get Expo Go from the <a href="https://play.google.com/store/apps/details?id=host.exp.exponent" className="text-lime-400 underline underline-offset-4">Play Store</a> or <a href="https://apps.apple.com/app/expo-go/id982107779" className="text-lime-400 underline underline-offset-4">App Store</a>.</li>
-                  <li>Scan the code with your camera (iPhone) or inside Expo Go (Android).</li>
-                  <li>On your phone already? <a href={EXPO_GO} className="text-lime-400 underline underline-offset-4">Open in Expo Go</a></li>
-                </ol>
-              </div>
             </div>
           </div>
         </div>
