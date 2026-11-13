@@ -101,3 +101,14 @@ export function setLabels(sets: { type?: T }[], short: Record<string, { short: s
 // Seconds <-> "m:ss" for timed sets.
 export const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 export const hhmmss = (s: number) => (s >= 3600 ? `${Math.floor(s / 3600)}:${mmss(s % 3600).padStart(5, "0")}` : mmss(s));
+
+// Plate calculator: the plates for each side of the bar, loaded heaviest first, plus any weight plates can't make.
+// Colours follow competition plates (25 red, 20 blue, 15 yellow, 10 green, 5 white, 2.5 red, 1.25 silver).
+export const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+export const PLATE_COLOR: Record<number, string> = { 25: "#dc2626", 20: "#2563eb", 15: "#eab308", 10: "#16a34a", 5: "#f4f4f5", 2.5: "#b91c1c", 1.25: "#a1a1aa" };
+export function platesFor(total: number, bar = 20, plates = PLATES) {
+  let side = Math.max(0, (total - bar) / 2);
+  const out: number[] = [];
+  for (const p of plates) while (side >= p - 1e-9) { out.push(p); side = Math.round((side - p) * 1000) / 1000; }
+  return { side: out, left: Math.round(side * 2 * 100) / 100 };
+}

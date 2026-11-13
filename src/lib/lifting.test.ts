@@ -83,3 +83,12 @@ test("heaviest: the weight actually lifted, not an estimated 1RM", async () => {
   assert.equal(heaviest({ Bench: 132.5, Squat: 120 }, log).Bench, 100); // logged sets win over a stored value
   assert.equal(heaviest({ Bench: 132.5, Squat: 120 }, log).Squat, 120); // which only fills in lifts not logged yet
 });
+
+test("plates per side, heaviest first, with what can't be made", async () => {
+  const { platesFor } = await import("./lifting.ts");
+  assert.deepEqual(platesFor(100), { side: [25, 15], left: 0 });
+  assert.deepEqual(platesFor(62.5), { side: [20, 1.25], left: 0 });
+  assert.deepEqual(platesFor(61), { side: [20], left: 1 });
+  assert.deepEqual(platesFor(15), { side: [], left: 0 });
+  assert.deepEqual(platesFor(40, 10), { side: [15], left: 0 });
+});

@@ -3,7 +3,8 @@
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { BookmarkCheck, BookmarkPlus, Check, Clock, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from 'lucide-react-native';
+import { BookmarkCheck, BookmarkPlus, Check, Clock, Disc3, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from 'lucide-react-native';
+import PlateCalc from '@/components/plate-calc';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Alert, Dimensions, Modal, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
@@ -136,6 +137,7 @@ function Workout() {
   const [showHit, setShowHit] = useState(false);
   const [picking, setPicking] = useState(false);
   const [typing, setTyping] = useState<{ i: number; j: number } | null>(null);
+  const [plates, setPlates] = useState<number | null>(null); // plate calculator for this exercise
   const [saved, setSaved] = useState(false);
 
   const body = bodyFor(s.library, Number(me.bw));
@@ -338,6 +340,12 @@ function Workout() {
                         <ThemedText type="smallBold" style={{ fontSize: 12, color: sc ?? theme.textSecondary }}>{ex.superset !== undefined ? 'Unlink superset' : 'Superset'}</ThemedText>
                       </Pressable>
                     )}
+                    {!sorting && !timed && (item?.equipment === 'barbell' || item?.equipment === 'ez-bar') && (
+                      <Pressable onPress={() => setPlates(i)} style={styles.smallAction}>
+                        <Disc3 size={13} color={theme.textSecondary} />
+                        <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 12 }}>Plates</ThemedText>
+                      </Pressable>
+                    )}
                     {!sorting && (ex.timed || timedByDefault(item?.id)) && (
                       <Pressable onPress={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((st) => { st.secs ??= 30; }); })} style={styles.smallAction}>
                         {timed ? <Hash size={13} color={theme.textSecondary} /> : <Clock size={13} color={theme.textSecondary} />}
@@ -466,6 +474,10 @@ function Workout() {
       </Modal>
       <SetTypeSheet open={!!typingSet} current={typingSet ? typingSet.type : undefined} onClose={() => setTyping(null)}
         onPick={(t: SetType | undefined) => { if (typing) edit((x) => { x[typing.i].sets[typing.j].type = t; }); setTyping(null); }} />
+      {plates !== null && a.exercises[plates] && (
+        <PlateCalc name={a.exercises[plates].name} bar={lib.get(a.exercises[plates].name)?.equipment === 'ez-bar' ? 10 : 20} onClose={() => setPlates(null)}
+          start={Math.max(0, ...a.exercises[plates].sets.map((st) => st.kg))} />
+      )}
       <ExercisePicker open={picking} onPick={addExercise} onClose={() => setPicking(false)} taken={a.exercises.map((e) => e.name)} />
       <MusclesSheet open={showHit} onClose={() => setShowHit(false)} hit={hit} areas={areas} ranked={ranked} />
     </View>

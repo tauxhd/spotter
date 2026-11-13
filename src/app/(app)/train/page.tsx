@@ -3,7 +3,8 @@ import Icon from "@/components/Icon";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookmarkCheck, BookmarkPlus, Check, Clock, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, Check, Clock, Disc3, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
+import PlateCalc from "@/components/PlateCalc";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
@@ -55,6 +56,7 @@ export default function Train() {
   const goSlide = (k: number) => { const el = slides.current; if (el) el.scrollTo({ left: Math.min(1, Math.max(0, k)) * el.clientWidth, behavior: "smooth" }); };
   const [picking, setPicking] = useState(false);
   const [typing, setTyping] = useState<{ i: number; j: number } | null>(null); // set-type sheet
+  const [plates, setPlates] = useState<number | null>(null); // plate calculator for this exercise
   const lib = new Map(s.library.map((e) => [e.name, e]));
 
   useEffect(() => {
@@ -475,6 +477,9 @@ export default function Train() {
                     <Link2 size={13} />{ex.superset !== undefined ? "Unlink superset" : "Superset"}
                   </button>
                 )}
+                {!sorting && !isTimed(ex) && ["barbell", "ez-bar"].includes(lib.get(ex.name)?.equipment ?? "") && (
+                  <button onClick={() => setPlates(i)} className="muted relative z-10 mt-1 flex items-center gap-1 text-xs font-semibold"><Disc3 size={13} />Plates</button>
+                )}
                 {!sorting && (ex.timed || timedByDefault(lib.get(ex.name)?.id)) && <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
                   className="muted relative z-10 mt-1 flex items-center gap-1 text-xs font-semibold">
                   {isTimed(ex) ? <><Hash size={13} />Log reps instead</> : <><Clock size={13} />Log time instead</>}
@@ -582,6 +587,10 @@ export default function Train() {
       )}
 
       {typing && typingSet && <SetTypeSheet current={typingSet.type} onPick={setType} onClose={() => setTyping(null)} />}
+      {plates !== null && a.exercises[plates] && (
+        <PlateCalc name={a.exercises[plates].name} bar={lib.get(a.exercises[plates].name)?.equipment === "ez-bar" ? 10 : 20} onClose={() => setPlates(null)}
+          start={Math.max(0, ...a.exercises[plates].sets.map((st) => st.kg))} />
+      )}
       {picking && <ExercisePicker taken={a.exercises.map((e) => e.name)} onPick={addExercise} onClose={() => setPicking(false)} />}
 
       {rest > 0 && (
