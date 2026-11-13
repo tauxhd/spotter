@@ -1,12 +1,14 @@
 // node scripts/sync-art.js — copy the website's artwork (../public) into the app and write src/lib/art.ts, a map from the
-// website path ("/icons/gym.webp") to a bundled require(), so every picture works offline on the phone.
+// website path ("/icons/gym.webp") to a bundled require(), so the UI's own art works offline on the phone.
 // Re-run after adding artwork to the website.
 const fs = require('fs');
 const path = require('path');
 
 const pub = path.resolve(__dirname, '../../public');
 const out = path.resolve(__dirname, '../assets/web');
-const dirs = ['icons', 'exercises', 'food', 'stalls', 'muscles', 'empty', 'avatars', 'sounds', 'quest'];
+// Exercise and dish pictures (~500) load from the website instead (img() in src/lib/web.ts, cached by expo-image): bundled,
+// they made the Expo Go / EAS Update download ~700 files, and one failed file stops the app from opening.
+const dirs = ['icons', 'stalls', 'muscles', 'empty', 'avatars', 'sounds', 'quest'];
 const lines = [];
 for (const d of dirs) {
   fs.mkdirSync(path.join(out, d), { recursive: true });
