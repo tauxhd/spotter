@@ -47,7 +47,7 @@ export default function Welcome() {
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(([icon, title, text]) => (
             <div key={title} className="rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-lime-400/10 ring-1 ring-lime-400/20"><Image src={`/icons/${icon}.webp`} alt="" width={40} height={40} className="h-10 w-10 object-contain" /></div>
+              <Image src={`/icons/${icon}.webp`} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
               <h3 className="mt-4 text-lg font-semibold">{title}</h3>
               <p className="mt-1 text-zinc-400">{text}</p>
             </div>
