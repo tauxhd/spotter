@@ -4,10 +4,10 @@
 // The phone app's twin is mobile/src/components/quest.tsx; the script (steps, lines, XP) is shared in lib/quest.ts.
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, LogIn, Minus, Plus, Sparkles } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Sparkles, UserPlus } from "lucide-react";
 import Icon, { type IconName } from "./Icon";
 import WeightInput from "./WeightInput";
-import { apuStudent, isTp } from "@/lib/apu";
+import { courses, isTp, newStudent } from "@/lib/apu";
 import { activities, goals, nutrition, type Goal } from "@/lib/nutrition";
 import { activityReply, bwReply, goalReply, questArt, steps, totalXp } from "@/lib/quest";
 import { toUnit, type Unit } from "@/lib/units";
@@ -86,7 +86,10 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
   const [reply, setReply] = useState<string | null>(null);
   const [wiggle, setWiggle] = useState(0);
   const [tp, setTp] = useState("");
-  const [pw, setPw] = useState("");
+  const [name, setName] = useState("");
+  const [course, setCourse] = useState("");
+  const [intake, setIntake] = useState("");
+  const [sex, setSex] = useState<"M" | "F" | "">("");
   const [height, setHeight] = useState("");
   const [age, setAge] = useState("");
   const [busy, setBusy] = useState(false);
@@ -108,8 +111,8 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
 
   function login(e: React.FormEvent) {
     e.preventDefault();
-    const s = apuStudent(tp);
-    if (!s) return setErr("TP number looks like TP012345");
+    const s = newStudent({ tp, name, course, intake, sex });
+    if (typeof s === "string") return setErr(s);
     setP({ ...s, bw: 70, squat: 0, bench: 0, deadlift: 0 });
     next();
   }
@@ -180,14 +183,26 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
 
         {step.id === "login" && (
           <form onSubmit={login} className="space-y-3">
+            <label className="block"><span className="muted text-xs font-semibold">Full name</span>
+              <input required autoFocus value={name} onChange={(e) => { setName(e.target.value.slice(0, 40)); setErr(""); }} placeholder="Aiden Lim" autoComplete="name" className={field} /></label>
             <label className="block"><span className="muted text-xs font-semibold">TP number</span>
-              <input required autoFocus value={tp} onChange={(e) => { setTp(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)); setErr(""); }}
+              <input required value={tp} onChange={(e) => { setTp(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)); setErr(""); }}
                 placeholder="TP012345" autoComplete="username" autoCapitalize="characters" autoCorrect="off" spellCheck={false} className={`${field} uppercase tabular-nums placeholder:normal-case`} /></label>
-            <label className="block"><span className="muted text-xs font-semibold">APU password</span>
-              <input required type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" className={field} /></label>
+            <label className="block"><span className="muted text-xs font-semibold">Course</span>
+              <select required value={course} onChange={(e) => { setCourse(e.target.value); setErr(""); }} className={field}>
+                <option value="" disabled>Pick your course</option>
+                {courses.map((c) => <option key={c.course} value={c.course}>{c.course}</option>)}
+              </select></label>
+            <label className="block"><span className="muted text-xs font-semibold">Intake code <span className="font-normal">(optional, for your timetable)</span></span>
+              <input value={intake} onChange={(e) => { setIntake(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16)); setErr(""); }} placeholder="APD2F2602CS" autoCapitalize="characters" autoCorrect="off" spellCheck={false} className={`${field} uppercase placeholder:normal-case`} /></label>
+            <div><span className="muted text-xs font-semibold">Category</span>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                {([["M", "Men"], ["F", "Women"]] as const).map(([v, l]) => (
+                  <button key={v} type="button" onClick={() => { setSex(v); setErr(""); }} className={`rounded-xl py-3 font-semibold ring-1 transition ${sex === v ? "bg-lime-500 text-zinc-950 ring-lime-500" : "bg-zinc-100 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"}`}>{l}</button>
+                ))}
+              </div></div>
             {err && <p className="text-sm text-red-600">{err}</p>}
-            <button disabled={!isTp(tp) || !pw} className="btn flex w-full items-center justify-center gap-2 py-3.5 text-base disabled:opacity-50"><LogIn size={18} />Sign in with APU</button>
-            <p className="muted text-center text-xs">Demo build: any TP number and password works.</p>
+            <button disabled={!name.trim() || !isTp(tp) || !course || !sex} className="btn flex w-full items-center justify-center gap-2 py-3.5 text-base disabled:opacity-50"><UserPlus size={18} />Create my account</button>
           </form>
         )}
 
@@ -198,7 +213,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
                 <Icon name="id-card" size={56} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xl font-black leading-tight">{p.name}</p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-sm"><span className="font-mono font-semibold tracking-wider text-zinc-300">{p.tp}</span><Icon name="shield" size={14} /><span className="font-semibold text-lime-400">Verified</span></p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm"><span className="font-mono font-semibold tracking-wider text-zinc-300">{p.tp}</span><Icon name="shield" size={14} /><span className="font-semibold text-lime-400">Member</span></p>
                 </div>
                 <span className="rounded-full bg-lime-500 px-2.5 py-1 text-[11px] font-black uppercase text-zinc-950">Lv 1</span>
               </div>
@@ -304,7 +319,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
         <div className="sticky bottom-0 -mx-4 mt-4 bg-gradient-to-t from-white via-white to-transparent px-4 pb-2 pt-6 dark:from-zinc-950 dark:via-zinc-950">
           <button type="button" onClick={action.run} disabled={!action.ok}
             className={`btn w-full py-3.5 text-base font-bold transition disabled:opacity-40 ${action.ok && (done || step.id === "hello") ? "anim-breathe" : ""}`}>{action.label}</button>
-          {step.id === "found" && <button type="button" onClick={() => go(1)} className="muted mt-2 w-full text-center text-sm">Not you? Sign in again</button>}
+          {step.id === "found" && <button type="button" onClick={() => go(1)} className="muted mt-2 w-full text-center text-sm">Fix my details</button>}
         </div>
       )}
     </div>

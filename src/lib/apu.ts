@@ -24,6 +24,19 @@ const names: Record<Sex, string[]> = {
 const surnames = ["Rahman", "Tan", "Lim", "Kumar", "Ismail", "Wong", "Abdullah", "Lee", "Nair", "Hassan", "Ong", "Yusof"];
 
 export const isTp = (tp: string) => /^TP\d{6}$/.test(tp);
+export const courses = programmes.map(([faculty, course]) => ({ faculty, course }));
+
+// Sign-up: the student types their own details. Returns the student, or what to fix.
+export function newStudent(f: { tp: string; name: string; course: string; intake: string; sex: Sex | "" }): ApuStudent | string {
+  const tp = f.tp.trim().toUpperCase(), name = f.name.trim().replace(/\s+/g, " "), intake = f.intake.trim().toUpperCase();
+  const c = courses.find((x) => x.course === f.course);
+  if (name.length < 2) return "Enter your full name";
+  if (!isTp(tp)) return "TP number looks like TP012345";
+  if (!c) return "Pick your course";
+  if (intake && !/^[A-Z0-9]{6,16}$/.test(intake)) return "Intake code looks like APD2F2602CS";
+  if (!f.sex) return "Pick a category";
+  return { tp, name, sex: f.sex, faculty: c.faculty, course: c.course, intake };
+}
 
 // Same TP always gives the same student.
 export function apuStudent(tp: string): ApuStudent | null {

@@ -4,7 +4,7 @@
 import { createAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import { ArrowLeft, LogIn, Minus, Plus, Sparkles } from 'lucide-react-native';
+import { ArrowLeft, UserPlus, Minus, Plus, Sparkles } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { apuStudent, isTp } from '@shared/apu';
+import { courses, isTp, newStudent } from '@shared/apu';
 import { activities, goals, nutrition, type Goal } from '@shared/nutrition';
 import { activityReply, bwReply, goalReply, questArt, steps, totalXp, type Pose } from '@shared/quest';
 import { fromUnit, toUnit, type Unit } from '@shared/units';
@@ -165,7 +165,10 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
   const [p, setP] = useState<P | null>(null);
   const [reply, setReply] = useState<string | null>(null);
   const [tp, setTp] = useState('');
-  const [pw, setPw] = useState('');
+  const [name, setName] = useState('');
+  const [course, setCourse] = useState('');
+  const [intake, setIntake] = useState('');
+  const [sex, setSex] = useState<'M' | 'F' | ''>('');
   const [height, setHeight] = useState('');
   const [age, setAge] = useState('');
   const [bwText, setBwText] = useState<string | null>(null);
@@ -195,8 +198,8 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
   const plan = p && p.goal && p.activity && statsOk ? nutrition({ ...p, height: h, age: a }, [], []).targets : null;
 
   function login() {
-    const s = apuStudent(tp);
-    if (!s) return setErr('TP number looks like TP012345');
+    const s = newStudent({ tp, name, course, intake, sex });
+    if (typeof s === 'string') return setErr(s);
     setP({ ...s, bw: 70, squat: 0, bench: 0, deadlift: 0 });
     next();
   }
@@ -257,16 +260,35 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
 
             {step.id === 'login' && (
               <View style={{ gap: 12 }}>
+                <View><ThemedText themeColor="textSecondary" style={styles.label}>Full name</ThemedText>
+                  <Input autoFocus value={name} onChangeText={(v) => { setName(v.slice(0, 40)); setErr(''); }} placeholder="Aiden Lim"
+                    placeholderTextColor={theme.textSecondary} autoComplete="name" style={field} /></View>
                 <View><ThemedText themeColor="textSecondary" style={styles.label}>TP number</ThemedText>
-                  <Input autoFocus value={tp} onChangeText={(v) => { setTp(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); setErr(''); }} placeholder="TP012345"
+                  <Input value={tp} onChangeText={(v) => { setTp(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); setErr(''); }} placeholder="TP012345"
                     placeholderTextColor={theme.textSecondary} autoCapitalize="characters" autoCorrect={false} autoComplete="username" style={field} /></View>
-                <View><ThemedText themeColor="textSecondary" style={styles.label}>APU password</ThemedText>
-                  <Input value={pw} onChangeText={setPw} secureTextEntry autoComplete="current-password" style={field} onSubmitEditing={login} /></View>
+                <View><ThemedText themeColor="textSecondary" style={styles.label}>Course</ThemedText>
+                  <View style={{ gap: 6, marginTop: 4 }}>
+                    {courses.map((c) => (
+                      <Pressable key={c.course} onPress={() => { setCourse(c.course); setErr(''); }} style={[styles.pick, { backgroundColor: course === c.course ? Lime : theme.backgroundElement }]}>
+                        <ThemedText type="small" style={{ color: course === c.course ? '#09090b' : theme.text, fontWeight: course === c.course ? '700' : '400' }}>{c.course}</ThemedText>
+                      </Pressable>
+                    ))}
+                  </View></View>
+                <View><ThemedText themeColor="textSecondary" style={styles.label}>Intake code (optional, for your timetable)</ThemedText>
+                  <Input value={intake} onChangeText={(v) => { setIntake(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16)); setErr(''); }} placeholder="APD2F2602CS"
+                    placeholderTextColor={theme.textSecondary} autoCapitalize="characters" autoCorrect={false} style={field} /></View>
+                <View><ThemedText themeColor="textSecondary" style={styles.label}>Category</ThemedText>
+                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                    {([['M', 'Men'], ['F', 'Women']] as const).map(([v, l]) => (
+                      <Pressable key={v} onPress={() => { setSex(v); setErr(''); }} style={[styles.pick, { flex: 1, alignItems: 'center', backgroundColor: sex === v ? Lime : theme.backgroundElement }]}>
+                        <ThemedText style={{ color: sex === v ? '#09090b' : theme.text, fontWeight: '700' }}>{l}</ThemedText>
+                      </Pressable>
+                    ))}
+                  </View></View>
                 {!!err && <ThemedText type="small" style={{ color: Red }}>{err}</ThemedText>}
-                <Button onPress={login} disabled={!isTp(tp) || !pw}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><LogIn size={18} color="#09090b" /><ThemedText style={{ color: '#09090b', fontWeight: '700' }}>Sign in with APU</ThemedText></View>
+                <Button onPress={login} disabled={!name.trim() || !isTp(tp) || !course || !sex}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><UserPlus size={18} color="#09090b" /><ThemedText style={{ color: '#09090b', fontWeight: '700' }}>Create my account</ThemedText></View>
                 </Button>
-                <ThemedText themeColor="textSecondary" style={{ fontSize: 12, textAlign: 'center' }}>Demo build: any TP number and password works.</ThemedText>
               </View>
             )}
 
@@ -278,7 +300,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
                     <View style={{ flex: 1 }}>
                       <ThemedText numberOfLines={1} style={{ fontSize: 20, lineHeight: 24, fontWeight: '700', color: '#fff' }}>{p.name}</ThemedText>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                        <ThemedText type="smallBold" style={{ color: '#d4d4d8', letterSpacing: 1 }}>{p.tp}</ThemedText><Icon name="shield" size={14} /><ThemedText type="smallBold" style={{ color: Lime }}>Verified</ThemedText>
+                        <ThemedText type="smallBold" style={{ color: '#d4d4d8', letterSpacing: 1 }}>{p.tp}</ThemedText><Icon name="shield" size={14} /><ThemedText type="smallBold" style={{ color: Lime }}>Member</ThemedText>
                       </View>
                     </View>
                     <View style={styles.lv}><ThemedText style={{ fontSize: 11, fontWeight: '700', color: '#09090b' }}>LV 1</ThemedText></View>
@@ -397,7 +419,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
         {action && (
           <View style={styles.bottom}>
             <Breathe on={action.ok && (done || step.id === 'hello')}><Button onPress={action.run} disabled={!action.ok}>{action.label}</Button></Breathe>
-            {step.id === 'found' && <Pressable onPress={() => go(1)} style={{ alignSelf: 'center', marginTop: 10 }}><ThemedText type="small" themeColor="textSecondary">Not you? Sign in again</ThemedText></Pressable>}
+            {step.id === 'found' && <Pressable onPress={() => go(1)} style={{ alignSelf: 'center', marginTop: 10 }}><ThemedText type="small" themeColor="textSecondary">Fix my details</ThemedText></Pressable>}
           </View>
         )}
         {done && <Confetti />}
@@ -407,6 +429,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
 }
 
 const styles = StyleSheet.create({
+  pick: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 8 },
   back: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   eyebrow: { fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
