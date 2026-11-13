@@ -17,6 +17,8 @@ type Stats = { workouts: number; followers: number; following: number };
 
 // Social-style profile: photo, Workouts / Followers / Following, then every workout they've posted (that you're allowed to see).
 const PAGE = 20; // workouts per page on a profile
+// each profile's loaded workouts, so coming back from one shows the same list and the browser can put you where you were
+const kept = new Map<string, { posts: Post[]; more: boolean; y?: number }>();
 
 export default function ProfileView({ userId }: { userId: string }) {
   const { s, me, demo: isDemo } = useStore();
@@ -27,8 +29,17 @@ export default function ProfileView({ userId }: { userId: string }) {
 
   const [other, setOther] = useState<Profile | null | undefined>(own ? me : undefined);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [posts, setPosts] = useState<Post[] | null>(null);
-  const [more, setMore] = useState(false); // older workouts to load as you scroll
+  const [posts, setPosts] = useState<Post[] | null>(() => kept.get(userId)?.posts ?? null);
+  const [more, setMore] = useState(() => kept.get(userId)?.more ?? false); // older workouts to load as you scroll
+  useEffect(() => { if (posts) kept.set(userId, { ...kept.get(userId), posts, more }); }, [userId, posts, more]);
+  // remember how far down you were; on coming back, scroll there again once the list is drawn
+  useEffect(() => {
+    const y = kept.get(userId)?.y;
+    if (y) requestAnimationFrame(() => requestAnimationFrame(() => scrollTo(0, y)));
+    const save = () => { const k = kept.get(userId); if (k) k.y = scrollY; };
+    addEventListener("scroll", save, { passive: true });
+    return () => removeEventListener("scroll", save);
+  }, [userId]);
   const end = useRef<HTMLDivElement>(null);
   const [list, setList] = useState<{ kind: "followers" | "following"; people: Person[] | null } | null>(null);
   const p = own ? me : other;

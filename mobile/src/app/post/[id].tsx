@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
-import { addSets, findExercise, lifters, oldNames, setTypes } from '@shared/data';
+import { addSets, findExercise, lifters, oldNames, setTypes, type Post } from '@shared/data';
 import { countsPR, e1rm, mmss, setLabels } from '@shared/lifting';
 import Avatar from '@/components/avatar';
 import { ExerciseThumb, FollowButton } from '@/components/post-card';
@@ -17,7 +17,7 @@ import { EmptyState, Icon } from '@/components/ui/kit';
 import { PostSkeleton } from '@/components/skeleton';
 import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useStore } from '@/lib/store';
+import { POST_SELECT, sb, toPost, useStore } from '@/lib/store';
 import { setTypeColor, supersetHex } from '@/lib/tw';
 import { Input } from '@/components/ui/input';
 
@@ -39,11 +39,21 @@ export default function PostPage() {
   const { s, me, like, comment } = useStore();
   const theme = useTheme();
   const [draft, setDraft] = useState('');
-  const p = s.posts.find((x) => x.id === id);
+  const inFeed = s.posts.find((x) => x.id === id);
+  // older workouts (opened from a profile) aren't in the feed's pages: load this one on its own
+  const [extra, setExtra] = useState<Post | null | undefined>(undefined);
+  useEffect(() => {
+    if (inFeed || extra !== undefined) return;
+    sb.from('posts').select(POST_SELECT).eq('id', id).maybeSingle().then(({ data }) => setExtra(data ? toPost(data, me.id) : null));
+  }, [id, inFeed, extra, me.id]);
+  const p = inFeed ?? extra ?? undefined;
+  // likes and comments on a workout loaded on its own update it here too
+  const doLike = (x: Post) => { if (!inFeed) setExtra({ ...x, liked: !x.liked, likes: x.likes + (x.liked ? -1 : 1) }); like(x.id, !!x.liked); };
+  const doComment = (x: Post, text: string) => { if (!inFeed) setExtra({ ...x, comments: [...x.comments, { by: me.name, text, uid: me.id }] }); comment(x.id, text); };
 
   if (!p) return (
     <View style={{ flex: 1, padding: 16, gap: 12, backgroundColor: theme.background }}>
-      {s.posts.length ? <EmptyState art="not-found" title="This workout isn't available" text="It may be private, friends-only, or deleted." />
+      {extra === null ? <EmptyState art="not-found" title="This workout isn't available" text="It may be private, friends-only, or deleted." />
         : <PostSkeleton />}
     </View>
   );
@@ -62,7 +72,7 @@ export default function PostPage() {
   const splitTotal = split.reduce((n, [, v]) => n + v, 0) || 1;
   const when = new Date(p.at);
   const author = p.uid ?? lifters.find((l) => l.name === p.by)?.id;
-  const send = () => { if (draft.trim()) { comment(p.id, draft.trim()); setDraft(''); } };
+  const send = () => { if (draft.trim()) { doComment(p, draft.trim()); setDraft(''); } };
 
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
@@ -89,7 +99,7 @@ export default function PostPage() {
           <View style={{ flex: 1 }}><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Records</ThemedText><View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Icon name="medal" size={18} /><ThemedText type="smallBold" style={{ fontSize: 15 }}>{p.prs.length}</ThemedText></View></View>
         </View>
         <View style={[styles.actions, { borderColor: theme.border }]}>
-          <Pressable onPress={() => like(p.id)} style={styles.action} accessibilityLabel={`Like, ${p.likes} likes`}>
+          <Pressable onPress={() => doLike(p)} style={styles.action} accessibilityLabel={`Like, ${p.likes} likes`}>
             <Heart size={22} color={p.liked ? Red : theme.textSecondary} fill={p.liked ? Red : 'transparent'} /><ThemedText type="smallBold" style={{ color: p.liked ? Red : theme.textSecondary }}>{p.likes}</ThemedText>
           </Pressable>
           <View style={styles.action}><MessageCircle size={22} color={theme.textSecondary} /><ThemedText type="smallBold" themeColor="textSecondary">{p.comments.length}</ThemedText></View>

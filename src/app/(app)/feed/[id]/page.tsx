@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Heart, MessageCircle, SendHorizontal, Share2 } from "lucide-react";
@@ -11,8 +11,8 @@ import { w, wTotal } from "@/lib/units";
 import FollowButton from "@/components/FollowButton";
 import ProfileLink from "@/components/ProfileLink";
 import ExerciseThumb from "@/components/ExerciseThumb";
-import { useStore } from "@/lib/store";
-import { addSets, findExercise, lifters, oldNames, setTypes, supersetColor } from "@/lib/data";
+import { POST_SELECT, sb, toPost, useStore } from "@/lib/store";
+import { addSets, findExercise, lifters, oldNames, setTypes, supersetColor, type Post } from "@/lib/data";
 import { countsPR, e1rm, mmss, setLabels } from "@/lib/lifting";
 import MeButton from "@/components/MeButton";
 
@@ -22,10 +22,20 @@ export default function WorkoutDetail() {
   const { id } = useParams<{ id: string }>();
   const { s, me, u, like, comment } = useStore();
   const [draft, setDraft] = useState("");
-  const p = s.posts.find((x) => x.id === id);
+  const inFeed = s.posts.find((x) => x.id === id);
+  // older workouts (opened from a profile) aren't in the feed's pages: load this one on its own
+  const [extra, setExtra] = useState<Post | null | undefined>(undefined);
+  useEffect(() => {
+    if (inFeed || extra !== undefined) return;
+    sb.from("posts").select(POST_SELECT).eq("id", id).maybeSingle().then(({ data }) => setExtra(data ? toPost(data, me.id) : null));
+  }, [id, inFeed, extra, me.id]);
+  const p = inFeed ?? extra ?? undefined;
   const back = "/feed" + (typeof window !== "undefined" ? location.search : "");
+  // likes and comments on a workout loaded on its own update it here too
+  const doLike = (x: Post) => { if (!inFeed) setExtra({ ...x, liked: !x.liked, likes: x.likes + (x.liked ? -1 : 1) }); like(x.id, !!x.liked); };
+  const doComment = (x: Post, text: string) => { if (!inFeed) setExtra({ ...x, comments: [...x.comments, { by: me.name, text, uid: me.id }] }); comment(x.id, text); };
 
-  if (!p) return s.posts.length
+  if (!p) return extra === null
     ? <EmptyState art="not-found" title="This workout isn't available" text="It may be private, friends-only, or deleted." className="mt-16" />
     : <PostSkeleton />;
 
@@ -82,7 +92,7 @@ export default function WorkoutDetail() {
           <div><p className="muted text-xs">Records</p><p className="flex items-center gap-1 font-semibold"><Icon name="medal" size={18} />{p.prs.length}</p></div>
         </div>
         <div className="flex items-center gap-5 border-y border-zinc-200 py-3 text-sm dark:border-zinc-800">
-          <button onClick={() => like(p.id)} aria-pressed={!!p.liked} aria-label={`Like, ${p.likes} likes`} className={`flex items-center gap-1.5 font-medium ${p.liked ? "text-red-500" : "muted"}`}>
+          <button onClick={() => doLike(p)} aria-pressed={!!p.liked} aria-label={`Like, ${p.likes} likes`} className={`flex items-center gap-1.5 font-medium ${p.liked ? "text-red-500" : "muted"}`}>
             <Heart size={22} fill={p.liked ? "currentColor" : "none"} />{p.likes}
           </button>
           <a href="#comments" aria-label={`Comments, ${p.comments.length}`} className="muted flex items-center gap-1.5 font-medium"><MessageCircle size={22} />{p.comments.length}</a>
@@ -154,7 +164,7 @@ export default function WorkoutDetail() {
         <h3 className="text-lg font-bold">Comments</h3>
         {p.comments.length === 0 && <EmptyState art="comments" size={96} className="py-4" title="No comments yet" text="Hype them up 💪" />}
         {p.comments.map((c, i) => <p key={i} className="text-sm"><ProfileLink id={c.uid} name={c.by} className="font-semibold">{c.by}</ProfileLink> {c.text}</p>)}
-        <form onSubmit={(ev) => { ev.preventDefault(); if (draft.trim()) { comment(p.id, draft.trim()); setDraft(""); } }} className="flex gap-2">
+        <form onSubmit={(ev) => { ev.preventDefault(); if (draft.trim()) { doComment(p, draft.trim()); setDraft(""); } }} className="flex gap-2">
           <input value={draft} onChange={(ev) => setDraft(ev.target.value)} placeholder={`Comment as ${me.name}…`} aria-label="Comment"
             className="min-w-0 flex-1 rounded-xl bg-white px-3 py-2 text-base outline-none ring-1 ring-zinc-200 focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900 dark:ring-zinc-800" />
           <button aria-label="Post comment" disabled={!draft.trim()} className="grid w-10 place-items-center rounded-xl bg-lime-500 text-zinc-950 disabled:opacity-40"><SendHorizontal size={16} /></button>
