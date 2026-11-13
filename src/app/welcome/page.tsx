@@ -104,7 +104,7 @@ export default function Welcome() {
           </div>
           <div>
             {/* Expo Go: the same app, loaded from EAS Update (channel "main" always serves the newest publish) */}
-            <h3 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">Or open it in Expo Go<Info text="No install file. Works on Android and iPhone, on any network." /></h3>
+            <h3 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">Or open in Expo<span className="text-base font-normal text-zinc-400">(iPhone + Android)</span><Info text="No install file. Works on Android and iPhone, on any network." /></h3>
             <div className="mt-5 flex items-center gap-5">
               <Image src="/expo-go-qr.svg" alt="QR code that opens Spotter in Expo Go" width={128} height={128} className="h-32 w-32 shrink-0 rounded-lg" unoptimized />
               <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-400">
