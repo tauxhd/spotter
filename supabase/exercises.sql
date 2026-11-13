@@ -485,3 +485,21 @@ create policy "media upload" on storage.objects for insert to authenticated
 update posts set duration_min = 95, exercises = '[{"id":"back-squat","name":"Squat (Barbell)","sets":5,"best":"200 kg × 1"},{"id":"leg-press","name":"Leg Press (Machine)","sets":4,"best":"300 kg × 8"},{"id":"romanian-deadlift","name":"Romanian Deadlift (Barbell)","sets":3,"best":"140 kg × 8"},{"id":"leg-extension","name":"Leg Extension (Machine)","sets":3,"best":"70 kg × 12"},{"id":"standing-calf-raise","name":"Standing Calf Raise (Machine)","sets":4,"best":"100 kg × 15"}]'::jsonb where by = 'Hafiz R.' and user_id is null;
 update posts set duration_min = 70, exercises = '[{"id":"barbell-bench-press","name":"Bench Press (Barbell)","sets":5,"best":"62.5 kg × 2"},{"id":"incline-dumbbell-press","name":"Incline Bench Press (Dumbbell)","sets":3,"best":"20 kg × 10"},{"id":"cable-crossover","name":"Cable Crossover","sets":3,"best":"12.5 kg × 12"},{"id":"lateral-raise","name":"Lateral Raise (Dumbbell)","sets":4,"best":"8 kg × 15"},{"id":"rope-pushdown","name":"Triceps Pushdown (Rope)","sets":3,"best":"20 kg × 12"}]'::jsonb where by = 'Priya S.' and user_id is null;
 update posts set duration_min = 55, exercises = '[{"id":"deadlift","name":"Deadlift (Barbell)","sets":4,"best":"180 kg × 3"},{"id":"pull-up","name":"Pull Up","sets":3,"best":"BW × 12"},{"id":"lat-pulldown","name":"Lat Pulldown (Cable)","sets":3,"best":"70 kg × 10"},{"id":"seated-cable-row","name":"Seated Cable Row","sets":3,"best":"65 kg × 10"},{"id":"face-pull","name":"Face Pull","sets":3,"best":"25 kg × 15"},{"id":"hammer-curl","name":"Hammer Curl (Dumbbell)","sets":3,"best":"16 kg × 10"}]'::jsonb where by = 'Kenji T.' and user_id is null;
+
+-- 14 exercises from the Hevy import (Taux): images to come
+insert into exercises (id, name, muscle, equipment, secondary, lift, image, sort) values
+  ('machine-crunch', 'Crunch (Machine)', 'abs', 'machine', array[]::text[], null, '/exercises/machine-crunch.webp', 451),
+  ('machine-squat', 'Squat (Machine)', 'quads', 'machine', array['glutes']::text[], null, '/exercises/machine-squat.webp', 452),
+  ('parallel-bar-leg-raise', 'Leg Raise Parallel Bars', 'abs', 'bodyweight', array[]::text[], null, '/exercises/parallel-bar-leg-raise.webp', 453),
+  ('barbell-clean-and-press', 'Clean and Press (Barbell)', 'full body', 'barbell', array['shoulders','quads']::text[], null, '/exercises/barbell-clean-and-press.webp', 454),
+  ('triceps-dip', 'Triceps Dip', 'triceps', 'bodyweight', array['chest','shoulders']::text[], null, '/exercises/triceps-dip.webp', 455),
+  ('reverse-grip-lat-pulldown', 'Reverse Grip Lat Pulldown (Cable)', 'back', 'cable', array['biceps']::text[], null, '/exercises/reverse-grip-lat-pulldown.webp', 456),
+  ('cable-hammer-curl', 'Hammer Curl (Cable)', 'biceps', 'cable', array['forearms']::text[], null, '/exercises/cable-hammer-curl.webp', 457),
+  ('machine-seated-shoulder-press', 'Seated Shoulder Press (Machine)', 'shoulders', 'machine', array['triceps']::text[], null, '/exercises/machine-seated-shoulder-press.webp', 458),
+  ('heel-taps', 'Heel Taps', 'abs', 'bodyweight', array[]::text[], null, '/exercises/heel-taps.webp', 459),
+  ('lying-neck-extension', 'Lying Neck Extension (Weighted)', 'back', 'other', array[]::text[], null, '/exercises/lying-neck-extension.webp', 460),
+  ('machine-preacher-curl', 'Preacher Curl (Machine)', 'biceps', 'machine', array[]::text[], null, '/exercises/machine-preacher-curl.webp', 461),
+  ('horizontal-leg-press', 'Leg Press Horizontal (Machine)', 'quads', 'machine', array['glutes','hamstrings']::text[], null, '/exercises/horizontal-leg-press.webp', 462),
+  ('warm-up', 'Warm Up', 'cardio', 'cardio', array[]::text[], null, '/exercises/warm-up.webp', 463),
+  ('stretching', 'Stretching', 'full body', 'other', array[]::text[], null, '/exercises/stretching.webp', 464)
+on conflict (id) do nothing;

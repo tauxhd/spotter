@@ -448,5 +448,19 @@
   {"id":"band-hip-abduction","name":"Hip Abduction (Band)","muscle":"glutes","equipment":"other","secondary":[],"hint":"seated on a bench, lime band around the knees, pushing the knees apart"},
   {"id":"hip-thrust-machine","name":"Hip Thrust (Machine)","muscle":"glutes","equipment":"machine","secondary":["hamstrings"],"hint":"back against the pad of a hip thrust machine, belt over the hips, thrusting the hips up"},
   {"id":"smith-hip-thrust","name":"Hip Thrust (Smith Machine)","muscle":"glutes","equipment":"smith","secondary":["hamstrings"],"hint":"upper back on a bench, smith machine bar across the hips, thrusting up"},
-  {"id":"glute-kickback-machine","name":"Glute Kickback (Machine)","muscle":"glutes","equipment":"machine","secondary":["hamstrings"],"hint":"on a glute kickback machine, pushing one leg back and up"}
+  {"id":"glute-kickback-machine","name":"Glute Kickback (Machine)","muscle":"glutes","equipment":"machine","secondary":["hamstrings"],"hint":"on a glute kickback machine, pushing one leg back and up"},
+  {"id":"machine-crunch","name":"Crunch (Machine)","muscle":"abs","equipment":"machine","secondary":[],"hint":"seated in an ab crunch machine, curling the chest down toward the knees"},
+  {"id":"machine-squat","name":"Squat (Machine)","muscle":"quads","equipment":"machine","secondary":["glutes"],"hint":"in a pendulum-style squat machine, shoulders under the pads, squatting down"},
+  {"id":"parallel-bar-leg-raise","name":"Leg Raise Parallel Bars","muscle":"abs","equipment":"bodyweight","secondary":[],"hint":"on a captain chair, forearms on the pads, raising straight legs to hip height"},
+  {"id":"barbell-clean-and-press","name":"Clean and Press (Barbell)","muscle":"full body","equipment":"barbell","secondary":["shoulders","quads"],"hint":"pressing a barbell overhead after cleaning it to the shoulders"},
+  {"id":"triceps-dip","name":"Triceps Dip","muscle":"triceps","equipment":"bodyweight","secondary":["chest","shoulders"],"hint":"on parallel dip bars, torso upright, lowering by bending the elbows"},
+  {"id":"reverse-grip-lat-pulldown","name":"Reverse Grip Lat Pulldown (Cable)","muscle":"back","equipment":"cable","secondary":["biceps"],"hint":"seated at a lat pulldown, palms facing in, pulling the bar to the upper chest"},
+  {"id":"cable-hammer-curl","name":"Hammer Curl (Cable)","muscle":"biceps","equipment":"cable","secondary":["forearms"],"hint":"curling a rope attachment from a low cable pulley with a neutral grip"},
+  {"id":"machine-seated-shoulder-press","name":"Seated Shoulder Press (Machine)","muscle":"shoulders","equipment":"machine","secondary":["triceps"],"hint":"seated in a shoulder press machine, pressing the handles overhead"},
+  {"id":"heel-taps","name":"Heel Taps","muscle":"abs","equipment":"bodyweight","secondary":[],"hint":"lying on the back, knees bent, reaching side to side to tap the heels"},
+  {"id":"lying-neck-extension","name":"Lying Neck Extension (Weighted)","muscle":"back","equipment":"other","secondary":[],"hint":"lying face down on a bench, head off the end, a weight plate on the back of the head, lifting the head"},
+  {"id":"machine-preacher-curl","name":"Preacher Curl (Machine)","muscle":"biceps","equipment":"machine","secondary":[],"hint":"seated at a preacher curl machine, arms on the pad, curling the handles"},
+  {"id":"horizontal-leg-press","name":"Leg Press Horizontal (Machine)","muscle":"quads","equipment":"machine","secondary":["glutes","hamstrings"],"hint":"seated upright in a horizontal leg press, pushing the platform away with both feet"},
+  {"id":"warm-up","name":"Warm Up","muscle":"cardio","equipment":"cardio","secondary":[],"hint":"jogging lightly on the spot, arms swinging"},
+  {"id":"stretching","name":"Stretching","muscle":"full body","equipment":"other","secondary":[],"hint":"standing, reaching one arm overhead and leaning to the side in a stretch"}
 ]
