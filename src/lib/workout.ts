@@ -1,5 +1,5 @@
-import { timedByDefault, type Exercise, type ExerciseLog, type PostExercise, type SetT } from "./data";
-import { countsPR, countsVolume, e1rm, mmss } from "./lifting";
+import { timedByDefault, type Exercise, type ExerciseLog, type PostExercise, type SetT } from "./data.ts";
+import { countsPR, countsVolume, e1rm, mmss } from "./lifting.ts";
 
 export type RankedLift = { kg: number; reps: number; at: number; orm: number };
 
@@ -69,4 +69,25 @@ export function repeatOf(p: { title: string; exercises: PostExercise[] }, librar
       };
     }),
   };
+}
+
+// Superset picker: exercise i plus the chosen ones (indexes) become one superset; fewer than two means none. Exercises
+// taken from another group leave it, a group left with one exercise dissolves, and the new group's exercises move
+// together where its first one was, so they're done back to back.
+export function setSuperset(exs: ExerciseLog[], i: number, chosen: number[], id = Date.now()): ExerciseLog[] {
+  const pick = new Set([i, ...chosen]);
+  const g = exs[i].superset ?? id;
+  const out = exs.map((e, k) => {
+    const { superset, ...rest } = e;
+    if (pick.has(k)) return pick.size > 1 ? { ...rest, superset: g } : rest;
+    return superset === g || superset === undefined ? rest : { ...rest, superset };
+  });
+  const n = new Map<number, number>();
+  out.forEach((e) => e.superset !== undefined && n.set(e.superset, (n.get(e.superset) ?? 0) + 1));
+  const clean = out.map((e) => { if (e.superset === undefined || (n.get(e.superset) ?? 0) > 1) return e; const { superset: _, ...rest } = e; return rest; }); // eslint-disable-line @typescript-eslint/no-unused-vars
+  if (pick.size < 2) return clean;
+  const first = Math.min(...pick);
+  const members = clean.filter((_, k) => pick.has(k)), others = clean.filter((_, k) => !pick.has(k));
+  const at = clean.slice(0, first).filter((_, k) => !pick.has(k)).length;
+  return [...others.slice(0, at), ...members, ...others.slice(at)];
 }
