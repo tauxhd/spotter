@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { EmptyState, Title } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
 import { BottomTabInset, Lime } from '@/constants/theme';
+import FeedActions from '@/components/feed-actions';
 import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore } from '@/lib/store';
@@ -38,7 +39,7 @@ export default function Feed() {
         ListFooterComponent={s.posts.length ? <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: 20 }}>{s.morePosts ? 'Loading more…' : 'You\'re all caught up'}</ThemedText> : undefined}
         ListHeaderComponent={
           <View style={{ gap: 16, marginBottom: 4 }}>
-            <Title icon="feed" sub={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><View style={styles.live} /><ThemedText type="small" themeColor="textSecondary">What APU is lifting, live</ThemedText></View>}>Feed</Title>
+            <Title icon="feed" right={<FeedActions />} sub={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><View style={styles.live} /><ThemedText type="small" themeColor="textSecondary">What APU is lifting, live</ThemedText></View>}>Feed</Title>
             {suggested.length > 0 && (
               <View>
                 <ThemedText type="smallBold" themeColor="textSecondary" style={styles.kicker}>SUGGESTED FOR YOU</ThemedText>

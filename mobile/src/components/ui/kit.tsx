@@ -19,7 +19,7 @@ export function Icon({ name, size = 24, style }: { name: string; size?: number; 
 
 // Page title with its illustrated icon, like the website's headers.
 // Your profile picture sits on the right (me={false} to leave it out); `info` adds an (i) after the title.
-export function Title({ icon, children, sub, info, me = true }: { icon?: string; children: React.ReactNode; sub?: React.ReactNode; info?: string; me?: boolean }) {
+export function Title({ icon, children, sub, info, me = true, right }: { icon?: string; children: React.ReactNode; sub?: React.ReactNode; info?: string; me?: boolean; right?: React.ReactNode }) {
   return (
     <View style={{ marginBottom: 2, flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
       <View style={{ flex: 1 }}>
@@ -30,6 +30,7 @@ export function Title({ icon, children, sub, info, me = true }: { icon?: string;
         </View>
         {typeof sub === 'string' ? <ThemedText type="small" themeColor="textSecondary">{sub}</ThemedText> : sub}
       </View>
+      {right}
       {me && <MeButton />}
     </View>
   );
