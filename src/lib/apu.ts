@@ -2,7 +2,7 @@ import type { Sex } from "./data";
 
 // Mock APU student records, keyed by TP number.
 // ponytail: stands in for the APU student API / SSO. Swap apuStudent() for the real lookup; nothing else changes.
-export type ApuStudent = { tp: string; name: string; sex: Sex; faculty: string; course: string; intake: string };
+export type ApuStudent = { tp: string; name: string; sex: Sex; faculty: string; course: string; intake: string | null };
 
 const programmes: [faculty: string, course: string, code: string][] = [
   ["Computing", "BSc (Hons) Computer Science", "CS"],
@@ -40,7 +40,7 @@ export function newStudent(f: { tp: string; name: string; course: string; intake
   if (!c) return "Pick your course";
   if (intake && !/^[A-Z0-9]{6,16}$/.test(intake)) return "Intake code looks like APD2F2602CS";
   if (!f.sex) return "Pick a category";
-  return { tp, name, sex: f.sex, faculty: c.faculty, course: c.course, intake };
+  return { tp, name, sex: f.sex, faculty: c.faculty, course: c.course, intake: intake || null }; // no intake: null (the column rejects "")
 }
 
 // Same TP always gives the same student.
