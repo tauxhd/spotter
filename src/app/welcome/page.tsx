@@ -119,7 +119,7 @@ export default function Welcome() {
       </section>
 
       <footer className="border-t border-white/5 px-4 py-8 text-center text-sm text-zinc-500">
-        Spotter · made for APU students · <Link href="/" className="hover:text-zinc-300">Open the web app</Link>
+        Spotter · made for APU students · <Link href="/?app=1" className="hover:text-zinc-300">Open the web app</Link>
       </footer>
     </div>
   );

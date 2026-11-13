@@ -145,6 +145,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       .then(({ data }) => { if (!data) return; setS((x) => ({ ...x, library: data })); try { localStorage.setItem(LIB, JSON.stringify(data)); } catch {} });
     (async () => {
       let { data: { session } } = await sb.auth.getSession();
+      // a first-time visitor typing the bare address gets the landing page; the installed app, the landing page's own
+      // links (?install, ?app, ?demo), the demo phone and anyone already signed in go straight into Spotter
+      const installed = matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone;
+      if (!session && location.pathname === "/" && !location.search && self === top && !installed) { location.replace("/welcome"); return; }
       if (!session) {
         const r = await sb.auth.signInAnonymously();
         if (r.error) return setErr(r.error.message);
