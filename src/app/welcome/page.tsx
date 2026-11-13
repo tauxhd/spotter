@@ -104,16 +104,16 @@ export default function Welcome() {
           </div>
           <div id="expo" className="scroll-mt-20">
             {/* Expo Go: the same app, loaded from EAS Update (channel "main" always serves the newest publish) */}
-            <h3 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">Or open in Expo (iPhone + Android)<Info text="No install file. Works on Android and iPhone, on any network." /></h3>
+            <h3 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">Or open in Expo Go (Android)<Info text="No install file, on any network. iPhones can't open other people's projects in Expo Go: use the web app instead." /></h3>
             <div className="mt-5 flex items-center gap-5">
               <Image src="/expo-go-qr.svg" alt="QR code that opens Spotter in Expo Go" width={128} height={128} className="h-32 w-32 shrink-0 rounded-lg" unoptimized />
               <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-400">
-                <li>Get Expo Go from the <a href="https://play.google.com/store/apps/details?id=host.exp.exponent" className="text-lime-400 underline underline-offset-4">Play Store</a> or <a href="https://apps.apple.com/app/expo-go/id982107779" className="text-lime-400 underline underline-offset-4">App Store</a>.</li>
-                <li>Scan the code with your camera (iPhone) or inside Expo Go (Android).</li>
+                <li>Get Expo Go from the <a href="https://play.google.com/store/apps/details?id=host.exp.exponent" className="text-lime-400 underline underline-offset-4">Play Store</a>.</li>
+                <li>Open Expo Go and scan the code.</li>
                 <li>On your phone already? <a href={EXPO_GO} className="text-lime-400 underline underline-offset-4">Open in Expo Go</a></li>
               </ol>
             </div>
-            <Facts rows={[["Needs", "Expo Go app (free)"], ["Android", "7.0 or newer"], ["iPhone", "Any iPhone that runs Expo Go"], ["Internet", "Needed to open it"], ["Updates", "Always the newest version, automatically"], ["Missing", "Home-screen icon; it opens inside Expo Go"]]} />
+            <Facts rows={[["Needs", "Expo Go app (free)"], ["Android", "7.0 or newer"], ["iPhone", "Not supported: use the web app"], ["Internet", "Needed to open it"], ["Updates", "Always the newest version, automatically"], ["Missing", "Home-screen icon; it opens inside Expo Go"]]} />
           </div>
         </div>
       </section>

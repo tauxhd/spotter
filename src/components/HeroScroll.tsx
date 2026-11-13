@@ -5,6 +5,7 @@
 // numbers count, bars fill, lists filter and stagger in, sheets slide up, the camera pushes in on the phone, components
 // burst out of it as bigger live cards, and the page flashes lime on the big moments. The map scene runs the real 3D gym.
 // Everything is a pure function of scroll position, so scrolling back plays it in reverse.
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
@@ -945,7 +946,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <a href="#demo" className="rounded-full bg-lime-400 px-6 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">Try the live demo</a>
             <a href={apk} className="rounded-full bg-white/10 px-6 py-3 font-semibold ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">Download for Android</a>
-            <a href="#expo" className="rounded-full bg-white/10 px-6 py-3 font-semibold ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">Open on iPhone</a>
+            <Link href="/?install=1" className="rounded-full bg-white/10 px-6 py-3 font-semibold ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">Use on iPhone</Link>
           </div>
           {!video && <p className="mt-10 text-sm text-zinc-500 motion-safe:animate-bounce">Scroll ↓</p>}
         </div>

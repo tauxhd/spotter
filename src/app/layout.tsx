@@ -7,6 +7,8 @@ const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Spotter",
   description: "The APU gym, connected: clock in, train, eat, rank and share.",
+  // iPhone "Add to Home Screen": opens full screen with its own name, like an installed app
+  appleWebApp: { capable: true, title: "Spotter", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
