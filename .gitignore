@@ -46,3 +46,7 @@ video/out/
 # deck: screenshots and prepared images are rebuilt by deck/capture.cjs and deck/prep.py
 deck/shots/
 deck/assets/
+
+# Cloudflare (OpenNext)
+.open-next
+.wrangler

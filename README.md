@@ -36,6 +36,20 @@ Add `?t=17:30` to any URL to demo the app at a different time of day.
 
 Print `/poster` and stick it on the gym door: scanning its QR opens `/checkin`, which clocks the student in.
 
+## Deploy (Cloudflare Workers)
+
+The website runs on Cloudflare Workers through OpenNext (`open-next.config.ts`, `wrangler.jsonc`). Log in once with
+`npx wrangler login`, then:
+
+```bash
+npm run preview   # build and run it locally in the Workers runtime
+npm run deploy    # build and publish (https://spotter.<your-subdomain>.workers.dev)
+```
+
+Set `GEMINI_API_KEY` as a Worker secret (`npx wrangler secret put GEMINI_API_KEY`) to turn on meal-photo analysis.
+Windows can hit its 260-character path limit on native Android builds; the Android APK is built on GitHub Actions
+(`.github/workflows/android.yml`) and attached to each release.
+
 ## Tests
 
 ```bash
