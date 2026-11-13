@@ -63,6 +63,14 @@ const SAME: Record<string, string> = {
   "Full Squat": "Squat (Barbell)", "Front Squat": "Front Squat (Barbell)", "Russian Twist (Weighted)": "Russian Twist (Dumbbell)",
   "Seated Calf Raise": "Seated Calf Raise (Machine)", "Butterfly (Pec Deck)": "Pec Deck (Machine Fly)", "Seated Cable Row - Bar Grip": "Seated Cable Row",
   "Lunge (Dumbbell)": "Forward Lunge (Dumbbell)", "Clean and Press": "Clean and Press (Barbell)",
+  "Treadmill": "Running (Treadmill)", "Running": "Running (Treadmill)", "Spinning": "Cycling (Stationary Bike)", "Cycling": "Cycling (Stationary Bike)",
+  "Lateral Leg Raises": "Side Lying Leg Raise", "Seated Cable Row - V Grip (Cable)": "Seated Cable Row", "Standing Cable Glute Kickbacks": "Glute Kickback (Cable)",
+  "Triceps Rope Pushdown": "Triceps Pushdown (Rope)", "Scapular Pull Ups": "Scapular Pull Up", "Chest Fly (Machine)": "Pec Deck (Machine Fly)",
+  "Kettlebell Windmill": "Windmill (Kettlebell)", "Kettble ball Windmill": "Windmill (Kettlebell)", "Bulgarian Split Squat (Dumbbell)": "Bulgarian Split Squat",
+  "Dumbbell Step Up": "Step Up (Dumbbell)", "Step Up": "Step Up (Bodyweight)", "Weighted Plank": "Plank", "Chest Supported Incline Row (Dumbbell)": "Chest Supported Row (Dumbbell)",
+  "Walking Lunge": "Walking Lunge (Dumbbell)", "Lunge": "Bodyweight Lunge", "Lateral Lunge": "Lateral Lunge (Dumbbell)", "Seated Incline Curl (Dumbbell)": "Incline Curl (Dumbbell)",
+  "Standing Calf Raise (Dumbbell)": "Calf Raise (Dumbbell)", "Shoulder Taps": "Plank Shoulder Tap", "Back Extension (Weighted Hyperextension)": "Weighted Back Extension",
+  "Pull Up (Band)": "Band Assisted Pull Up", "Pull Up (Assisted)": "Assisted Pull Up (Machine)", "Around The World": "Around the World (Dumbbell)", "touch down": "Touch Downs",
 };
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 export function nameIn(library: Exercise[], hevy: string) {

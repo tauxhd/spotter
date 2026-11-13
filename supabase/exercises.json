@@ -462,5 +462,17 @@
   {"id":"machine-preacher-curl","name":"Preacher Curl (Machine)","muscle":"biceps","equipment":"machine","secondary":[],"hint":"seated at a preacher curl machine, arms on the pad, curling the handles"},
   {"id":"horizontal-leg-press","name":"Leg Press Horizontal (Machine)","muscle":"quads","equipment":"machine","secondary":["glutes","hamstrings"],"hint":"seated upright in a horizontal leg press, pushing the platform away with both feet"},
   {"id":"warm-up","name":"Warm Up","muscle":"cardio","equipment":"cardio","secondary":[],"hint":"jogging lightly on the spot, arms swinging"},
-  {"id":"stretching","name":"Stretching","muscle":"full body","equipment":"other","secondary":[],"hint":"standing, reaching one arm overhead and leaning to the side in a stretch"}
+  {"id":"stretching","name":"Stretching","muscle":"full body","equipment":"other","secondary":[],"hint":"standing, reaching one arm overhead and leaning to the side in a stretch"},
+  {"id":"farmers-walk","name":"Farmers Walk","muscle":"forearms","equipment":"dumbbell","secondary":["full body"],"hint":"walking forward holding a heavy dumbbell in each hand at the sides"},
+  {"id":"wall-ball","name":"Wall Ball","muscle":"full body","equipment":"other","secondary":["quads","shoulders"],"hint":"squatting and throwing a medicine ball up to a target on a wall"},
+  {"id":"ball-slams","name":"Ball Slams","muscle":"full body","equipment":"other","secondary":["abs","shoulders"],"hint":"lifting a slam ball overhead and slamming it into the floor"},
+  {"id":"plate-rotation","name":"Plate Rotation","muscle":"abs","equipment":"other","secondary":[],"hint":"standing, rotating the torso while holding a weight plate at chest height"},
+  {"id":"kneeling-push-up","name":"Kneeling Push Up","muscle":"chest","equipment":"bodyweight","secondary":["triceps"],"hint":"push-up with the knees on the floor"},
+  {"id":"knee-raise-parallel-bars","name":"Knee Raise Parallel Bars","muscle":"abs","equipment":"bodyweight","secondary":[],"hint":"on a captain's chair, bending the knees up to the chest"},
+  {"id":"beast-hold-shoulder-taps","name":"Beast Hold + Shoulder Taps","muscle":"abs","equipment":"bodyweight","secondary":["shoulders"],"hint":"knees hovering on hands and toes, tapping the opposite shoulder"},
+  {"id":"kettlebell-gorilla-row","name":"Gorilla Row (Kettlebell)","muscle":"back","equipment":"kettlebell","secondary":["biceps"],"hint":"hinged over two kettlebells, rowing one at a time"},
+  {"id":"swimming","name":"Swimming","muscle":"cardio","equipment":"cardio","secondary":[],"hint":"swimming freestyle in a pool lane"},
+  {"id":"walking","name":"Walking","muscle":"cardio","equipment":"cardio","secondary":[],"hint":"brisk walking"},
+  {"id":"rafting","name":"Rafting","muscle":"cardio","equipment":"other","secondary":["back","shoulders"],"hint":"paddling an inflatable raft"},
+  {"id":"touch-downs","name":"Touch Downs","muscle":"cardio","equipment":"bodyweight","secondary":["quads","glutes"],"hint":"agility drill: shuffling sideways and touching the floor"}
 ]

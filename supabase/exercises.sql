@@ -503,3 +503,19 @@ insert into exercises (id, name, muscle, equipment, secondary, lift, image, sort
   ('warm-up', 'Warm Up', 'cardio', 'cardio', array[]::text[], null, '/exercises/warm-up.webp', 463),
   ('stretching', 'Stretching', 'full body', 'other', array[]::text[], null, '/exercises/stretching.webp', 464)
 on conflict (id) do nothing;
+
+-- 12 exercises from Shasha's Hevy import
+insert into exercises (id, name, muscle, equipment, secondary, lift, image, sort) values
+  ('farmers-walk', 'Farmers Walk', 'forearms', 'dumbbell', array['full body']::text[], null, '/exercises/farmers-walk.webp', 465),
+  ('wall-ball', 'Wall Ball', 'full body', 'other', array['quads','shoulders']::text[], null, '/exercises/wall-ball.webp', 466),
+  ('ball-slams', 'Ball Slams', 'full body', 'other', array['abs','shoulders']::text[], null, '/exercises/ball-slams.webp', 467),
+  ('plate-rotation', 'Plate Rotation', 'abs', 'other', array[]::text[], null, '/exercises/plate-rotation.webp', 468),
+  ('kneeling-push-up', 'Kneeling Push Up', 'chest', 'bodyweight', array['triceps']::text[], null, '/exercises/kneeling-push-up.webp', 469),
+  ('knee-raise-parallel-bars', 'Knee Raise Parallel Bars', 'abs', 'bodyweight', array[]::text[], null, '/exercises/knee-raise-parallel-bars.webp', 470),
+  ('beast-hold-shoulder-taps', 'Beast Hold + Shoulder Taps', 'abs', 'bodyweight', array['shoulders']::text[], null, '/exercises/beast-hold-shoulder-taps.webp', 471),
+  ('kettlebell-gorilla-row', 'Gorilla Row (Kettlebell)', 'back', 'kettlebell', array['biceps']::text[], null, '/exercises/kettlebell-gorilla-row.webp', 472),
+  ('swimming', 'Swimming', 'cardio', 'cardio', array[]::text[], null, '/exercises/swimming.webp', 473),
+  ('walking', 'Walking', 'cardio', 'cardio', array[]::text[], null, '/exercises/walking.webp', 474),
+  ('rafting', 'Rafting', 'cardio', 'other', array['back','shoulders']::text[], null, '/exercises/rafting.webp', 475),
+  ('touch-downs', 'Touch Downs', 'cardio', 'bodyweight', array['quads','glutes']::text[], null, '/exercises/touch-downs.webp', 476)
+on conflict (id) do nothing;
