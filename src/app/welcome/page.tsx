@@ -87,20 +87,13 @@ export default function Welcome() {
         </div>
         <div className="mx-auto grid max-w-6xl gap-14 px-4 pb-20 md:grid-cols-2 md:gap-16">
           <div id="download" className="scroll-mt-20">
-            <h3 className="text-2xl font-semibold tracking-tight">Try it yourself on Android</h3>
-            <p className="mt-1 text-zinc-400">Your own account, your own data, plus clock-in with your camera and haptics.</p>
+            <h3 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">Try it yourself on Android<Info text="Your own account, your own data, plus clock-in with your camera and haptics." /></h3>
             <a href={APK} className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-5 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
               Download the APK
             </a>
             {/* ponytail: hand-kept; update with each release (Actions > Android APK) */}
-            <table className="mt-4 w-full text-sm">
-              <tbody className="divide-y divide-white/10">
-                {[["Size", "78 MB"], ["Version", "1.0.3"], ["Requires", "Android 7.0 or newer"], ["Works on", "64-bit phones (almost every phone since 2017)"], ["Price", "Free, no ads"]].map(([k, v]) => (
-                  <tr key={k}><th scope="row" className="py-2 pr-4 text-left font-medium text-zinc-500">{k}</th><td className="py-2 text-right text-zinc-200">{v}</td></tr>
-                ))}
-              </tbody>
-            </table>
+            <Facts rows={[["Size", "78 MB"], ["Version", "1.0.3"], ["Requires", "Android 7.0 or newer"], ["Works on", "64-bit phones (almost every phone since 2017)"], ["Price", "Free, no ads"]]} />
 
             <p className="mt-3 text-sm text-zinc-400">Download not starting? <a href="/download" download="spotter.apk" className="font-medium text-lime-400 underline underline-offset-4">Get it straight from this site</a></p>
             <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
@@ -111,8 +104,7 @@ export default function Welcome() {
           </div>
           <div>
             {/* Expo Go: the same app, loaded from EAS Update (channel "main" always serves the newest publish) */}
-            <h3 className="text-2xl font-semibold tracking-tight">Or open it in Expo Go</h3>
-            <p className="mt-1 text-zinc-400">No install file. Works on Android and iPhone, on any network.</p>
+            <h3 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">Or open it in Expo Go<Info text="No install file. Works on Android and iPhone, on any network." /></h3>
             <div className="mt-5 flex items-center gap-5">
               <Image src="/expo-go-qr.svg" alt="QR code that opens Spotter in Expo Go" width={128} height={128} className="h-32 w-32 shrink-0 rounded-lg" unoptimized />
               <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-400">
@@ -121,6 +113,7 @@ export default function Welcome() {
                 <li>On your phone already? <a href={EXPO_GO} className="text-lime-400 underline underline-offset-4">Open in Expo Go</a></li>
               </ol>
             </div>
+            <Facts rows={[["Needs", "Expo Go app (free)"], ["Android", "7.0 or newer"], ["iPhone", "Any iPhone that runs Expo Go"], ["Internet", "Needed to open it"], ["Updates", "Always the newest version, automatically"], ["Missing", "Home-screen icon; it opens inside Expo Go"]]} />
           </div>
         </div>
       </section>
@@ -129,5 +122,29 @@ export default function Welcome() {
         Spotter · made for APU students · <Link href="/" className="hover:text-zinc-300">Open the web app</Link>
       </footer>
     </div>
+  );
+}
+
+// A small (i) that shows its text on hover, or on tap (focus) on a phone.
+function Info({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex">
+      <button type="button" aria-label={text} className="grid h-6 w-6 place-items-center rounded-full text-zinc-500 transition hover:text-zinc-200 focus:text-zinc-200 focus:outline-none">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+      </button>
+      <span role="tooltip" className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg bg-zinc-800 p-3 text-sm font-normal leading-snug tracking-normal text-zinc-200 opacity-0 shadow-xl transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">{text}</span>
+    </span>
+  );
+}
+
+function Facts({ rows }: { rows: [string, string][] }) {
+  return (
+    <table className="mt-4 w-full text-sm">
+      <tbody className="divide-y divide-white/10">
+        {rows.map(([k, v]) => (
+          <tr key={k}><th scope="row" className="py-2 pr-4 text-left font-medium text-zinc-500">{k}</th><td className="py-2 text-right text-zinc-200">{v}</td></tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
