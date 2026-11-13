@@ -1,4 +1,4 @@
-import { timedByDefault, type Exercise, type ExerciseLog, type PostExercise } from "./data";
+import { timedByDefault, type Exercise, type ExerciseLog, type PostExercise, type SetT } from "./data";
 import { countsPR, countsVolume, e1rm, mmss } from "./lifting";
 
 export type RankedLift = { kg: number; reps: number; at: number; orm: number };
@@ -53,4 +53,20 @@ export function summarize(exs: ExerciseLog[], library: Exercise[], prev: Record<
   const volume = sessionVolume(done, volBody);
   const sets = done.reduce((n, e) => n + e.sets.length, 0);
   return { done, prs, exercises, volume, sets };
+}
+
+// A post's workout as a fresh one to do again (Hevy's "copy workout"): same exercises, sets and weights, nothing ticked.
+export function repeatOf(p: { title: string; exercises: PostExercise[] }, library: Exercise[]): { title: string; exercises: ExerciseLog[] } {
+  return {
+    title: p.title,
+    exercises: p.exercises.map((e) => {
+      const log: Omit<SetT, "done">[] = e.log?.length ? e.log : Array.from({ length: e.sets || 3 }, () => ({ kg: 0, reps: 0 }));
+      return {
+        name: library.find((x) => x.id === e.id)?.name ?? e.name,
+        ...(e.superset ? { superset: e.superset.charCodeAt(0) - 65 } : {}),
+        ...(log.some((l) => l.secs !== undefined) ? { timed: true } : {}),
+        sets: log.map(({ kg, reps, type, secs }) => ({ kg, reps, ...(type ? { type } : {}), ...(secs !== undefined ? { secs } : {}) })),
+      };
+    }),
+  };
 }

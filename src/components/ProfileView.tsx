@@ -84,6 +84,7 @@ export default function ProfileView({ userId }: { userId: string }) {
         {own ? <span /> : <button onClick={() => router.back()} aria-label="Back" className="grid h-9 w-9 place-items-center"><ArrowLeft size={20} /></button>}
         <h1 className="truncate text-center text-base font-semibold">{own ? "Profile" : p.name}</h1>
         <div className="flex justify-end">
+          {!own && <Link href={`/u/${p.id}/compare${q}`} aria-label={`Compare with ${p.name}`} title="Compare" className="grid h-9 w-9 place-items-center"><Icon name="p4p" size={26} /></Link>}
           <Link href={`/u/${p.id}/stats${q}`} aria-label="Gym stats" className="grid h-9 w-9 place-items-center"><Icon name="stats" size={26} /></Link>
           {own && <Link href={`/me/edit${q}`} aria-label="Edit profile" className="grid h-9 w-9 place-items-center"><Icon name="edit" size={26} /></Link>}
           {own && <Link href={`/settings${q}`} aria-label="Settings" className="grid h-9 w-9 place-items-center"><Icon name="settings" size={26} /></Link>}
@@ -116,6 +117,7 @@ export default function ProfileView({ userId }: { userId: string }) {
               ? <p className="muted grid place-items-center rounded-xl bg-zinc-100 py-2 text-center text-xs dark:bg-zinc-900">Demo student · can&apos;t be followed</p>
               : <div className="grid place-items-center rounded-xl bg-zinc-100 dark:bg-zinc-900 [&>button]:w-full [&>button]:justify-center [&>button]:py-2 [&>button]:text-sm"><FollowButton id={p.id} name={p.name} /></div>}
           <button onClick={share} className="btn-ghost flex items-center justify-center gap-2 py-2 text-sm"><Share2 size={15} />Share profile</button>
+          {!own && <Link href={`/u/${p.id}/compare${q}`} className="btn-ghost col-span-2 flex items-center justify-center gap-2 py-2 text-sm"><Icon name="p4p" size={20} />Compare strength with {p.name.split(" ")[0]}</Link>}
         </div>
       </section>
 

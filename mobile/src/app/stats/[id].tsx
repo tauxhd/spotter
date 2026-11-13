@@ -1,8 +1,8 @@
-// Gym stats for a student (the website's /u/[id]/stats): this week + 8-week chart, streak and totals, best lifts with
+// Gym stats for a student (the website's /u/[id]/stats): week / month / year progress, training calendar, streak and totals, best lifts with
 // DOTS, muscle distribution spider chart, most-trained exercises, and (for yourself) gym visits.
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { findExercise, lifters, type Post } from '@shared/data';
 import { baseOf, estimated, heaviest, liftsOf } from '@shared/lifting';
@@ -11,12 +11,13 @@ import { ExerciseThumb } from '@/components/post-card';
 import { ThemedText } from '@/components/themed-text';
 import { EmptyState, Icon, Section } from '@/components/ui/kit';
 import { StatsSkeleton } from '@/components/skeleton';
-import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { POST_SELECT, sb, toPost, useStore, type Profile } from '@/lib/store';
 import { InfoTip } from '@/components/ui/info-tip';
 import { help } from '@shared/help';
 import { BestLifts, type LiftPage } from '@/components/best-lifts';
+import Progress from '@/components/progress';
+import TrainCalendar from '@/components/train-calendar';
 
 const WEEKS = 8, DAY = 864e5;
 const weekStart = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.getTime(); };
@@ -45,7 +46,7 @@ export default function GymStats() {
   useEffect(() => {
     if (!own && !demo) sb.from('profiles').select('*').eq('id', id).maybeSingle().then(({ data }) => setP(data));
     const base = sb.from('posts').select(POST_SELECT);
-    (demo ? base.is('user_id', null).eq('by', demo.name) : base.eq('user_id', id)).order('created_at', { ascending: false }).limit(200)
+    (demo ? base.is('user_id', null).eq('by', demo.name) : base.eq('user_id', id)).order('created_at', { ascending: false }).limit(1000)
       .then(({ data }) => setPosts((data ?? []).map((r) => toPost(r, me.id))));
     if (own) sb.from('visits').select('in_at, out_at').order('in_at', { ascending: false }).limit(500).then(({ data }) => setVisits(data ?? []));
   }, [id, own, demo, me.id]);
@@ -56,9 +57,7 @@ export default function GymStats() {
   const thisWeek = weekStart(now);
   const setsOf = (x: Post) => x.exercises.reduce((n, e) => n + (e.log?.length || e.sets || 1), 0);
   const total = { workouts: posts.length, minutes: posts.reduce((n, x) => n + (x.duration ?? 0), 0), volume: posts.reduce((n, x) => n + x.volume, 0), sets: posts.reduce((n, x) => n + setsOf(x), 0), prs: posts.reduce((n, x) => n + x.prs.length, 0) };
-  const week = posts.filter((x) => new Date(x.at).getTime() >= thisWeek);
   const perWeek = Array.from({ length: WEEKS }, (_, i) => { const start = thisWeek - (WEEKS - 1 - i) * 7 * DAY; return { start, n: posts.filter((x) => { const t = new Date(x.at).getTime(); return t >= start && t < start + 7 * DAY; }).length }; });
-  const maxWeek = Math.max(1, ...perWeek.map((w) => w.n));
   let streak = 0;
   for (let i = WEEKS - 1 - (perWeek[WEEKS - 1].n ? 0 : 1); i >= 0 && perWeek[i].n > 0; i--) streak++;
 
@@ -87,20 +86,7 @@ export default function GymStats() {
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }}>
       <Stack.Screen options={{ title: own ? 'Your gym stats' : `${p.name}'s stats` }} />
-      <Section>
-        <ThemedText type="smallBold" themeColor="textSecondary" style={styles.kicker}>THIS WEEK</ThemedText>
-        <ThemedText style={{ fontSize: 30, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{week.length} <ThemedText themeColor="textSecondary" style={{ fontSize: 16 }}>workout{week.length === 1 ? '' : 's'}</ThemedText></ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">{Math.round(week.reduce((n, x) => n + x.volume, 0)).toLocaleString()} kg · {hrs(week.reduce((n, x) => n + (x.duration ?? 0), 0))} trained</ThemedText>
-        <View style={styles.weeks}>
-          {perWeek.map((w, i) => (
-            <View key={w.start} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-              <ThemedText style={{ fontSize: 10, fontWeight: '700' }}>{w.n || ' '}</ThemedText>
-              <View style={{ width: '100%', height: Math.max(4, (w.n / maxWeek) * 64), borderRadius: 3, backgroundColor: i === WEEKS - 1 ? Lime : theme.backgroundSelected }} />
-              <ThemedText themeColor="textSecondary" style={{ fontSize: 9 }}>{new Date(w.start).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}</ThemedText>
-            </View>
-          ))}
-        </View>
-      </Section>
+      {posts.length > 0 && <Progress posts={posts} />}
 
       <Section style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         <Big icon="flame" value={`${streak} wk`} label="Weekly streak" />
@@ -110,6 +96,8 @@ export default function GymStats() {
         <Big icon="medal" value={total.prs} label="Personal records" />
         <Big icon="barbell" value={`${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
       </Section>
+
+      {posts.length > 0 && <TrainCalendar posts={posts} />}
 
       {sbd > 0 && <BestLifts pages={liftPages} bw={Number(p.bw)} sex={p.sex} />}
 
@@ -150,7 +138,3 @@ export default function GymStats() {
   );
 }
 
-const styles = StyleSheet.create({
-  kicker: { fontSize: 12, letterSpacing: 1 },
-  weeks: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 100, marginTop: 16 },
-});

@@ -74,6 +74,7 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
         headerTitleAlign: 'center',
         headerRight: () => (
           <View style={{ flexDirection: 'row', gap: 4 }}>
+            {!own && <Pressable onPress={() => router.push({ pathname: '/compare/[id]', params: { id: p.id } })} hitSlop={6} accessibilityLabel={`Compare with ${p.name}`} style={styles.headBtn}><Icon name="p4p" size={26} /></Pressable>}
             <Pressable onPress={() => router.push({ pathname: '/stats/[id]', params: { id: p.id } })} hitSlop={6} accessibilityLabel="Gym stats" style={styles.headBtn}><Icon name="stats" size={26} /></Pressable>
             {own && <Pressable onPress={() => setEditing(true)} hitSlop={6} accessibilityLabel="Edit profile" style={styles.headBtn}><Icon name="edit" size={26} /></Pressable>}
             {own && <Pressable onPress={() => router.push('/settings')} hitSlop={6} accessibilityLabel="Settings" style={styles.headBtn}><Icon name="settings" size={26} /></Pressable>}
@@ -104,6 +105,11 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
             <Share2 size={15} color={theme.text} /><ThemedText type="smallBold">Share profile</ThemedText>
           </Press>
         </View>
+        {!own && (
+          <Press onPress={() => router.push({ pathname: '/compare/[id]', params: { id: p.id } })} style={[styles.share, { marginTop: 8, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.backgroundElement }]}>
+            <Icon name="p4p" size={20} /><ThemedText type="smallBold">Compare strength with {p.name.split(' ')[0]}</ThemedText>
+          </Press>
+        )}
       </View>
 
       <ThemedText type="smallBold" style={{ fontSize: 16, paddingTop: 16 }}>Workouts</ThemedText>

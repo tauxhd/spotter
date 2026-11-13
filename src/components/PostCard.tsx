@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Heart, Lock, MessageCircle, SendHorizontal, Share2, Users } from "lucide-react";
+import { Heart, Lock, MessageCircle, Repeat2, SendHorizontal, Share2, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { repeatOf } from "@/lib/workout";
 import Icon from "./Icon";
 import Avatar from "./Avatar";
 import ExerciseThumb from "./ExerciseThumb";
@@ -68,7 +70,15 @@ function Swipe({ p, find }: { p: Post; find: Find }) {
 
 // One workout post (feed and profile pages). Keeps a local copy so likes/comments respond instantly anywhere.
 export default function PostCard({ post, showFollow = true }: { post: Post; showFollow?: boolean }) {
-  const { s, me, u, like, comment } = useStore();
+  const { s, me, u, like, comment, setActive } = useStore();
+  const router = useRouter();
+  // do this workout yourself: same exercises and sets, ready to tick off
+  const repeat = () => {
+    if (s.active && !confirm("Replace the workout you have going with this one?")) return;
+    const w = repeatOf(p, s.library);
+    setActive(() => ({ ...w, startedAt: new Date().toISOString() }));
+    router.push("/train" + location.search);
+  };
   const [p, setP] = useState(post);
   useEffect(() => setP(post), [post]);
   const [open, setOpen] = useState(false);
@@ -127,6 +137,7 @@ export default function PostCard({ post, showFollow = true }: { post: Post; show
         <button onClick={() => { setOpen((o) => !o); setDraft(""); }} aria-expanded={open} aria-label={`Comments, ${p.comments.length}`} className="muted flex items-center gap-1.5 font-medium">
           <MessageCircle size={22} />{p.comments.length}
         </button>
+        <button onClick={repeat} aria-label="Do this workout" title="Do this workout" className="muted flex items-center gap-1.5 text-sm font-medium"><Repeat2 size={22} />Repeat</button>
         <button onClick={share} aria-label="Share" className="muted"><Share2 size={22} /></button>
       </div>
 

@@ -3,9 +3,10 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Heart, Lock, MessageCircle, SendHorizontal, Share2, UserCheck, UserPlus, Users } from 'lucide-react-native';
+import { Heart, Lock, MessageCircle, Repeat2, SendHorizontal, Share2, UserCheck, UserPlus, Users } from 'lucide-react-native';
+import { repeatOf } from '@shared/workout';
 import { memo, useState } from 'react';
-import { Dimensions, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Alert, Dimensions, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { findExercise, lifters, timeAgo, type Exercise, type Post } from '@shared/data';
@@ -103,7 +104,12 @@ function Swipe({ p, find }: { p: Post; find: (id?: string, name?: string) => Exe
 
 // memo + narrow store slices: a card only re-renders when its own post (or your profile) changes
 export default memo(function PostCard({ post, showFollow = true, last }: { post: Post; showFollow?: boolean; last?: boolean }) {
-  const { me } = useMe(), library = useLibrary(), { like, comment } = useActions();
+  const { me } = useMe(), library = useLibrary(), { like, comment, setActive } = useActions();
+  // do this workout yourself: same exercises and sets, ready to tick off (replaces one in progress)
+  const repeat = () => Alert.alert('Do this workout?', 'Same exercises and sets, ready to tick off. Any workout in progress is replaced.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Start', onPress: () => { const w = repeatOf(p, library); setActive(() => ({ ...w, startedAt: new Date().toISOString() })); router.navigate('/train'); } },
+  ]);
   const theme = useTheme();
   const [p, setP] = useState(post);
   const [seen, setSeen] = useState(post); // a fresh post from the feed replaces the local copy
@@ -158,6 +164,9 @@ export default memo(function PostCard({ post, showFollow = true, last }: { post:
         </Pressable>
         <Pressable onPress={() => { setOpen((o) => !o); setDraft(''); }} accessibilityLabel={`Comments, ${p.comments.length}`} style={styles.action}>
           <MessageCircle size={22} color={theme.textSecondary} /><ThemedText type="smallBold" themeColor="textSecondary">{p.comments.length}</ThemedText>
+        </Pressable>
+        <Pressable onPress={repeat} accessibilityLabel="Do this workout" style={styles.action}>
+          <Repeat2 size={22} color={theme.textSecondary} /><ThemedText type="smallBold" themeColor="textSecondary">Repeat</ThemedText>
         </Pressable>
         <Pressable onPress={() => Share.share({ message: `${p.by} on Spotter: ${p.title} · ${vol(p.volume)}` })} accessibilityLabel="Share" style={styles.action}>
           <Share2 size={22} color={theme.textSecondary} />

@@ -8,7 +8,7 @@ import ExerciseThumb from "@/components/ExerciseThumb";
 import MuscleDistribution, { type Log } from "@/components/MuscleDistribution";
 import EmptyState from "@/components/EmptyState";
 import { StatsSkeleton } from "@/components/Skeleton";
-import { toUnit, wTotal } from "@/lib/units";
+import { toUnit } from "@/lib/units";
 import { POST_SELECT, sb, toPost, useStore, type Profile } from "@/lib/store";
 import { findExercise, lifters, type Post } from "@/lib/data";
 import { baseOf, estimated, heaviest, liftsOf } from "@/lib/lifting";
@@ -16,6 +16,8 @@ import MeButton from "@/components/MeButton";
 import InfoTip from "@/components/InfoTip";
 import { help } from "@/lib/help";
 import BestLifts, { type LiftPage } from "@/components/BestLifts";
+import Progress from "@/components/Progress";
+import TrainCalendar from "@/components/TrainCalendar";
 
 const WEEKS = 8;
 const DAY = 864e5;
@@ -37,7 +39,7 @@ export default function GymStats() {
     if (demo) setP({ ...demo, intake: null, avatar_url: null });
     else if (!own) sb.from("profiles").select("*").eq("id", id).maybeSingle().then(({ data }) => setP(data));
     const base = sb.from("posts").select(POST_SELECT);
-    (demo ? base.is("user_id", null).eq("by", demo.name) : base.eq("user_id", id)).order("created_at", { ascending: false }).limit(200)
+    (demo ? base.is("user_id", null).eq("by", demo.name) : base.eq("user_id", id)).order("created_at", { ascending: false }).limit(1000)
       .then(({ data }) => setPosts((data ?? []).map((r) => toPost(r, me.id))));
     if (own) sb.from("visits").select("in_at, out_at").order("in_at", { ascending: false }).limit(500).then(({ data }) => setVisits(data ?? []));
   }, [id, own, demo, me.id]);
@@ -50,13 +52,11 @@ export default function GymStats() {
   const thisWeek = weekStart(now);
   const setsOf = (x: Post) => x.exercises.reduce((n, e) => n + (e.log?.length || e.sets || 1), 0);
   const total = { workouts: posts.length, minutes: posts.reduce((n, x) => n + (x.duration ?? 0), 0), volume: posts.reduce((n, x) => n + x.volume, 0), sets: posts.reduce((n, x) => n + setsOf(x), 0), prs: posts.reduce((n, x) => n + x.prs.length, 0) };
-  const week = posts.filter((x) => new Date(x.at).getTime() >= thisWeek);
 
   const perWeek = Array.from({ length: WEEKS }, (_, i) => {
     const start = thisWeek - (WEEKS - 1 - i) * 7 * DAY;
     return { start, n: posts.filter((x) => { const t = new Date(x.at).getTime(); return t >= start && t < start + 7 * DAY; }).length };
   });
-  const maxWeek = Math.max(1, ...perWeek.map((w) => w.n));
   let streak = 0; // consecutive weeks with a workout, counting back from this week (or last week if this one is still empty)
   for (let i = WEEKS - 1 - (perWeek[WEEKS - 1].n ? 0 : 1); i >= 0 && perWeek[i].n > 0; i--) streak++;
 
@@ -104,20 +104,7 @@ export default function GymStats() {
         <MeButton size={32} className="justify-self-end" />
       </header>
 
-      <section className={section}>
-        <p className="muted text-xs font-semibold uppercase tracking-wider">This week</p>
-        <p className="mt-1 text-3xl font-bold tabular-nums">{week.length} <span className="text-base font-medium text-zinc-500">workout{week.length === 1 ? "" : "s"}</span></p>
-        <p className="muted text-sm tabular-nums">{wTotal(week.reduce((n, x) => n + x.volume, 0), u)} · {hrs(week.reduce((n, x) => n + (x.duration ?? 0), 0))} trained</p>
-        <div className="mt-4 flex h-24 items-end gap-2" aria-label={`Workouts per week, last ${WEEKS} weeks`}>
-          {perWeek.map((w, i) => (
-            <div key={w.start} className="flex flex-1 flex-col items-center gap-1">
-              <span className="text-[10px] font-semibold tabular-nums">{w.n || ""}</span>
-              <div className={`w-full rounded-md ${i === WEEKS - 1 ? "bg-lime-500" : "bg-zinc-300 dark:bg-zinc-700"}`} style={{ height: `${Math.max(4, (w.n / maxWeek) * 64)}px` }} />
-              <span className="muted text-[9px] tabular-nums">{new Date(w.start).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {posts.length > 0 && <Progress posts={posts} u={u} />}
 
       <section className={`${section} grid grid-cols-2 gap-x-4`}>
         <Big icon="flame" value={`${streak} wk`} label="Weekly streak" />
@@ -127,6 +114,8 @@ export default function GymStats() {
         <Big icon="medal" value={total.prs} label="Personal records" />
         <Big icon="barbell" value={u === "lb" ? `${Math.round(toUnit(total.volume, u) / 1000)}k lb` : `${(total.volume / 1000).toFixed(1)} t`} label="Total volume" />
       </section>
+
+      {posts.length > 0 && <TrainCalendar posts={posts} />}
 
       {sbd > 0 && <BestLifts pages={liftPages} bw={Number(p.bw)} sex={p.sex} u={u} />}
 
