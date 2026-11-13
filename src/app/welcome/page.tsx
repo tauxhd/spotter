@@ -87,6 +87,7 @@ export default function Welcome() {
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
                 Download the APK
               </a>
+              <p className="mt-3 text-sm text-zinc-400">Download not starting? <a href="/download" download="spotter.apk" className="font-medium text-lime-400 underline underline-offset-4">Get it straight from this site</a></p>
               <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
                 <li>Open the downloaded file on your phone.</li>
                 <li>Allow installs from your browser if Android asks.</li>
