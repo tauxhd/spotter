@@ -2,13 +2,14 @@
 // then every workout they've posted that you're allowed to see. Used by /u/[id] and /me.
 import { router, Stack } from 'expo-router';
 import { Share2, X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { lifters, type Post } from '@shared/data';
 import Avatar from '@/components/avatar';
 import PostCard, { FollowButton } from '@/components/post-card';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import ProfileSheet from '@/components/profile-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
@@ -21,7 +22,11 @@ import { POST_SELECT, sb, toPost, useStore, type Profile } from '@/lib/store';
 type Person = { id: string; name: string; faculty: string; avatar_url: string | null };
 type Stats = { workouts: number; followers: number; following: number };
 
+const PAGE = 20; // workouts per page on a profile
+
 export default function ProfileView({ userId, startEditing = false }: { userId: string; startEditing?: boolean }) {
+  const [more, setMore] = useState(false); // older workouts to load as you scroll
+  const pull = usePullRefresh();
   const { s, me } = useStore();
   const theme = useTheme();
   const own = userId === me.id;
@@ -41,16 +46,31 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
     if (demo) return;
     sb.rpc('profile_stats', { uid: userId }).then(({ data }) => data?.[0] && setStats(data[0]));
   }, [userId, demo, s.following.length, s.followers.length, s.posts.length]);
-  useEffect(() => {
+  const query = useCallback(() => {
     const base = sb.from('posts').select(POST_SELECT);
-    (demo ? base.is('user_id', null).eq('by', demo.name) : base.eq('user_id', userId))
-      .order('created_at', { ascending: false }).order('created_at', { referencedTable: 'comments' }).limit(30)
-      .then(({ data }) => {
-        const l = (data ?? []).map((r) => toPost(r, me.id));
-        setPosts(l);
-        if (demo) setStats({ workouts: l.length, followers: 0, following: 0 });
-      });
-  }, [userId, demo, me.id, s.posts.length]);
+    return (demo ? base.is('user_id', null).eq('by', demo.name) : base.eq('user_id', userId)).order('created_at', { ascending: false }).order('created_at', { referencedTable: 'comments' });
+  }, [demo, userId]);
+  // newest PAGE; a refresh keeps the older ones already scrolled in
+  useEffect(() => {
+    query().limit(PAGE).then(({ data }) => {
+      const fresh = (data ?? []).map((r) => toPost(r, me.id)), cut = fresh.at(-1)?.at ?? '';
+      setPosts((x) => [...fresh, ...(fresh.length === PAGE && x ? x.filter((y) => y.at < cut) : [])]);
+      setMore(fresh.length === PAGE);
+      if (demo) setStats({ workouts: fresh.length, followers: 0, following: 0 });
+    });
+  }, [query, demo, me.id, s.posts.length, s.rev]);
+  // the next PAGE, older than the last one shown (when you scroll near the bottom)
+  const loading = useRef(false);
+  const loadMore = useCallback(async () => {
+    const last = posts?.at(-1);
+    if (loading.current || !more || !last) return;
+    loading.current = true;
+    const { data } = await query().lt('created_at', last.at).limit(PAGE);
+    loading.current = false;
+    const older = (data ?? []).map((r) => toPost(r, me.id));
+    setPosts((x) => [...(x ?? []), ...older.filter((o) => !x?.some((y) => y.id === o.id))]);
+    setMore(older.length === PAGE);
+  }, [posts, more, query, me.id]);
 
   async function openList(kind: 'followers' | 'following') {
     setList({ kind, people: null });
@@ -69,7 +89,8 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
   );
 
   return (
-    <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }}>
+    <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }} refreshControl={pull} scrollEventThrottle={200}
+      onScroll={({ nativeEvent: n }) => { if (n.layoutMeasurement.height + n.contentOffset.y > n.contentSize.height - 1200) loadMore(); }}>
       <Stack.Screen options={{
         headerTitleAlign: 'center',
         headerRight: () => (
@@ -119,7 +140,8 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
           {own && <Button style={{ marginTop: 16, paddingVertical: 10 }} onPress={() => router.navigate('/train')}>Start a workout</Button>}
         </EmptyState>
       )}
-      {posts?.map((post, i) => <PostCard key={post.id} post={post} showFollow={false} last={i === posts.length - 1} />)}
+      {posts?.map((post, i) => <PostCard key={post.id} post={post} showFollow={false} last={i === posts.length - 1 && !more} />)}
+      {!!posts?.length && <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: 20 }}>{more ? 'Loading more…' : 'That’s every workout'}</ThemedText>}
 
       <Modal visible={!!list} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setList(null)}>
         <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>

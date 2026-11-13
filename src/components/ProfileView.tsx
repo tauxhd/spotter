@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Share2, X } from "lucide-react";
@@ -16,6 +16,8 @@ type Person = { id: string; name: string; faculty: string; avatar_url: string | 
 type Stats = { workouts: number; followers: number; following: number };
 
 // Social-style profile: photo, Workouts / Followers / Following, then every workout they've posted (that you're allowed to see).
+const PAGE = 20; // workouts per page on a profile
+
 export default function ProfileView({ userId }: { userId: string }) {
   const { s, me, demo: isDemo } = useStore();
   const router = useRouter();
@@ -26,8 +28,14 @@ export default function ProfileView({ userId }: { userId: string }) {
   const [other, setOther] = useState<Profile | null | undefined>(own ? me : undefined);
   const [stats, setStats] = useState<Stats | null>(null);
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [more, setMore] = useState(false); // older workouts to load as you scroll
+  const end = useRef<HTMLDivElement>(null);
   const [list, setList] = useState<{ kind: "followers" | "following"; people: Person[] | null } | null>(null);
   const p = own ? me : other;
+  const query = useCallback(() => {
+    const base = sb.from("posts").select(POST_SELECT);
+    return (demo ? base.is("user_id", null).eq("by", demo.name) : base.eq("user_id", userId)).order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" });
+  }, [demo, userId]);
 
   useEffect(() => {
     if (own) return;
@@ -47,15 +55,34 @@ export default function ProfileView({ userId }: { userId: string }) {
       setStats({ workouts: s.sessions.length, followers: 0, following: s.following.length });
       return;
     }
-    const base = sb.from("posts").select(POST_SELECT);
-    (demo ? base.is("user_id", null).eq("by", demo.name) : base.eq("user_id", userId))
-      .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).limit(30)
-      .then(({ data }) => {
-        const list = (data ?? []).map((r) => toPost(r, me.id));
-        setPosts(list);
-        if (demo) setStats({ workouts: list.length, followers: 0, following: 0 });
-      });
-  }, [userId, demo, me.id, s.posts, own, isDemo, s.sessions.length, s.following.length]);
+    // newest PAGE; a refresh keeps the older ones already scrolled in
+    query().limit(PAGE).then(({ data }) => {
+      const fresh = (data ?? []).map((r) => toPost(r, me.id)), cut = fresh.at(-1)?.at ?? "";
+      setPosts((x) => [...fresh, ...(fresh.length === PAGE && x ? x.filter((y) => y.at < cut) : [])]);
+      setMore(fresh.length === PAGE);
+      if (demo) setStats({ workouts: fresh.length, followers: 0, following: 0 });
+    });
+  }, [userId, demo, me.id, s.posts, own, isDemo, s.sessions.length, s.following.length, query]);
+
+  // the next PAGE of this person's workouts, older than the last one shown
+  const loading = useRef(false);
+  const loadMore = useCallback(async () => {
+    const last = posts?.at(-1);
+    if (loading.current || !more || !last) return;
+    loading.current = true;
+    const { data } = await query().lt("created_at", last.at).limit(PAGE);
+    loading.current = false;
+    const older = (data ?? []).map((r) => toPost(r, me.id));
+    setPosts((x) => [...(x ?? []), ...older.filter((o) => !x?.some((y) => y.id === o.id))]);
+    setMore(older.length === PAGE);
+  }, [posts, more, query, me.id]);
+  useEffect(() => {
+    const el = end.current;
+    if (!el || !more) return;
+    const io = new IntersectionObserver((e) => { if (e[0].isIntersecting) loadMore(); }, { rootMargin: "1200px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loadMore, more]);
 
   async function openList(kind: "followers" | "following") {
     setList({ kind, people: null });
@@ -130,6 +157,7 @@ export default function ProfileView({ userId }: { userId: string }) {
         </EmptyState>
       )}
       {posts?.map((post) => <PostCard key={post.id} post={post} showFollow={false} />)}
+      {!!posts?.length && <div ref={end} className="muted py-8 text-center text-sm">{more ? "Loading more…" : "That’s every workout"}</div>}
 
       {list && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal aria-label={list.kind === "followers" ? "Followers" : "Following"} onClick={() => setList(null)}>
