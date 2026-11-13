@@ -198,7 +198,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   if (me === undefined) return <Splash />;
 
   const saveProfile: Ctx["saveProfile"] = async (p) => {
-    const { data, error } = await sb.from("profiles").upsert({ id: uid, ...p }).select().single();
+    // the photo is only changed by setAvatar: a form opened before a new photo still holds the old one, and saving it
+    // would wipe the photo that was just uploaded
+    const { avatar_url: _, ...fields } = p as typeof p & { avatar_url?: string | null }; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const { data, error } = await sb.from("profiles").upsert({ id: uid, ...fields }).select().single();
     if (error) throw error;
     setMe(data);
     await loadMine(data.id);

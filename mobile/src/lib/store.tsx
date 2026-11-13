@@ -324,6 +324,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await sb.from("visits").update({ out_at: new Date().toISOString() }).is("out_at", null);
     },
     async updateProfile(p) { // on screen at once; put back if the save fails
+      const { avatar_url: _, ...rest } = p as typeof p & { avatar_url?: string | null }; // eslint-disable-line @typescript-eslint/no-unused-vars
+      p = rest; // the photo only changes through setAvatar, so an older form can't wipe a new one
       const before = me;
       setMe({ ...me, ...p });
       const { data, error } = await sb.from("profiles").update(p).eq("id", me.id).select().single();
