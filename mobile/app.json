@@ -17,7 +17,13 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "my.apu.spotter",
-      "versionCode": 4
+      "versionCode": 4,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "output": "single",
@@ -42,6 +48,23 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "9f32282c-cb97-4413-b5ec-7d76a546e49a"
+      }
+    },
+    "owner": "tauxhd",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9f32282c-cb97-4413-b5ec-7d76a546e49a"
     }
   }
 }

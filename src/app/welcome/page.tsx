@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 // The Android build, attached to the repo's latest GitHub release (set NEXT_PUBLIC_APK_URL to host it elsewhere).
+const EXPO_GO = "exp://u.expo.dev/9f32282c-cb97-4413-b5ec-7d76a546e49a?channel-name=main&runtime-version=exposdk:58.0.0";
 const APK = process.env.NEXT_PUBLIC_APK_URL ?? "https://github.com/tauxhd/spotter/releases/latest/download/spotter.apk";
 
 const features: [icon: string, title: string, text: string][] = [
@@ -97,12 +98,25 @@ export default function Welcome() {
                   ))}
                 </tbody>
               </table>
+
               <p className="mt-3 text-sm text-zinc-400">Download not starting? <a href="/download" download="spotter.apk" className="font-medium text-lime-400 underline underline-offset-4">Get it straight from this site</a></p>
               <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
                 <li>Open the downloaded file on your phone.</li>
                 <li>Allow installs from your browser if Android asks.</li>
                 <li>Open Spotter and start the quest.</li>
               </ol>
+
+              {/* Expo Go: the same app, loaded from EAS Update (channel "main" always serves the newest publish) */}
+              <h3 className="mt-12 text-2xl font-semibold tracking-tight">Or open it in Expo Go</h3>
+              <p className="mt-1 text-zinc-400">No install file. Works on Android and iPhone, on any network.</p>
+              <div className="mt-5 flex items-center gap-5">
+                <Image src="/expo-go-qr.svg" alt="QR code that opens Spotter in Expo Go" width={128} height={128} className="h-32 w-32 shrink-0 rounded-lg" unoptimized />
+                <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-400">
+                  <li>Get Expo Go from the <a href="https://play.google.com/store/apps/details?id=host.exp.exponent" className="text-lime-400 underline underline-offset-4">Play Store</a> or <a href="https://apps.apple.com/app/expo-go/id982107779" className="text-lime-400 underline underline-offset-4">App Store</a>.</li>
+                  <li>Scan the code with your camera (iPhone) or inside Expo Go (Android).</li>
+                  <li>On your phone already? <a href={EXPO_GO} className="text-lime-400 underline underline-offset-4">Open in Expo Go</a></li>
+                </ol>
+              </div>
             </div>
           </div>
         </div>
