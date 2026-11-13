@@ -10,12 +10,12 @@ import { useStore } from "@/lib/store";
 
 export default function Settings() {
   const router = useRouter();
-  const { me, signOut } = useStore();
+  const { me, signOut, demo } = useStore();
   const [busy, setBusy] = useState(false);
   const q = typeof window !== "undefined" ? location.search : "";
 
   async function logOut() {
-    if (!confirm("Log out of Spotter on this device?\n\nThis demo signs you in with your TP number only, so logging back in sets up a new profile.")) return;
+    if (!confirm(demo ? "Leave the demo and create your own account?" : "Log out of Spotter on this device?\n\nSign back in any time with your TP number and password.")) return;
     setBusy(true);
     await signOut();
   }
@@ -49,7 +49,7 @@ export default function Settings() {
 
       <button onClick={logOut} disabled={busy}
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 font-semibold text-red-600 transition active:scale-[0.98] disabled:opacity-50 dark:text-red-400">
-        <LogOut size={18} />{busy ? "Logging out…" : "Log out"}
+        <LogOut size={18} />{busy ? "Logging out…" : demo ? "Create my own account" : "Log out"}
       </button>
     </div>
   );

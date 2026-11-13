@@ -344,7 +344,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       async setAvatar(file) { setMe({ ...me, avatar_url: URL.createObjectURL(file) }); },
       async saveRoutine(rt) { const row = { id: rt.id ?? id(), name: rt.name.trim() || "My routine", exercises: rt.exercises }; setS((x) => ({ ...x, routines: [row, ...x.routines.filter((y) => y.id !== row.id)] })); },
       async deleteRoutine(rid) { setS((x) => ({ ...x, routines: x.routines.filter((y) => y.id !== rid) })); },
-      async signOut() { location.href = "/?demo=1"; }, // a fresh demo
+      async signOut() { try { sessionStorage.removeItem("spotter:demo"); } catch {} location.href = "/"; }, // leave the demo: the real sign-up / sign-in quest
     } satisfies Partial<Ctx>);
   }
 

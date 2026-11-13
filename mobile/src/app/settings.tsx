@@ -11,7 +11,7 @@ import { Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 
-const WARN = 'This demo signs you in with your TP number only, so logging back in sets up a new profile.';
+const WARN = 'Sign back in any time with your TP number and password.';
 
 export default function Settings() {
   const { me, signOut } = useStore();

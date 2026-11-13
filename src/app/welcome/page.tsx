@@ -77,7 +77,7 @@ export default function Welcome() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Take it for a spin</h2>
             <p className="mt-4 max-w-md text-lg text-zinc-300">
-              <span className="font-semibold text-lime-400"><span className="hidden md:inline">← </span>The phone is live.</span> It&apos;s the real app, signed in to a demo student with eight weeks of training. Log a workout, add a meal, check the ranks or find a machine on the 3D map. Nothing you do here is saved.
+              <span className="font-semibold text-lime-400"><span className="hidden md:inline">← </span>The phone is live.</span> It&apos;s the real app, signed in to a demo student with eight weeks of training. Log a workout, add a meal, check the ranks or find a machine on the 3D map. Nothing you do here is saved; to make your own account, open Me, then Settings, then Create my own account.
             </p>
 
             <div id="download" className="mt-14 max-w-md scroll-mt-20">
