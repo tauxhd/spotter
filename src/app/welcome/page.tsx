@@ -73,7 +73,7 @@ export default function Welcome() {
                 <DemoFrame src="/?demo=1&t=18:00" />
               </div>
             </div>
-            <DemoFullscreen src="/?demo=1&t=18:00" />
+            <DemoFullscreen src="/?demo=1&t=18:00&full=1" />
           </div>
 
           <div>

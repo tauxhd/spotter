@@ -101,7 +101,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const d = demoAccount();
       setDemo(true);
       // shown in the landing page's phone frame: a phone has no scrollbar, and inside the frame the mouse is hidden (the frame draws a fingertip dot)
-      document.head.appendChild(Object.assign(document.createElement("style"), { textContent: `html{scrollbar-width:none}html::-webkit-scrollbar{display:none}${self !== top ? "*{cursor:none !important}" : ""}` }));
+      document.head.appendChild(Object.assign(document.createElement("style"), { textContent: `html{scrollbar-width:none}html::-webkit-scrollbar{display:none}${self !== top && !location.search.includes("full=1") ? "*{cursor:none !important}" : ""}` }));
       setMe(d.me);
       setS((x) => ({ ...x, sessions: d.sessions, food: d.food, weights: d.weights, routines: d.routines }));
       sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort").then(({ data }) => data && setS((x) => ({ ...x, library: data })));
