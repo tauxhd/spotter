@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import DemoFrame from "@/components/DemoFrame";
+import DemoFullscreen from "@/components/DemoFullscreen";
 import HeroScroll from "@/components/HeroScroll";
 
 // The landing page: what Spotter is, a live demo of the web app in a phone frame (a made-up account, /?demo=1, nothing is
@@ -72,6 +73,7 @@ export default function Welcome() {
                 <DemoFrame src="/?demo=1&t=18:00" />
               </div>
             </div>
+            <DemoFullscreen src="/?demo=1&t=18:00" />
           </div>
 
           <div>
