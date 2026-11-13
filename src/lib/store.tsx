@@ -16,7 +16,7 @@ export type FoodEntry = { id: string; name: string; kcal: number; p: number; c: 
 export type WeightEntry = { id: string; kg: number; at: string };
 type Active = { title: string; startedAt: string; exercises: ExerciseLog[] } | null;
 
-type State = { clockedIn: string | null; sessions: Session[]; food: FoodEntry[]; weights: WeightEntry[]; posts: Post[]; following: string[]; followers: string[]; library: Exercise[]; routines: Routine[] };
+type State = { clockedIn: string | null; sessions: Session[]; food: FoodEntry[]; weights: WeightEntry[]; posts: Post[]; morePosts: boolean; rev: number; following: string[]; followers: string[]; library: Exercise[]; routines: Routine[] };
 type Ctx = {
   s: State & { active: Active };
   me: Profile;
@@ -39,11 +39,15 @@ type Ctx = {
   deleteRoutine: (id: string) => Promise<void>;
   unfollow: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
+  loadMore: () => Promise<void>;
+  refresh: () => Promise<void>; // pull to refresh: posts, your own data, and s.rev for pages that fetch their own
 };
 
 const C = createContext<Ctx | null>(null);
 const ACTIVE = "spotter:active"; // the in-progress workout stays on the device until finished
-const CACHE = "spotter:cache", LIB = "spotter:library"; // last-seen data, so the app opens instantly
+const CACHE = "spotter:cache", LIB = "spotter:library";
+const PAGE = 20; // feed posts per page
+let paging = false; // a feed page is loading (one store per app, so module-level is enough) // last-seen data, so the app opens instantly
 
 export type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 // What a post row joins to, and how it becomes a Post. Shared by the feed and profile pages.
@@ -60,19 +64,33 @@ export const toPost = (r: Row, uid: string): Post => ({
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [uid, setUid] = useState<string | null>(null);
   const [me, setMe] = useState<Profile | null | undefined>(undefined); // undefined = loading, null = needs onboarding
-  const [s, setS] = useState<State>({ clockedIn: null, sessions: [], food: [], weights: [], posts: [], following: [], followers: [], library: [], routines: [] });
+  const [s, setS] = useState<State>({ clockedIn: null, sessions: [], food: [], weights: [], posts: [], morePosts: true, rev: 0, following: [], followers: [], library: [], routines: [] });
   const [active, setActiveRaw] = useState<Active>(null);
   const [err, setErr] = useState<string | null>(null);
   const [demo, setDemo] = useState(false);
 
+  // The feed loads PAGE posts, then more as you scroll (loadMore). A refresh reloads the newest PAGE and keeps the older
+  // ones already scrolled in, so a live update never collapses the list.
   const loadPosts = useCallback(async (id: string) => {
-    const { data, error } = await sb.from("posts")
-      .select(POST_SELECT)
-      .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).limit(50);
+    const { data, error } = await sb.from("posts").select(POST_SELECT)
+      .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).limit(PAGE);
     if (error) console.error("feed", error.message);
-    if (data) setS((x) => ({ ...x, posts: data.map((r) => toPost(r, id)) }));
+    if (data) setS((x) => {
+      const fresh = data.map((r) => toPost(r, id)), cut = fresh.at(-1)?.at ?? "";
+      const older = fresh.length === PAGE ? x.posts.filter((p) => p.at < cut) : [];
+      return { ...x, morePosts: older.length ? x.morePosts : fresh.length === PAGE, posts: [...fresh, ...older] };
+    });
   }, []);
-
+  // the next page of the feed: PAGE posts older than the last one shown
+  const loadMorePosts = useCallback(async (id: string, posts: Post[], more: boolean) => {
+    if (paging || !more || !posts.length) return;
+    paging = true;
+    try {
+      const { data } = await sb.from("posts").select(POST_SELECT)
+        .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).lt("created_at", posts[posts.length - 1].at).limit(PAGE);
+      if (data) setS((x) => ({ ...x, morePosts: data.length === PAGE, posts: [...x.posts, ...data.map((r) => toPost(r, id)).filter((p) => !x.posts.some((y) => y.id === p.id))] }));
+    } finally { paging = false; }
+  }, []);
   const loadMine = useCallback(async (id: string) => {
     const [v, w, f, wl, fo, ro] = await Promise.all([
       sb.from("visits").select("in_at").is("out_at", null).order("in_at", { ascending: false }).limit(1),
@@ -306,6 +324,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     async unfollow(id) {
       setS((x) => ({ ...x, following: x.following.filter((y) => y !== id) }));
       await sb.from("follows").delete().match({ follower: me.id, followee: id });
+    },
+    loadMore: () => loadMorePosts(me.id, s.posts, s.morePosts), // the next page of the feed (Feed calls it near the bottom)
+    async refresh() {
+      setS((x) => ({ ...x, rev: x.rev + 1 }));
+      await Promise.all([loadPosts(me.id), demo ? null : loadMine(me.id)]);
     },
     async signOut() {
       try { localStorage.removeItem(ACTIVE); localStorage.removeItem(CACHE); } catch {}

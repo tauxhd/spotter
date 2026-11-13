@@ -22,6 +22,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
 import { EmptyState, Icon, Section, Title } from '@/components/ui/kit';
 import { BottomTabInset, Lime, Red, Spring, SpringBounce } from '@/constants/theme';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { setTypeColor, supersetHex } from '@/lib/tw';
@@ -52,6 +53,7 @@ export default function Train() {
 // ---------- routines (nothing in progress) ----------
 function Routines() {
   const { s, setActive } = useStore();
+  const pull = usePullRefresh();
   const theme = useTheme();
   const lib = new Map(s.library.map((e) => [e.name, e]));
   const start = (r: { name: string; exercises: ExerciseLog[] } | null) => {
@@ -78,7 +80,7 @@ function Routines() {
     </Animated.View>
   );
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: BottomTabInset + 40, gap: 16 }}>
+    <ScrollView refreshControl={pull} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: BottomTabInset + 40, gap: 16 }}>
       <Title icon="train">Train</Title>
       <View style={{ gap: 8 }}>
         <ThemedText type="smallBold" style={{ fontSize: 16 }}>Quick start</ThemedText>

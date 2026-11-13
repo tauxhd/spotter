@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState, Icon, Title } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
 import { BottomTabInset, Lime, Spring } from '@/constants/theme';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore, type Profile } from '@/lib/store';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,7 @@ function Stat({ icon, children }: { icon: string; children: React.ReactNode }) {
 
 export default function Ranks() {
   const { s, me } = useStore();
+  const pull = usePullRefresh();
   const theme = useTheme();
   const [others, setOthers] = useState<Omit<Profile, 'intake'>[]>([]);
   const [group, setGroup] = useState<string>('Powerlifting');
@@ -65,12 +67,12 @@ export default function Ranks() {
 
   useEffect(() => {
     sb.from('profiles').select('id, name, faculty, sex, bw, squat, bench, deadlift, avatar_url').neq('id', me.id).then(({ data }) => data && setOthers(data));
-  }, [me.id]);
+  }, [me.id, s.rev]); // s.rev: pull to refresh
   useEffect(() => {
     if (gym) return;
     sb.from('results').select('user_id, value').eq('event', ev.id)
       .then(({ data }) => setResults(Object.fromEntries((data ?? []).map((r) => [r.user_id, Number(r.value)]))));
-  }, [ev.id, gym]);
+  }, [ev.id, gym, s.rev]);
 
   const rows = useMemo(() => {
     const lifts = <T extends { squat: number; bench: number; deadlift: number }>(l: T) => ({ ...l, total: l.squat + l.bench + l.deadlift });
@@ -113,7 +115,7 @@ export default function Ranks() {
   const card = [styles.card, { borderBottomColor: theme.border }];
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
+      <ScrollView refreshControl={pull} contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
         <Title icon="ranks" info={ranksHelp(standard, ev.p4p, ev.lower, classSex, gym)}>Ranks</Title>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 20, paddingHorizontal: 16 }} style={[styles.bleed, styles.tabRow, { borderColor: theme.border }]}>

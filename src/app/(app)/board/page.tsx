@@ -51,13 +51,13 @@ export default function Ranks() {
     // ponytail: whole table client-side; move ranking into a SQL view when there are thousands of students
     sb.from("profiles").select("id, name, faculty, sex, bw, squat, bench, deadlift, avatar_url").neq("id", me.id)
       .then(({ data }) => data && setOthers(data));
-  }, [me.id]);
+  }, [me.id, s.rev]); // s.rev: pull to refresh
 
   useEffect(() => {
     if (gym) return;
     sb.from("results").select("user_id, value").eq("event", ev.id)
       .then(({ data }) => setResults(Object.fromEntries((data ?? []).map((r) => [r.user_id, Number(r.value)]))));
-  }, [ev.id, gym]);
+  }, [ev.id, gym, s.rev]);
 
   const lifts = <T extends { squat: number; bench: number; deadlift: number }>(l: T) => ({ ...l, total: l.squat + l.bench + l.deadlift });
   const you = { ...me, name: `${me.name} (you)`, verified: false, ...lifts(liftsOf(heaviest(baseOf(me), s.sessions))) };

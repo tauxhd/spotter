@@ -18,6 +18,7 @@ import { H2, Icon, Title } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
 import { ChevronRight, Plus, Search, Sparkles, Trash2 } from 'lucide-react-native';
 import { BottomTabInset, Lime, Red, Spring } from '@/constants/theme';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 import { img } from '@/lib/web';
@@ -111,6 +112,7 @@ const Menu = memo(function Menu({ onAdd }: { onAdd: (f: Food) => void }) {
 
 export default function Eat() {
   const { s, me, addFood, removeFood } = useStore();
+  const pull = usePullRefresh();
   const [view, setView] = useState<'today' | 'progress'>('today');
   const theme = useTheme();
   const [busy, setBusy] = useState(false);
@@ -159,7 +161,7 @@ export default function Eat() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
+      <ScrollView refreshControl={pull} contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]} keyboardShouldPersistTaps="handled">
         <Title icon="eat" sub={
           <Pressable onPress={() => router.push('/plan')} hitSlop={6} style={{ flexDirection: 'row', alignItems: 'center' }}>
             <ThemedText type="small" themeColor="textSecondary">{goals[n.goal].label} · {targets.kcal} kcal target</ThemedText><ChevronRight size={14} color={theme.textSecondary} />

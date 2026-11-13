@@ -1,7 +1,7 @@
 // Feed: what APU is lifting, live. Suggested people to follow, then every post (the website's /feed).
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,15 +11,16 @@ import { ThemedText } from '@/components/themed-text';
 import { EmptyState, Title } from '@/components/ui/kit';
 import WorkoutPill from '@/components/workout-pill';
 import { BottomTabInset, Lime } from '@/constants/theme';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore } from '@/lib/store';
 
 type Suggestion = { id: string; name: string; faculty: string; avatar_url: string | null };
 
 export default function Feed() {
-  const { s, me, refresh } = useStore();
+  const { s, me, loadMore } = useStore();
+  const pull = usePullRefresh();
   const theme = useTheme();
-  const [busy, setBusy] = useState(false);
   const [people, setPeople] = useState<Suggestion[]>([]);
   useEffect(() => { sb.from('profiles').select('id, name, faculty, avatar_url').neq('id', me.id).limit(20).then(({ data }) => data && setPeople(data)); }, [me.id]);
   const suggested = people.filter((p) => !s.following.includes(p.id));
@@ -32,7 +33,9 @@ export default function Feed() {
         // render a few cards at a time and drop the off-screen ones (posts are tall, with photos and videos)
         initialNumToRender={3} maxToRenderPerBatch={3} windowSize={7}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: BottomTabInset + 90 }}
-        refreshControl={<RefreshControl refreshing={busy} tintColor={Lime} onRefresh={async () => { setBusy(true); await refresh(); setBusy(false); }} />}
+        refreshControl={pull}
+        onEndReached={() => { loadMore(); }} onEndReachedThreshold={1.5}
+        ListFooterComponent={s.posts.length ? <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: 20 }}>{s.morePosts ? 'Loading more…' : 'You\'re all caught up'}</ThemedText> : undefined}
         ListHeaderComponent={
           <View style={{ gap: 16, marginBottom: 4 }}>
             <Title icon="feed" sub={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><View style={styles.live} /><ThemedText type="small" themeColor="textSecondary">What APU is lifting, live</ThemedText></View>}>Feed</Title>

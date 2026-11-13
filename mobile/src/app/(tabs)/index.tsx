@@ -18,6 +18,7 @@ import { Bone } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Press } from '@/components/ui/button';
 import { BottomTabInset, Lime } from '@/constants/theme';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore } from '@/lib/store';
 import { img } from '@/lib/web';
@@ -59,6 +60,7 @@ function HourBar({ p, now, i }: { p: number; now: boolean; i: number }) {
 
 export default function GymHome() {
   const { s, me, clockIn, clockOut } = useStore();
+  const pull = usePullRefresh();
   const theme = useTheme();
   const [now, setNow] = useState(() => new Date());
   const [scanning, setScanning] = useState(false);
@@ -104,7 +106,7 @@ export default function GymHome() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]}>
+      <ScrollView refreshControl={pull} contentContainerStyle={[styles.page, { paddingBottom: BottomTabInset + 40 }]}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <ThemedText type="small" themeColor="textSecondary">Hey {me.name} 👋</ThemedText>

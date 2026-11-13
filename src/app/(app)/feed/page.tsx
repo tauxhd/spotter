@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
@@ -11,7 +11,16 @@ import MeButton from "@/components/MeButton";
 type Suggestion = { id: string; name: string; faculty: string; avatar_url: string | null };
 
 export default function Feed() {
-  const { s, me } = useStore();
+  const { s, me, loadMore } = useStore();
+  // the next page loads when the bottom of the list comes within ~1.5 screens
+  const end = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = end.current;
+    if (!el || !s.morePosts) return;
+    const io = new IntersectionObserver((e) => { if (e[0].isIntersecting) loadMore(); }, { rootMargin: "1200px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loadMore, s.morePosts, s.posts.length]);
   const [people, setPeople] = useState<Suggestion[]>([]);
 
   useEffect(() => {
@@ -48,6 +57,7 @@ export default function Feed() {
       )}
 
       <div className="stagger">{s.posts.map((p) => <PostCard key={p.id} post={p} />)}</div>
+      <div ref={end} className="muted py-8 text-center text-sm">{s.posts.length ? (s.morePosts ? "Loading more…" : "You’re all caught up") : null}</div>
     </div>
   );
 }

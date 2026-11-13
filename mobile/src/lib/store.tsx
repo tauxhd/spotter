@@ -23,7 +23,7 @@ export type Active = { title: string; startedAt: string; exercises: ExerciseLog[
 export type Media = { uri: string; type: "image" | "video"; mime?: string; file?: Blob };
 export type Row = Record<string, any>;
 
-type State = { sessions: Session[]; posts: Post[]; library: Exercise[]; routines: Routine[]; active: Active; clockedIn: string | null; food: FoodEntry[]; weights: WeightEntry[]; following: string[]; followers: string[] };
+type State = { sessions: Session[]; posts: Post[]; morePosts: boolean; rev: number; library: Exercise[]; routines: Routine[]; active: Active; clockedIn: string | null; food: FoodEntry[]; weights: WeightEntry[]; following: string[]; followers: string[] };
 type Ctx = {
   s: State;
   me: Profile;
@@ -35,6 +35,7 @@ type Ctx = {
   follow: (id: string) => Promise<void>;
   unfollow: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
+  loadMore: () => Promise<void>;
   refresh: () => Promise<void>;
   saveRoutine: (r: { id?: string; name: string; exercises: ExerciseLog[] }) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
@@ -46,7 +47,7 @@ type Ctx = {
   removeFood: (id: string) => Promise<void>;
   addWeight: (kg: number) => Promise<void>;
 };
-const ACTIONS = ["setActive", "finishWorkout", "like", "comment", "follow", "unfollow", "signOut", "refresh", "saveRoutine", "deleteRoutine",
+const ACTIONS = ["setActive", "finishWorkout", "like", "comment", "follow", "unfollow", "signOut", "refresh", "loadMore", "saveRoutine", "deleteRoutine",
   "clockIn", "clockOut", "updateProfile", "setAvatar", "addFood", "removeFood", "addWeight"] as const satisfies readonly (keyof Ctx)[];
 type Action = (typeof ACTIONS)[number];
 export type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "onboarding"; save: (p: Omit<Profile, "id">) => Promise<void> } | { kind: "ready" };
@@ -60,6 +61,8 @@ const M = createContext<{ me: Profile; u: Unit } | null>(null);
 const L = createContext<Exercise[]>([]);
 const F = createContext<{ following: string[]; followers: string[] }>({ following: [], followers: [] });
 const ACTIVE = "spotter:active";
+const PAGE = 20; // feed posts per page
+let paging = false; // a feed page is loading (one store per app, so module-level is enough)
 const CACHE = "spotter:cache", LIB = "spotter:library"; // last-seen data, so the app opens instantly
 // read once at start-up (localStorage here is expo-sqlite, synchronous): the first frame is your app, not a spinner
 const read = (k: string) => { try { return JSON.parse(localStorage.getItem(k) ?? "null"); } catch { return null; } };
@@ -91,13 +94,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [s, setS] = useState<State>(() => {
     let active: Active = null;
     try { const a = localStorage.getItem(ACTIVE); if (a) active = JSON.parse(a); } catch {}
-    return { sessions: [], posts: [], routines: [], clockedIn: null, food: [], weights: [], following: [], followers: [], ...cached?.s, library: read(LIB) ?? [], active };
+    return { sessions: [], posts: [], morePosts: true, rev: 0, routines: [], clockedIn: null, food: [], weights: [], following: [], followers: [], ...cached?.s, library: read(LIB) ?? [], active };
   });
 
+  // The feed loads PAGE posts, then more as you scroll (loadMore). A refresh reloads the newest PAGE and keeps the older
+  // ones already scrolled in, so a live update never collapses the list.
   const loadPosts = useCallback(async (id: string) => {
-    const { data } = await sb.from("posts").select(POST_SELECT)
-      .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).limit(50);
-    if (data) setS((x) => ({ ...x, posts: data.map((r) => toPost(r, id)) }));
+    const { data, error } = await sb.from("posts").select(POST_SELECT)
+      .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).limit(PAGE);
+    if (error) console.error("feed", error.message);
+    if (data) setS((x) => {
+      const fresh = data.map((r) => toPost(r, id)), cut = fresh.at(-1)?.at ?? "";
+      const older = fresh.length === PAGE ? x.posts.filter((p) => p.at < cut) : [];
+      return { ...x, morePosts: older.length ? x.morePosts : fresh.length === PAGE, posts: [...fresh, ...older] };
+    });
+  }, []);
+  // the next page of the feed: PAGE posts older than the last one shown
+  const loadMorePosts = useCallback(async (id: string, posts: Post[], more: boolean) => {
+    if (paging || !more || !posts.length) return;
+    paging = true;
+    try {
+      const { data } = await sb.from("posts").select(POST_SELECT)
+        .order("created_at", { ascending: false }).order("created_at", { referencedTable: "comments" }).lt("created_at", posts[posts.length - 1].at).limit(PAGE);
+      if (data) setS((x) => ({ ...x, morePosts: data.length === PAGE, posts: [...x.posts, ...data.map((r) => toPost(r, id)).filter((p) => !x.posts.some((y) => y.id === p.id))] }));
+    } finally { paging = false; }
   }, []);
   const loadMine = useCallback(async (id: string) => {
     const [w, ro, v, f, wl, fo] = await Promise.all([
@@ -251,7 +271,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setS((x) => ({ ...x, sessions: [], posts: [], routines: [], active: null, clockedIn: null, food: [], weights: [], following: [], followers: [] }));
       await boot(); // a fresh session with no profile -> the sign-in quest
     },
-    refresh: () => loadPosts(me.id),
+    async refresh() {
+      setS((x) => ({ ...x, rev: x.rev + 1 }));
+      await Promise.all([loadPosts(me.id), loadMine(me.id)]);
+    },
+    loadMore: () => loadMorePosts(me.id, s.posts, s.morePosts), // the next page of the feed (Feed calls it near the bottom)
     async saveRoutine(r) {
       const row = { name: r.name.trim().slice(0, 60) || "My routine", exercises: r.exercises, updated_at: new Date().toISOString() };
       const { data, error } = r.id
