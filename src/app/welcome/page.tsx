@@ -44,12 +44,12 @@ export default function Welcome() {
 
       <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Everything between the door and your last set</h2>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-14 grid gap-x-12 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(([icon, title, text]) => (
-            <div key={title} className="rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10">
-              <Image src={`/icons/${icon}.webp`} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
-              <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-              <p className="mt-1 text-zinc-400">{text}</p>
+            <div key={title}>
+              <Image src={`/icons/${icon}.webp`} alt="" width={56} height={56} className="h-14 w-14 object-contain" />
+              <h3 className="mt-5 text-xl font-semibold tracking-tight">{title}</h3>
+              <p className="mt-2 max-w-xs text-zinc-400">{text}</p>
             </div>
           ))}
         </div>
@@ -59,6 +59,10 @@ export default function Welcome() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-[auto_1fr] md:gap-16">
           {/* the real web app, signed in to a demo account with made-up data */}
           <div className="mx-auto w-[min(390px,calc(100vw-2rem),calc((100dvh-10rem)*0.462))]">
+            <p className="mb-4 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-lime-400">
+              <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-400 opacity-75" /><span className="relative inline-flex h-2 w-2 rounded-full bg-lime-400" /></span>
+              Live demo · tap around
+            </p>
             <div className="relative aspect-[390/844] rounded-[3.2rem] bg-zinc-800 p-[10px] shadow-2xl shadow-lime-400/10 ring-1 ring-white/15">
               <div className="absolute -left-[3px] top-28 h-8 w-[3px] rounded-l bg-zinc-700" aria-hidden />
               <div className="absolute -left-[3px] top-40 h-14 w-[3px] rounded-l bg-zinc-700" aria-hidden />
@@ -71,14 +75,13 @@ export default function Welcome() {
           </div>
 
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-lime-400">Live demo</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Take it for a spin</h2>
-            <p className="mt-4 max-w-md text-lg text-zinc-400">
-              This is the real app, signed in to a demo student with eight weeks of training. Log a workout, add a meal, check the ranks or find a machine on the 3D map. Nothing you do here is saved.
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Take it for a spin</h2>
+            <p className="mt-4 max-w-md text-lg text-zinc-300">
+              <span className="font-semibold text-lime-400"><span className="hidden md:inline">← </span>The phone is live.</span> It&apos;s the real app, signed in to a demo student with eight weeks of training. Log a workout, add a meal, check the ranks or find a machine on the 3D map. Nothing you do here is saved.
             </p>
 
-            <div id="download" className="mt-10 max-w-md scroll-mt-20 rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/10">
-              <h3 className="text-xl font-semibold">Try it yourself on Android</h3>
+            <div id="download" className="mt-14 max-w-md scroll-mt-20">
+              <h3 className="text-2xl font-semibold tracking-tight">Try it yourself on Android</h3>
               <p className="mt-1 text-zinc-400">Your own account, your own data, plus clock-in with your camera and haptics.</p>
               <a href={APK} className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-5 py-3 font-semibold text-zinc-950 transition active:scale-[0.97]">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
