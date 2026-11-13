@@ -2,7 +2,7 @@
   "expo": {
     "name": "Spotter",
     "slug": "spotter",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "orientation": "portrait",
     "icon": "./assets/images/spotter-icon.png",
     "scheme": "spotter",
@@ -17,7 +17,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "my.apu.spotter",
-      "versionCode": 13,
+      "versionCode": 14,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
