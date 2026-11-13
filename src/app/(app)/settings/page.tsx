@@ -7,6 +7,7 @@ import { ArrowLeft, ChevronRight, LogOut } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import Icon, { type IconName } from "@/components/Icon";
 import { useStore } from "@/lib/store";
+import HevyImport from "@/components/HevyImport";
 
 export default function Settings() {
   const router = useRouter();
@@ -46,6 +47,8 @@ export default function Settings() {
           </li>
         ))}
       </ul>
+
+      <HevyImport />
 
       <button onClick={logOut} disabled={busy}
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 font-semibold text-red-600 transition active:scale-[0.98] disabled:opacity-50 dark:text-red-400">

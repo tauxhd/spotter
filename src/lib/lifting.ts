@@ -64,7 +64,7 @@ export function gaps(busy: { start: number; end: number }[], open: number, close
 
 // Leaderboard lifts <-> exercise bests. Rounded down to the nearest 2.5 kg plate jump.
 export const plate = (kg: number) => Math.floor(kg / 2.5) * 2.5;
-type Lifts = { squat: number; bench: number; deadlift: number };
+export type Lifts = { squat: number; bench: number; deadlift: number };
 export const baseOf = (p: Lifts): Record<string, number> => ({ "Squat (Barbell)": p.squat, "Bench Press (Barbell)": p.bench, "Deadlift (Barbell)": p.deadlift });
 export const liftsOf = (b: Record<string, number>): Lifts => ({ squat: plate(b["Squat (Barbell)"] ?? 0), bench: plate(b["Bench Press (Barbell)"] ?? 0), deadlift: plate(b["Deadlift (Barbell)"] ?? 0) });
 

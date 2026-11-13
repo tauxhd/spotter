@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import Avatar from '@/components/avatar';
+import HevyImport from '@/components/hevy-import';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/kit';
 import { Red } from '@/constants/theme';
@@ -45,6 +46,7 @@ export default function Settings() {
           </Pressable>
         ))}
       </View>
+      <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }}><HevyImport /></View>
       <Pressable onPress={logOut} disabled={busy} accessibilityRole="button"
         style={({ pressed }) => [styles.logout, { opacity: busy ? 0.5 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
         <LogOut size={18} color={Red} /><ThemedText style={{ color: Red, fontWeight: '600' }}>{busy ? 'Logging out…' : 'Log out'}</ThemedText>

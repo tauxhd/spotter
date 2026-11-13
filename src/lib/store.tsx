@@ -1,6 +1,8 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import type { Converted } from "./hevy";
+import type { Lifts } from "./lifting";
 import { demoNow, oldNames, type Exercise, type ExerciseLog, type Post, type Sex } from "./data";
 import Splash from "@/components/Splash";
 import Quest from "@/components/Quest";
@@ -40,6 +42,7 @@ type Ctx = {
   unfollow: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
   loadMore: () => Promise<void>;
+  importHevy: (items: Converted[], lifts: Lifts) => Promise<number>; // returns how many were new
   refresh: () => Promise<void>; // pull to refresh: posts, your own data, and s.rev for pages that fetch their own
 };
 
@@ -326,6 +329,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await sb.from("follows").delete().match({ follower: me.id, followee: id });
     },
     loadMore: () => loadMorePosts(me.id, s.posts, s.morePosts), // the next page of the feed (Feed calls it near the bottom)
+    // Import from Hevy: save converted workouts + posts, skipping any already here (same start time), then raise best lifts
+    async importHevy(items, lifts) {
+      const { data: have } = await sb.from("posts").select("created_at").eq("user_id", me.id);
+      const seen = new Set((have ?? []).map((r) => new Date(r.created_at).getTime()));
+      const todo = items.filter((x) => !seen.has(new Date(x.at).getTime()));
+      for (let i = 0; i < todo.length; i += 50) {
+        const part = todo.slice(i, i + 50);
+        const w = await sb.from("workouts").insert(part.map((x) => ({ ...x.workout, created_at: x.at })));
+        if (w.error) throw w.error;
+        const p = await sb.from("posts").insert(part.map((x) => ({ ...x.post, created_at: x.at })));
+        if (p.error) throw p.error;
+      }
+      if (todo.length) {
+        const up = { squat: Math.max(Number(me.squat), lifts.squat), bench: Math.max(Number(me.bench), lifts.bench), deadlift: Math.max(Number(me.deadlift), lifts.deadlift) };
+        await sb.from("profiles").update(up).eq("id", me.id);
+        setMe((m) => (m ? { ...m, ...up } : m));
+        await Promise.all([loadPosts(me.id), loadMine(me.id)]);
+      }
+      return todo.length;
+    },
     async refresh() {
       setS((x) => ({ ...x, rev: x.rev + 1 }));
       await Promise.all([loadPosts(me.id), demo ? null : loadMine(me.id)]);

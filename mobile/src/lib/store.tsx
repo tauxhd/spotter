@@ -4,6 +4,8 @@ import "./storage-install";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Alert, AppState } from "react-native";
 import { createClient } from "@supabase/supabase-js";
+import type { Converted } from '@shared/hevy';
+import type { Lifts } from '@shared/lifting';
 import { oldNames, type Exercise, type ExerciseLog, type Post, type Sex } from "@shared/data";
 import type { Unit } from "@shared/units";
 
@@ -36,6 +38,7 @@ type Ctx = {
   unfollow: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
   loadMore: () => Promise<void>;
+  importHevy: (items: Converted[], lifts: Lifts) => Promise<number>; // returns how many were new
   refresh: () => Promise<void>;
   saveRoutine: (r: { id?: string; name: string; exercises: ExerciseLog[] }) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
@@ -47,7 +50,7 @@ type Ctx = {
   removeFood: (id: string) => Promise<void>;
   addWeight: (kg: number) => Promise<void>;
 };
-const ACTIONS = ["setActive", "finishWorkout", "like", "comment", "follow", "unfollow", "signOut", "refresh", "loadMore", "saveRoutine", "deleteRoutine",
+const ACTIONS = ["setActive", "finishWorkout", "like", "comment", "follow", "unfollow", "signOut", "refresh", "loadMore", "importHevy", "saveRoutine", "deleteRoutine",
   "clockIn", "clockOut", "updateProfile", "setAvatar", "addFood", "removeFood", "addWeight"] as const satisfies readonly (keyof Ctx)[];
 type Action = (typeof ACTIONS)[number];
 export type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "onboarding"; save: (p: Omit<Profile, "id">) => Promise<void> } | { kind: "ready" };
@@ -270,6 +273,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setMe(undefined); setUid(null);
       setS((x) => ({ ...x, sessions: [], posts: [], routines: [], active: null, clockedIn: null, food: [], weights: [], following: [], followers: [] }));
       await boot(); // a fresh session with no profile -> the sign-in quest
+    },
+    // Import from Hevy: save converted workouts + posts, skipping any already here (same start time), then raise best lifts
+    async importHevy(items, lifts) {
+      const { data: have } = await sb.from("posts").select("created_at").eq("user_id", me.id);
+      const seen = new Set((have ?? []).map((r) => new Date(r.created_at).getTime()));
+      const todo = items.filter((x) => !seen.has(new Date(x.at).getTime()));
+      for (let i = 0; i < todo.length; i += 50) {
+        const part = todo.slice(i, i + 50);
+        const w = await sb.from("workouts").insert(part.map((x) => ({ ...x.workout, created_at: x.at })));
+        if (w.error) throw w.error;
+        const p = await sb.from("posts").insert(part.map((x) => ({ ...x.post, created_at: x.at })));
+        if (p.error) throw p.error;
+      }
+      if (todo.length) {
+        const up = { squat: Math.max(Number(me.squat), lifts.squat), bench: Math.max(Number(me.bench), lifts.bench), deadlift: Math.max(Number(me.deadlift), lifts.deadlift) };
+        await sb.from("profiles").update(up).eq("id", me.id);
+        setMe((m) => (m ? { ...m, ...up } : m));
+        await Promise.all([loadPosts(me.id), loadMine(me.id)]);
+      }
+      return todo.length;
     },
     async refresh() {
       setS((x) => ({ ...x, rev: x.rev + 1 }));
