@@ -47,7 +47,7 @@ export default function Notifications() {
             </div>
             <Link href={n.post ? `/feed/${n.post.id}${qs}` : `/u/${n.who.id}${qs}`} className="min-w-0 flex-1 text-sm after:absolute after:inset-0">
               <span className="font-semibold">{n.who.name}</span> {line(n)}
-              <span className="muted block text-xs">{n.kind === "like" ? "on your post" : timeAgo(n.at)}</span>
+              <span className="muted block text-xs">{timeAgo(n.at)}</span>
             </Link>
           </li>
         ))}

@@ -53,7 +53,7 @@ export default function Notifications() {
                   <ThemedText type="smallBold">{n.who.name}</ThemedText>
                   {n.kind === 'follow' ? ' started following you' : n.kind === 'like' ? <> liked <ThemedText type="smallBold">{n.post?.title}</ThemedText></> : <> commented on <ThemedText type="smallBold">{n.post?.title}</ThemedText>: “{n.text}”</>}
                 </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{n.kind === 'like' ? 'on your post' : timeAgo(n.at)}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{timeAgo(n.at)}</ThemedText>
               </View>
             </Pressable>
           )} />

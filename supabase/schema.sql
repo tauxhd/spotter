@@ -50,6 +50,7 @@ create table comments (
 create table likes (
   post_id uuid not null references posts on delete cascade,
   user_id uuid not null default auth.uid() references profiles on delete cascade,
+  created_at timestamptz not null default now(), -- for notifications ("liked your post · 2h ago")
   primary key (post_id, user_id)
 );
 
