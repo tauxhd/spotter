@@ -77,3 +77,25 @@ export function sharedLifts(a: Record<string, Best>, b: Record<string, Best>, li
   return Object.keys(a).filter((k) => b[k]).map((name) => ({ name, a: a[name], b: b[name] }))
     .sort((x, y) => Math.max(y.a.e1rm, y.b.e1rm) - Math.max(x.a.e1rm, x.b.e1rm)).slice(0, limit);
 }
+
+// One exercise's record for a person (the compare page opened from a workout's Compare button)
+export type LiftStats = { e1rm: number; heaviest: number; best: Best | null; mostReps: number; bestVolume: number; sets: number; sessions: number; last: string | null };
+export function liftStats(posts: PostLike[], name: string): LiftStats {
+  const st: LiftStats = { e1rm: 0, heaviest: 0, best: null, mostReps: 0, bestVolume: 0, sets: 0, sessions: 0, last: null };
+  for (const x of posts) {
+    const logs = x.exercises.filter((e) => e.name === name).flatMap((e) => e.log ?? []);
+    if (!logs.length) continue;
+    st.sessions++;
+    if (!st.last || x.at > st.last) st.last = x.at;
+    for (const l of logs) {
+      st.sets++;
+      if (!countsPR(l.type) || l.secs) continue;
+      st.heaviest = Math.max(st.heaviest, l.kg);
+      st.mostReps = Math.max(st.mostReps, l.reps);
+      st.bestVolume = Math.max(st.bestVolume, l.kg * l.reps);
+      const v = l.kg > 0 && l.reps > 0 ? e1rm(l.kg, l.reps) : 0;
+      if (v > st.e1rm) { st.e1rm = v; st.best = { kg: l.kg, reps: l.reps, e1rm: v }; }
+    }
+  }
+  return st;
+}

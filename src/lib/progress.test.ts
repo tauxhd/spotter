@@ -30,3 +30,13 @@ test("best lifts skip warm-ups and only shared exercises are compared", () => {
   assert.equal(a["Bench Press (Barbell)"].kg, 100);
   assert.deepEqual(sharedLifts(a, b).map((x) => x.name), ["Bench Press (Barbell)"]);
 });
+
+test("one lift's record: best, heaviest, reps, sessions, last time", async () => {
+  const { liftStats } = await import("./progress.ts");
+  const s = liftStats([
+    post("2026-11-01T10:00:00", 0, [{ kg: 20, reps: 10, type: "warmup" }, { kg: 100, reps: 5 }, { kg: 110, reps: 1 }]),
+    post("2026-11-08T10:00:00", 0, [{ kg: 60, reps: 15 }]),
+    post("2026-11-09T10:00:00", 0, [{ kg: 50, reps: 5 }], "Squat (Barbell)"),
+  ], "Bench Press (Barbell)");
+  assert.deepEqual([s.heaviest, s.mostReps, s.bestVolume, s.sets, s.sessions, s.best?.kg, s.last?.slice(0, 10)], [110, 15, 900, 4, 2, 100, "2026-11-08"]);
+});

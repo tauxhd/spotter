@@ -13,7 +13,7 @@ import { StatsSkeleton } from "@/components/Skeleton";
 import { POST_SELECT, sb, toPost, useStore, type Profile, type Row } from "@/lib/store";
 import { findExercise, lifters, type Exercise, type Post } from "@/lib/data";
 import { baseOf, dots, estimated } from "@/lib/lifting";
-import { bestLifts, setsOf, sharedLifts } from "@/lib/progress";
+import { bestLifts, liftStats, setsOf, sharedLifts } from "@/lib/progress";
 import { toUnit, wTotal } from "@/lib/units";
 
 const DAY = 864e5;
@@ -60,6 +60,19 @@ function Person({ p, d, win, you }: { p: Profile; d: number; win: boolean; you?:
   );
 }
 
+function LiftPerson({ p, v, win, you }: { p: Profile; v: string; win: boolean; you?: boolean }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+      <div className="relative pt-5">
+        {win && <span className="absolute left-1/2 top-0 -translate-x-1/2 -rotate-6"><Icon name="crown" size={30} /></span>}
+        <Avatar id={p.id} url={p.avatar_url} name={p.name} size={60} className={`ring-4 ${you ? "ring-lime-500" : "ring-sky-400"}`} />
+      </div>
+      <p className="max-w-full truncate text-sm font-semibold">{you ? "You" : p.name}</p>
+      <p className="text-xl font-bold tabular-nums">{v}</p>
+    </div>
+  );
+}
+
 export default function Compare() {
   const { id } = useParams<{ id: string }>();
   const lift = useSearchParams().get("lift");
@@ -81,10 +94,48 @@ export default function Compare() {
     })();
   }, [id, demo, me.id]);
 
-  useEffect(() => { if (lift && them && mine) document.getElementById("lift")?.scrollIntoView({ behavior: "smooth", block: "center" }); }, [lift, them, mine]);
-
   if (them === undefined || mine === null) return <StatsSkeleton />;
   if (them === null) return <EmptyState art="not-found" title="This profile doesn't exist" className="mt-16" />;
+
+  if (lift) {
+    const x = liftStats(mine, lift), y = liftStats(them.posts, lift);
+    const first = them.p.name.split(" ")[0];
+    const kgf = (v: number) => (v ? `${Math.round(toUnit(v, u))} ${u}` : "–");
+    const when = (at: string | null) => (at ? new Date(at).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" }) : "–");
+    const verdict = !x.sets ? "You haven't logged this lift yet" : !y.sets ? `${first} hasn't logged this lift` : x.e1rm === y.e1rm ? "Dead even on this lift" : x.e1rm > y.e1rm ? "You're stronger on this lift" : `${first} is stronger on this lift`;
+    return (
+      <div>
+        <header className="-mx-4 grid grid-cols-[2.5rem_1fr_2.5rem] items-center px-4 pb-2">
+          <button onClick={() => router.back()} aria-label="Back" className="grid h-9 w-9 place-items-center"><ArrowLeft size={20} /></button>
+          <h1 className="truncate text-center text-base font-semibold">{lift}</h1>
+        </header>
+        <section className="-mx-4 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800/80">
+          <div className="flex items-center justify-center gap-3"><ExerciseThumb ex={findExercise(s.library, undefined, lift)} size={64} /></div>
+          <div className="mt-2 flex items-center">
+            <LiftPerson p={me} v={kgf(x.e1rm)} win={x.e1rm > y.e1rm} you />
+            <Icon name="vs" size={52} className="shrink-0" />
+            <LiftPerson p={them.p} v={kgf(y.e1rm)} win={y.e1rm > x.e1rm} />
+          </div>
+          <p className="mt-3 flex items-center justify-center gap-2 font-semibold"><Icon name="flex" size={24} />{verdict}</p>
+          <p className="muted mt-1 text-center text-xs">Estimated one-rep max from each person&apos;s best set (warm-ups don&apos;t count).</p>
+        </section>
+        <section className="-mx-4 px-4 py-3">
+          <Versus icon="trophy" label="Est. 1RM" x={x.e1rm} y={y.e1rm} fmt={kgf} />
+          <Versus icon="barbell" label="Heaviest" x={x.heaviest} y={y.heaviest} fmt={kgf} />
+          <Versus icon="medal" label="Best set" x={x.best?.e1rm ?? 0} y={y.best?.e1rm ?? 0} fmt={(v) => { const b = v === (x.best?.e1rm ?? 0) ? x.best : y.best; return b ? `${kgf(b.kg)} × ${b.reps}` : "–"; }} />
+          <Versus icon="target" label="Most reps" x={x.mostReps} y={y.mostReps} />
+          <Versus icon="flame" label="Best set volume" x={x.bestVolume} y={y.bestVolume} fmt={kgf} />
+          <Versus icon="tick-box" label="Sets logged" x={x.sets} y={y.sets} />
+          <Versus icon="calendar" label="Sessions" x={x.sessions} y={y.sessions} />
+          <div className="flex items-center gap-2 py-2.5 text-sm tabular-nums">
+            <span className="w-24 font-bold">{when(x.last)}</span>
+            <span className="muted flex flex-1 items-center justify-center gap-1.5 text-xs font-medium"><Icon name="stopwatch" size={22} />Last done</span>
+            <span className="w-24 text-right font-bold">{when(y.last)}</span>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   const side = (p: Profile, posts: Post[]) => {
     const sessions = posts.map((x) => ({ exercises: x.exercises.map((e) => ({ name: findExercise(s.library, e.id, e.name)?.name ?? e.name, sets: (e.log ?? []).map((l) => ({ ...l, done: true })) })) }));
@@ -100,7 +151,6 @@ export default function Compare() {
   };
   const a = side(me, mine), b = side(them.p, them.posts);
   const shared = sharedLifts(a.best, b.best, 30);
-  const focus = lift ? { name: lift, a: a.best[lift], b: b.best[lift] } : null;
   const first = them.p.name.split(" ")[0];
   const kg = (v: number) => (v ? `${Math.round(toUnit(v, u))} ${u}` : "–");
   const set = (x?: { kg: number; reps: number }) => (x ? `${kg(x.kg)} × ${x.reps}` : "–");
@@ -125,17 +175,6 @@ export default function Compare() {
         <p className="muted mt-1 text-center text-xs">DOTS scores your squat, bench and deadlift for your bodyweight, so any two lifters can be compared.</p>
       </section>
 
-      {focus && (
-        <section id="lift" className={`${section} bg-lime-500/5`}>
-          <div className="flex items-center gap-3">
-            <ExerciseThumb ex={findExercise(s.library, undefined, focus.name)} size={48} />
-            <div className="min-w-0"><p className="muted text-xs font-semibold uppercase tracking-wider">This lift</p><h2 className="truncate font-bold">{focus.name}</h2></div>
-          </div>
-          <Versus label="Best (est. 1RM)" x={focus.a?.e1rm ?? 0} y={focus.b?.e1rm ?? 0} fmt={kg} />
-          <p className="muted -mt-1 flex justify-between text-xs tabular-nums"><span>Best set {set(focus.a)}</span><span>Best set {set(focus.b)}</span></p>
-          {!focus.a && <p className="muted mt-2 text-sm">You haven&apos;t logged this one yet.</p>}
-        </section>
-      )}
 
       <section className={section}>
         <h2 className="font-semibold">Where you train <span className="muted text-xs font-normal">share of sets</span></h2>

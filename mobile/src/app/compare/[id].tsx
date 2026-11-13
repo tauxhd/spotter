@@ -7,7 +7,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { findExercise, lifters, type Exercise, type Post } from '@shared/data';
 import { baseOf, dots, estimated } from '@shared/lifting';
-import { bestLifts, setsOf, sharedLifts } from '@shared/progress';
+import { bestLifts, liftStats, setsOf, sharedLifts } from '@shared/progress';
 import Avatar from '@/components/avatar';
 import { Radar, sum, type Log } from '@/components/muscle-distribution';
 import { ExerciseThumb } from '@/components/post-card';
@@ -50,7 +50,7 @@ function Versus({ icon, label, x, y, fmt = String, neutral }: { icon?: string; l
   );
 }
 
-function Person({ p, d, win, you }: { p: Profile; d: number; win: boolean; you?: boolean }) {
+function Person({ p, d, label, win, you }: { p: Profile; d?: number; label?: string; win: boolean; you?: boolean }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 6 }}>
       <View style={{ paddingTop: 20 }}>
@@ -58,7 +58,9 @@ function Person({ p, d, win, you }: { p: Profile; d: number; win: boolean; you?:
         <View style={{ borderRadius: 999, borderWidth: 3, borderColor: you ? Lime : SKY, padding: 2 }}><Avatar id={p.id} url={p.avatar_url} name={p.name} size={70} /></View>
       </View>
       <ThemedText type="smallBold" numberOfLines={1}>{you ? 'You' : p.name}</ThemedText>
-      <ThemedText style={{ fontSize: 24, lineHeight: 30, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{d || '–'} <ThemedText type="small" themeColor="textSecondary">DOTS</ThemedText></ThemedText>
+      {label !== undefined
+        ? <ThemedText style={{ fontSize: 20, lineHeight: 26, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{label}</ThemedText>
+        : <ThemedText style={{ fontSize: 24, lineHeight: 30, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{d || '–'} <ThemedText type="small" themeColor="textSecondary">DOTS</ThemedText></ThemedText>}
     </View>
   );
 }
@@ -86,6 +88,45 @@ export default function Compare() {
   if (them === undefined || mine === null) return <View style={{ padding: 16, flex: 1, backgroundColor: theme.background }}><StatsSkeleton /></View>;
   if (them === null) return <EmptyState art="not-found" title="This profile doesn't exist" />;
 
+  if (lift) {
+    const x = liftStats(mine, lift), y = liftStats(them.posts, lift);
+    const first = them.p.name.split(' ')[0];
+    const when = (at: string | null) => (at ? new Date(at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' }) : '–');
+    const verdict = !x.sets ? "You haven't logged this lift yet" : !y.sets ? `${first} hasn't logged this lift` : x.e1rm === y.e1rm ? 'Dead even on this lift' : x.e1rm > y.e1rm ? "You're stronger on this lift" : `${first} is stronger on this lift`;
+    const bestOf = (v: number) => { const b = v === (x.best?.e1rm ?? 0) ? x.best : y.best; return b ? `${kg(b.kg)} × ${b.reps}` : '–'; };
+    return (
+      <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }}>
+        <Stack.Screen options={{ title: lift }} />
+        <Section>
+          <View style={{ alignItems: 'center' }}><ExerciseThumb ex={findExercise(s.library, undefined, lift)} size={64} /></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+            <Person p={me} label={kg(x.e1rm)} win={x.e1rm > y.e1rm} you />
+            <Icon name="vs" size={48} />
+            <Person p={them.p} label={kg(y.e1rm)} win={y.e1rm > x.e1rm} />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
+            <Icon name="flex" size={24} /><ThemedText type="smallBold" style={{ fontSize: 16, flexShrink: 1, textAlign: 'center' }}>{verdict}</ThemedText>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 4, fontSize: 12 }}>Estimated one-rep max from each person&apos;s best set (warm-ups don&apos;t count).</ThemedText>
+        </Section>
+        <Section last>
+          <Versus icon="trophy" label="Est. 1RM" x={x.e1rm} y={y.e1rm} fmt={kg} />
+          <Versus icon="barbell" label="Heaviest" x={x.heaviest} y={y.heaviest} fmt={kg} />
+          <Versus icon="medal" label="Best set" x={x.best?.e1rm ?? 0} y={y.best?.e1rm ?? 0} fmt={bestOf} />
+          <Versus icon="target" label="Most reps" x={x.mostReps} y={y.mostReps} />
+          <Versus icon="flame" label="Best set volume" x={x.bestVolume} y={y.bestVolume} fmt={kg} />
+          <Versus icon="tick-box" label="Sets logged" x={x.sets} y={y.sets} />
+          <Versus icon="calendar" label="Sessions" x={x.sessions} y={y.sessions} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 }}>
+            <ThemedText style={styles.val}>{when(x.last)}</ThemedText>
+            <View style={styles.mid}><Icon name="stopwatch" size={22} /><ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Last done</ThemedText></View>
+            <ThemedText style={[styles.val, { textAlign: 'right' }]}>{when(y.last)}</ThemedText>
+          </View>
+        </Section>
+      </ScrollView>
+    );
+  }
+
   const side = (p: Profile, posts: Post[]) => {
     const sessions = posts.map((x) => ({ exercises: x.exercises.map((e) => ({ name: findExercise(s.library, e.id, e.name)?.name ?? e.name, sets: (e.log ?? []).map((l) => ({ ...l, done: true })) })) }));
     const est = estimated(baseOf(p), sessions);
@@ -100,7 +141,6 @@ export default function Compare() {
   };
   const a = side(me, mine), b = side(them.p, them.posts);
   const shared = sharedLifts(a.best, b.best, 30);
-  const focus = lift ? { name: lift, a: a.best[lift], b: b.best[lift] } : null;
   const first = them.p.name.split(' ')[0];
   const verdict = !a.dots || !b.dots ? 'Log squat, bench and deadlift to compare strength'
     : a.dots === b.dots ? 'Dead even, pound for pound' : a.dots > b.dots ? "You're stronger for your bodyweight" : `${first} is stronger for their bodyweight`;
@@ -120,23 +160,6 @@ export default function Compare() {
         <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 4, fontSize: 12 }}>DOTS scores your squat, bench and deadlift for your bodyweight, so any two lifters can be compared.</ThemedText>
       </Section>
 
-      {focus && (
-        <Section>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <ExerciseThumb ex={findExercise(s.library, undefined, focus.name)} size={48} />
-            <View style={{ flex: 1 }}>
-              <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 11, letterSpacing: 1 }}>THIS LIFT</ThemedText>
-              <ThemedText type="smallBold" style={{ fontSize: 16 }} numberOfLines={1}>{focus.name}</ThemedText>
-            </View>
-          </View>
-          <Versus label="Best (est. 1RM)" x={focus.a?.e1rm ?? 0} y={focus.b?.e1rm ?? 0} fmt={kg} />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Best set {set(focus.a)}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Best set {set(focus.b)}</ThemedText>
-          </View>
-          {!focus.a && <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: 6 }}>You haven&apos;t logged this one yet.</ThemedText>}
-        </Section>
-      )}
 
       <Section>
         <ThemedText type="smallBold" style={styles.h}>Where you train <ThemedText type="small" themeColor="textSecondary">share of sets</ThemedText></ThemedText>
