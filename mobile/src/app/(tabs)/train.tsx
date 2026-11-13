@@ -3,7 +3,7 @@
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { BookmarkCheck, BookmarkPlus, Check, Clock, Disc3, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from 'lucide-react-native';
+import { BookmarkCheck, BookmarkPlus, Check, Clock, Disc3, Flame, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from 'lucide-react-native';
 import PlateCalc from '@/components/plate-calc';
 import SupersetPicker from '@/components/superset-picker';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
@@ -32,7 +32,7 @@ import { art } from '@/lib/art';
 import { Input } from '@/components/ui/input';
 import { InfoTip } from '@/components/ui/info-tip';
 import { help } from '@shared/help';
-import { sessionVolume, setSuperset } from '@shared/workout';
+import { sessionVolume, setSuperset, warmups } from '@shared/workout';
 import { wTotal } from '@shared/units';
 
 const REST_KEY = 'spotter:rest', REST_ON_KEY = 'spotter:rest-on'; // same keys as the website
@@ -335,6 +335,12 @@ function Workout() {
                           <Pressable onPress={() => setPlates(i)} style={styles.smallAction}>
                             <Disc3 size={13} color={theme.textSecondary} />
                             <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 12 }}>Plates</ThemedText>
+                          </Pressable>
+                        )}
+                        {!timed && (item?.equipment === 'barbell' || item?.equipment === 'ez-bar') && !ex.sets.some((st) => st.type === 'warmup') && ex.sets.some((st) => st.kg > 20) && (
+                          <Pressable onPress={() => edit((x) => { const w = Math.max(...x[i].sets.map((st) => st.kg)); x[i].sets = [...warmups(w, item?.equipment === 'ez-bar' ? 10 : 20), ...x[i].sets]; })} style={styles.smallAction}>
+                            <Flame size={13} color={theme.textSecondary} />
+                            <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 12 }}>Warm-up</ThemedText>
                           </Pressable>
                         )}
                       </View>

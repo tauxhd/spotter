@@ -91,3 +91,14 @@ export function setSuperset(exs: ExerciseLog[], i: number, chosen: number[], id 
   const at = clean.slice(0, first).filter((_, k) => !pick.has(k)).length;
   return [...others.slice(0, at), ...members, ...others.slice(at)];
 }
+
+// Hevy-style warm-ups before a working weight: the empty bar, then about 40, 60 and 80%, rounded down to plates (2.5 kg).
+export function warmups(work: number, bar = 20): SetT[] {
+  if (work <= bar) return [];
+  const out: SetT[] = [];
+  for (const [f, reps] of [[0, 10], [0.4, 5], [0.6, 3], [0.8, 2]] as const) {
+    const kg = f ? Math.max(bar, Math.floor((work * f) / 2.5) * 2.5) : bar;
+    if (kg < work && !out.some((s) => s.kg === kg)) out.push({ kg, reps, type: "warmup" });
+  }
+  return out;
+}

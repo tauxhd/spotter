@@ -3,7 +3,7 @@ import Icon from "@/components/Icon";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookmarkCheck, BookmarkPlus, Check, Clock, Disc3, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, Check, Clock, Disc3, Flame, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
 import PlateCalc from "@/components/PlateCalc";
 import SupersetPicker from "@/components/SupersetPicker";
 import ExerciseThumb from "@/components/ExerciseThumb";
@@ -23,7 +23,7 @@ import dynamic from "next/dynamic";
 import InfoTip from "@/components/InfoTip";
 import MeButton from "@/components/MeButton";
 import { help } from "@/lib/help";
-import { sessionVolume, setSuperset } from "@/lib/workout";
+import { sessionVolume, setSuperset, warmups } from "@/lib/workout";
 const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-full min-h-10 w-full rounded-xl" /> });
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
@@ -468,6 +468,10 @@ export default function Train() {
                     )}
                     {!isTimed(ex) && ["barbell", "ez-bar"].includes(lib.get(ex.name)?.equipment ?? "") && (
                       <button onClick={() => setPlates(i)} className="muted relative z-10 flex items-center gap-1 text-xs font-semibold"><Disc3 size={13} />Plates</button>
+                    )}
+                    {!isTimed(ex) && ["barbell", "ez-bar"].includes(lib.get(ex.name)?.equipment ?? "") && !ex.sets.some((st) => st.type === "warmup") && ex.sets.some((st) => st.kg > 20) && (
+                      <button onClick={() => edit((x) => { const w = Math.max(...x[i].sets.map((st) => st.kg)); x[i].sets = [...warmups(w, lib.get(x[i].name)?.equipment === "ez-bar" ? 10 : 20), ...x[i].sets]; })}
+                        className="muted relative z-10 flex items-center gap-1 text-xs font-semibold"><Flame size={13} />Warm-up</button>
                     )}
                   </div>
                 )}

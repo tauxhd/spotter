@@ -16,3 +16,10 @@ test("two supersets keep their own ids; taking the last partner dissolves the ol
 test("unticking everything removes the superset", () => {
   assert.equal(shape(setSuperset([ex("A", 1), ex("B", 1), ex("C")], 0, [])), "A B C");
 });
+
+test("warm-ups climb from the empty bar to ~80%, never reaching the working weight", async () => {
+  const { warmups } = await import("./workout.ts");
+  assert.deepEqual(warmups(100).map((s) => `${s.kg}x${s.reps}`), ["20x10", "40x5", "60x3", "80x2"]);
+  assert.deepEqual(warmups(40).map((s) => s.kg), [20, 22.5, 30]);
+  assert.deepEqual(warmups(20), []);
+});
