@@ -1,32 +1,51 @@
-// You vs someone (the website's /u/[id]/compare): big three, strength for bodyweight (DOTS), the last 30 days, and every
-// lift you both do.
+// You vs someone (the website's /u/[id]/compare): strength for bodyweight (DOTS) with a crown on the winner, where each of
+// you puts your training (radar), the big three and the last 30 days as head-to-head bars, and every lift you both do.
+// `lift` (from a workout's Compare button) puts that one lift first.
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { Crown } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { findExercise, lifters, type Post } from '@shared/data';
+import { findExercise, lifters, type Exercise, type Post } from '@shared/data';
 import { baseOf, dots, estimated } from '@shared/lifting';
 import { bestLifts, setsOf, sharedLifts } from '@shared/progress';
 import Avatar from '@/components/avatar';
+import { Radar, sum, type Log } from '@/components/muscle-distribution';
 import { ExerciseThumb } from '@/components/post-card';
 import { StatsSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
-import { EmptyState, Section } from '@/components/ui/kit';
+import { EmptyState, Icon, Section } from '@/components/ui/kit';
 import { Lime } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { POST_SELECT, sb, toPost, useStore, type Profile, type Row } from '@/lib/store';
 
-const DAY = 864e5;
+const DAY = 864e5, SKY = '#38bdf8';
 const kg = (v: number) => (v ? `${Math.round(v)} kg` : '–');
+const set = (x?: { kg: number; reps: number }) => (x ? `${kg(x.kg)} × ${x.reps}` : '–');
 
-function Line({ label, x, y, fmt = String, neutral }: { label: string; x: number; y: number; fmt?: (v: number) => string; neutral?: boolean }) {
-  const win = (me: boolean) => !neutral && (me ? x > y : y > x) ? { color: Lime } : null;
+// sets per body area as a share of all sets, so a big and a small trainer can be compared by balance
+function balance(posts: Post[], library: Exercise[], bw: number) {
+  const logs: Log[] = posts.map((x) => ({ at: new Date(x.at).getTime(), exercises: x.exercises.map((e) => ({ ex: findExercise(library, e.id, e.name), sets: e.log ?? [] })) }));
+  const area = sum(logs, 0, Infinity, bw).area;
+  const total = Object.values(area).reduce((n, v) => n + v, 0) || 1;
+  return Object.fromEntries(Object.entries(area).map(([k, v]) => [k, (v / total) * 100]));
+}
+
+// One head-to-head row: both numbers, icon and label, and a bar split by who's ahead (lime = you, sky = them)
+function Versus({ icon, label, x, y, fmt = String, neutral }: { icon?: string; label: string; x: number; y: number; fmt?: (v: number) => string; neutral?: boolean }) {
+  const share = x + y > 0 ? (x / (x + y)) * 100 : 50;
   return (
-    <View style={styles.line}>
-      <ThemedText style={[styles.val, { textAlign: 'right' }, win(true)]}>{fmt(x)}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.label}>{label}</ThemedText>
-      <ThemedText style={[styles.val, win(false)]}>{fmt(y)}</ThemedText>
+    <View style={{ paddingVertical: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <ThemedText style={[styles.val, !neutral && x > y && { color: Lime }]}>{fmt(x)}</ThemedText>
+        <View style={styles.mid}>{icon && <Icon name={icon} size={22} />}<ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }} numberOfLines={1}>{label}</ThemedText></View>
+        <ThemedText style={[styles.val, { textAlign: 'right' }, !neutral && y > x && { color: SKY }]}>{fmt(y)}</ThemedText>
+      </View>
+      {!neutral && (
+        <View style={styles.track}>
+          <View style={{ width: `${share}%`, backgroundColor: Lime, opacity: x >= y ? 1 : 0.45, borderTopLeftRadius: 4, borderBottomLeftRadius: 4 }} />
+          <View style={{ flex: 1, backgroundColor: SKY, opacity: y >= x ? 1 : 0.45, borderTopRightRadius: 4, borderBottomRightRadius: 4 }} />
+        </View>
+      )}
     </View>
   );
 }
@@ -34,18 +53,18 @@ function Line({ label, x, y, fmt = String, neutral }: { label: string; x: number
 function Person({ p, d, win, you }: { p: Profile; d: number; win: boolean; you?: boolean }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-      <View>
-        <Avatar id={p.id} url={p.avatar_url} name={p.name} size={72} />
-        {win && <View style={styles.crown}><Crown size={22} color={Lime} fill={Lime} /></View>}
+      <View style={{ paddingTop: 20 }}>
+        {win && <View style={styles.crown}><Icon name="crown" size={34} /></View>}
+        <View style={{ borderRadius: 999, borderWidth: 3, borderColor: you ? Lime : SKY, padding: 2 }}><Avatar id={p.id} url={p.avatar_url} name={p.name} size={70} /></View>
       </View>
       <ThemedText type="smallBold" numberOfLines={1}>{you ? 'You' : p.name}</ThemedText>
-      <ThemedText style={{ fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{d || '–'} <ThemedText type="small" themeColor="textSecondary">DOTS</ThemedText></ThemedText>
+      <ThemedText style={{ fontSize: 24, lineHeight: 30, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{d || '–'} <ThemedText type="small" themeColor="textSecondary">DOTS</ThemedText></ThemedText>
     </View>
   );
 }
 
 export default function Compare() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, lift } = useLocalSearchParams<{ id: string; lift?: string }>();
   const { s, me } = useStore();
   const theme = useTheme();
   const demo = lifters.find((l) => l.id === id);
@@ -74,13 +93,14 @@ export default function Compare() {
     const total = big.squat + big.bench + big.deadlift;
     const recent = posts.filter((x) => now - new Date(x.at).getTime() < 30 * DAY);
     return {
-      big, total, dots: total && Number(p.bw) ? Math.round(dots(total, Number(p.bw), p.sex)) : 0, best: bestLifts(posts),
+      big, total, dots: total && Number(p.bw) ? Math.round(dots(total, Number(p.bw), p.sex)) : 0, best: bestLifts(posts), balance: balance(posts, s.library, Number(p.bw)),
       month: { workouts: recent.length, volume: recent.reduce((n, x) => n + x.volume, 0), sets: recent.reduce((n, x) => n + setsOf(x), 0) },
       prs: posts.reduce((n, x) => n + x.prs.length, 0),
     };
   };
   const a = side(me, mine), b = side(them.p, them.posts);
-  const shared = sharedLifts(a.best, b.best);
+  const shared = sharedLifts(a.best, b.best, 30);
+  const focus = lift ? { name: lift, a: a.best[lift], b: b.best[lift] } : null;
   const first = them.p.name.split(' ')[0];
   const verdict = !a.dots || !b.dots ? 'Log squat, bench and deadlift to compare strength'
     : a.dots === b.dots ? 'Dead even, pound for pound' : a.dots > b.dots ? "You're stronger for your bodyweight" : `${first} is stronger for their bodyweight`;
@@ -89,39 +109,71 @@ export default function Compare() {
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }}>
       <Stack.Screen options={{ title: `You vs ${first}` }} />
       <Section>
-        <View style={{ flexDirection: 'row', gap: 16 }}><Person p={me} you d={a.dots} win={a.dots > b.dots} /><Person p={them.p} d={b.dots} win={b.dots > a.dots} /></View>
-        <ThemedText type="smallBold" style={{ textAlign: 'center', marginTop: 14, fontSize: 16 }}>{verdict}</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Person p={me} d={a.dots} win={a.dots > b.dots} you />
+          <Icon name="vs" size={52} />
+          <Person p={them.p} d={b.dots} win={b.dots > a.dots} />
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14 }}>
+          <Icon name="flex" size={26} /><ThemedText type="smallBold" style={{ fontSize: 16, flexShrink: 1, textAlign: 'center' }}>{verdict}</ThemedText>
+        </View>
         <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 4, fontSize: 12 }}>DOTS scores your squat, bench and deadlift for your bodyweight, so any two lifters can be compared.</ThemedText>
       </Section>
+
+      {focus && (
+        <Section>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <ExerciseThumb ex={findExercise(s.library, undefined, focus.name)} size={48} />
+            <View style={{ flex: 1 }}>
+              <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 11, letterSpacing: 1 }}>THIS LIFT</ThemedText>
+              <ThemedText type="smallBold" style={{ fontSize: 16 }} numberOfLines={1}>{focus.name}</ThemedText>
+            </View>
+          </View>
+          <Versus label="Best (est. 1RM)" x={focus.a?.e1rm ?? 0} y={focus.b?.e1rm ?? 0} fmt={kg} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Best set {set(focus.a)}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Best set {set(focus.b)}</ThemedText>
+          </View>
+          {!focus.a && <ThemedText type="small" themeColor="textSecondary" style={{ marginTop: 6 }}>You haven&apos;t logged this one yet.</ThemedText>}
+        </Section>
+      )}
+
+      <Section>
+        <ThemedText type="smallBold" style={styles.h}>Where you train <ThemedText type="small" themeColor="textSecondary">share of sets</ThemedText></ThemedText>
+        <Radar cur={a.balance} prev={b.balance} vs height={240} />
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16 }}>
+          <View style={styles.key}><View style={[styles.dot, { backgroundColor: Lime }]} /><ThemedText type="small">You</ThemedText></View>
+          <View style={styles.key}><View style={[styles.dot, { backgroundColor: SKY }]} /><ThemedText type="small">{first}</ThemedText></View>
+        </View>
+      </Section>
+
       <Section>
         <ThemedText type="smallBold" style={styles.h}>Big three <ThemedText type="small" themeColor="textSecondary">estimated 1RM</ThemedText></ThemedText>
-        <Line label="Squat" x={a.big.squat} y={b.big.squat} fmt={kg} />
-        <Line label="Bench" x={a.big.bench} y={b.big.bench} fmt={kg} />
-        <Line label="Deadlift" x={a.big.deadlift} y={b.big.deadlift} fmt={kg} />
-        <Line label="Total" x={a.total} y={b.total} fmt={kg} />
-        <Line label="Bodyweight" x={Number(me.bw)} y={Number(them.p.bw)} fmt={kg} neutral />
+        <Versus icon="squat" label="Squat" x={a.big.squat} y={b.big.squat} fmt={kg} />
+        <Versus icon="bench" label="Bench" x={a.big.bench} y={b.big.bench} fmt={kg} />
+        <Versus icon="deadlift" label="Deadlift" x={a.big.deadlift} y={b.big.deadlift} fmt={kg} />
+        <Versus icon="trophy" label="Total" x={a.total} y={b.total} fmt={kg} />
+        <Versus icon="scale" label="Bodyweight" x={Number(me.bw)} y={Number(them.p.bw)} fmt={kg} neutral />
       </Section>
+
       <Section>
         <ThemedText type="smallBold" style={styles.h}>Last 30 days</ThemedText>
-        <Line label="Workouts" x={a.month.workouts} y={b.month.workouts} />
-        <Line label="Volume" x={a.month.volume} y={b.month.volume} fmt={(v) => `${Math.round(v).toLocaleString()} kg`} />
-        <Line label="Sets" x={a.month.sets} y={b.month.sets} />
-        <Line label="PRs (all time)" x={a.prs} y={b.prs} />
+        <Versus icon="calendar" label="Workouts" x={a.month.workouts} y={b.month.workouts} />
+        <Versus icon="barbell" label="Volume" x={a.month.volume} y={b.month.volume} fmt={(v) => `${Math.round(v).toLocaleString()} kg`} />
+        <Versus icon="target" label="Sets" x={a.month.sets} y={b.month.sets} />
+        <Versus icon="medal" label="PRs, all time" x={a.prs} y={b.prs} />
       </Section>
+
       <Section last>
         <ThemedText type="smallBold" style={styles.h}>Lifts you both do <ThemedText type="small" themeColor="textSecondary">best set</ThemedText></ThemedText>
         {shared.length === 0 && <ThemedText type="small" themeColor="textSecondary" style={{ paddingVertical: 12 }}>No exercises in common yet.</ThemedText>}
         {shared.map(({ name, a: x, b: y }) => (
-          <View key={name} style={{ paddingVertical: 8 }}>
+          <View key={name} style={{ paddingTop: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <ExerciseThumb ex={findExercise(s.library, undefined, name)} size={32} />
               <ThemedText type="smallBold" numberOfLines={1} style={{ flex: 1 }}>{name}</ThemedText>
             </View>
-            <View style={styles.line}>
-              <ThemedText style={[styles.val, { textAlign: 'right' }, x.e1rm > y.e1rm && { color: Lime }]}>{kg(x.kg)} × {x.reps}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.label}>{x.e1rm > y.e1rm ? '◀ stronger' : y.e1rm > x.e1rm ? 'stronger ▶' : 'tied'}</ThemedText>
-              <ThemedText style={[styles.val, y.e1rm > x.e1rm && { color: Lime }]}>{kg(y.kg)} × {y.reps}</ThemedText>
-            </View>
+            <Versus label={x.e1rm > y.e1rm ? '◀ you' : y.e1rm > x.e1rm ? `${first} ▶` : 'tied'} x={x.e1rm} y={y.e1rm} fmt={(v) => set(v === x.e1rm ? x : y)} />
           </View>
         ))}
       </Section>
@@ -130,9 +182,11 @@ export default function Compare() {
 }
 
 const styles = StyleSheet.create({
-  h: { fontSize: 16, marginBottom: 4 },
-  line: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, gap: 10 },
-  val: { flex: 1, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  label: { width: 96, textAlign: 'center', fontSize: 12 },
-  crown: { position: 'absolute', top: -14, left: 0, right: 0, alignItems: 'center' },
+  h: { fontSize: 16, marginBottom: 2 },
+  val: { width: 96, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  mid: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  track: { flexDirection: 'row', gap: 2, height: 8, marginTop: 6, borderRadius: 4, overflow: 'hidden' },
+  crown: { position: 'absolute', top: -2, left: 0, right: 0, alignItems: 'center', zIndex: 1, transform: [{ rotate: '-6deg' }] },
+  key: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
 });

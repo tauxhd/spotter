@@ -119,6 +119,10 @@ export default function WorkoutDetail() {
                 {ex ? <Link href={`/exercise/${ex.id}`} className="block font-semibold text-lime-600 after:absolute after:inset-0 dark:text-lime-400">{ex.name}</Link> : <p className="font-semibold text-lime-600 dark:text-lime-400">{e.name}</p>}
                 {ex && <p className="muted text-xs capitalize">{ex.muscle} · {ex.equipment}</p>}
               </div>
+              {!p.mine && p.uid && (
+                <Link href={`/u/${p.uid}/compare?lift=${encodeURIComponent(ex?.name ?? e.name)}${location.search.replace("?", "&")}`} aria-label={`Compare your ${ex?.name ?? e.name} with ${p.by}`}
+                  className="relative z-10 ml-auto flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold dark:bg-zinc-800"><Icon name="vs" size={18} />Compare</Link>
+              )}
             </div>
             <div className="mt-2 overflow-hidden rounded-xl">
               <div className="muted grid grid-cols-[3rem_1fr] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider"><span>Set</span><span>{log.some((x) => x.secs !== undefined) ? (log.some((x) => x.kg) ? "Weight & time" : "Time") : log.some((x) => x.kg) ? "Weight & reps" : "Reps"}</span></div>

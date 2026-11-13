@@ -18,7 +18,7 @@ const AREAS = ['Back', 'Chest', 'Core', 'Shoulders', 'Arms', 'Legs'] as const;
 const PERIODS = [['7D', 7], ['30D', 30], ['3M', 91], ['1Y', 365]] as const;
 const DAY = 864e5;
 
-function sum(logs: Log[], from: number, to: number, bw: number) {
+export function sum(logs: Log[], from: number, to: number, bw: number) {
   const area: Record<string, number> = {};
   let workouts = 0, sets = 0, reps = 0, volume = 0;
   for (const l of logs) {
@@ -34,7 +34,7 @@ function sum(logs: Log[], from: number, to: number, bw: number) {
   return { area, workouts, sets, reps, volume };
 }
 
-export function Radar({ cur, prev, height = 260 }: { cur: Record<string, number>; prev?: Record<string, number>; height?: number }) {
+export function Radar({ cur, prev, vs, height = 260 }: { cur: Record<string, number>; prev?: Record<string, number>; vs?: boolean; height?: number }) {
   const theme = useTheme();
   const max = Math.max(1, ...AREAS.flatMap((a) => [cur[a] ?? 0, prev?.[a] ?? 0]));
   const R = 92, C = 130;
@@ -44,7 +44,7 @@ export function Radar({ cur, prev, height = 260 }: { cur: Record<string, number>
     <Svg viewBox="-40 0 340 260" width="100%" height={height}>
       {[0.2, 0.4, 0.6, 0.8, 1].map((f) => <Polygon key={f} points={AREAS.map((_, i) => pt(i, f).join(',')).join(' ')} fill="none" stroke={theme.border} strokeWidth={1} />)}
       {AREAS.map((_, i) => <Line key={i} x1={C} y1={C} x2={pt(i, 1)[0]} y2={pt(i, 1)[1]} stroke={theme.border} strokeWidth={1} />)}
-      {prev && <Polygon points={poly(prev)} fill="rgba(161,161,170,0.1)" stroke="#71717a" strokeWidth={1.5} strokeDasharray="4 3" />}
+      {prev && <Polygon points={poly(prev)} fill={vs ? 'rgba(56,189,248,0.2)' : 'rgba(161,161,170,0.1)'} stroke={vs ? '#38bdf8' : '#71717a'} strokeWidth={vs ? 2 : 1.5} strokeDasharray={vs ? undefined : '4 3'} strokeLinejoin="round" />}
       <Polygon points={poly(cur)} fill="rgba(132,204,22,0.25)" stroke={Lime} strokeWidth={2} strokeLinejoin="round" />
       {AREAS.map((a, i) => { const [x, y] = pt(i, (cur[a] ?? 0) / max); return <Circle key={a} cx={x} cy={y} r={2.5} fill="#a3e635" />; })}
       {AREAS.map((a, i) => { const [x, y] = pt(i, 1.2); return <SvgText key={a} x={x} y={y + 4} fontSize={11} fill="#71717a" textAnchor={x < C - 10 ? 'end' : x > C + 10 ? 'start' : 'middle'}>{a}</SvgText>; })}

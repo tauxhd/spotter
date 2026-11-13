@@ -125,6 +125,12 @@ export default function PostPage() {
                 <ThemedText type="smallBold" style={{ color: Lime, fontSize: 16 }}>{ex?.name ?? e.name}</ThemedText>
                 {ex && <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, textTransform: 'capitalize' }}>{ex.muscle} · {ex.equipment}</ThemedText>}
               </View>
+              {!p.mine && !!p.uid && (
+                <Pressable onPress={() => router.push({ pathname: '/compare/[id]', params: { id: p.uid!, lift: ex?.name ?? e.name } })} hitSlop={6} accessibilityLabel={`Compare your ${ex?.name ?? e.name} with ${p.by}`}
+                  style={[styles.compare, { backgroundColor: theme.backgroundElement }]}>
+                  <Icon name="vs" size={18} /><ThemedText type="smallBold" style={{ fontSize: 12 }}>Compare</ThemedText>
+                </Pressable>
+              )}
             </View>
             <View style={{ marginTop: 8, borderRadius: 5, overflow: 'hidden' }}>
               <View style={styles.setRow}><ThemedText style={[styles.colHead, { width: 48 }]}>SET</ThemedText><ThemedText style={styles.colHead}>{log.some((x) => x.secs !== undefined) ? (log.some((x) => x.kg) ? 'WEIGHT & TIME' : 'TIME') : log.some((x) => x.kg) ? 'WEIGHT & REPS' : 'REPS'}</ThemedText></View>
@@ -162,6 +168,7 @@ export default function PostPage() {
 }
 
 const styles = StyleSheet.create({
+  compare: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
   media: { width: '100%', aspectRatio: 4 / 5, backgroundColor: '#000' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 20, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 12 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
