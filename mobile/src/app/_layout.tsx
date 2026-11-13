@@ -2,7 +2,8 @@ import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold, us
 import { DarkTheme, ThemeProvider } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
-import { StyleSheet, View } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -17,6 +18,11 @@ SplashScreen.preventAutoHideAsync();
 
 // Spotter is a dark app, like the website on a phone.
 const theme = { ...DarkTheme, colors: { ...DarkTheme.colors, primary: Lime, background: Colors.dark.background, card: Colors.dark.background, border: Colors.dark.border } };
+
+// Share to Spotter (Android app only): Expo Go and the web don't have the native share module, so it isn't loaded there.
+const ShareHandler: React.ComponentType | null = Platform.OS === 'android' && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient
+  ? require('@/components/share-handler').default // eslint-disable-line @typescript-eslint/no-require-imports
+  : null;
 
 export default function RootLayout() {
   return (
@@ -40,6 +46,8 @@ function Gate() {
   if (st.kind === 'loading') return <Splash />;
   if (st.kind === 'error') return <View style={styles.center}><ThemedText>Couldn&apos;t connect: {st.message}</ThemedText></View>;
   return (
+    <>
+    {ShareHandler && <ShareHandler />}
     <Stack screenOptions={{ headerTintColor: Lime, headerTitleStyle: { color: Colors.dark.text, fontFamily: 'Geist_600SemiBold' }, headerShadowVisible: false, headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: Colors.dark.background } }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="finish" options={{ title: 'Finish workout', presentation: 'modal' }} />
@@ -54,6 +62,7 @@ function Gate() {
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       <Stack.Screen name="plan" options={{ headerRight: meHeaderRight, title: 'Nutrition plan' }} />
     </Stack>
+    </>
   );
 }
 

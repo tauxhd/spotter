@@ -1,5 +1,5 @@
 // Settings (from the gear on your profile; the website's /settings): your account, quick links, and log out.
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronRight, LogOut } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -15,6 +15,7 @@ import { useStore } from '@/lib/store';
 const WARN = 'Sign back in any time with your TP number and password.';
 
 export default function Settings() {
+  const { hevy } = useLocalSearchParams<{ hevy?: string }>(); // a Hevy CSV shared to Spotter (ShareHandler)
   const { me, signOut } = useStore();
   const theme = useTheme();
   const [busy, setBusy] = useState(false);
@@ -46,7 +47,7 @@ export default function Settings() {
           </Pressable>
         ))}
       </View>
-      <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }}><HevyImport /></View>
+      <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }}><HevyImport shared={hevy} /></View>
       <Pressable onPress={logOut} disabled={busy} accessibilityRole="button"
         style={({ pressed }) => [styles.logout, { opacity: busy ? 0.5 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
         <LogOut size={18} color={Red} /><ThemedText style={{ color: Red, fontWeight: '600' }}>{busy ? 'Logging out…' : 'Log out'}</ThemedText>

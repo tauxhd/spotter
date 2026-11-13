@@ -41,3 +41,14 @@ test("converts to Spotter: names mapped, PRs in order, unknown exercises kept", 
   assert.equal(lifts.bench, 100);
   assert.deepEqual(unmatched, ["Mystery Machine"]);
 });
+
+test("Hevy API workouts read the same as the CSV", async () => {
+  const { fromApi } = await import("./hevy.ts");
+  const [w] = fromApi([{ title: "Push day", description: null, start_time: "2026-11-12T13:17:00Z", end_time: "2026-11-12T14:06:00Z",
+    exercises: [{ title: "Bench Press (Barbell)", superset_id: null, sets: [{ type: "warmup", weight_kg: 20, reps: 10 }, { type: "normal", weight_kg: 100, reps: 5 }] },
+      { title: "Plank", superset_id: 0, sets: [{ type: "normal", weight_kg: null, reps: null, duration_seconds: 60 }] }] }]);
+  assert.deepEqual(w.exercises.map((e) => `${e.name}:${e.superset ?? "-"}`), ["Bench Press (Barbell):-", "Plank:0"]);
+  assert.deepEqual(w.exercises[0].sets[0], { kg: 20, reps: 10, type: "warmup" });
+  assert.deepEqual(w.exercises[1].sets[0], { kg: 0, reps: 0, secs: 60 });
+  assert.equal(w.note, "");
+});

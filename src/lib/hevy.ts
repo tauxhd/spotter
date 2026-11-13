@@ -94,3 +94,21 @@ export function convert(ws: HevyWorkout[], library: Exercise[], p: Lifts & { bw:
   }
   return { items: out, lifts: liftsOf(heaviest(baseOf(p), done as never)), unmatched: [...unmatched] };
 }
+
+// Hevy's public API (GET /v1/workouts with the user's API key, Hevy Pro) -> the same shape the CSV gives
+export type ApiWorkout = {
+  title: string; description?: string | null; start_time: string; end_time?: string | null;
+  exercises: { title: string; superset_id?: number | null; sets: { type?: string; weight_kg?: number | null; reps?: number | null; duration_seconds?: number | null }[] }[];
+};
+export function fromApi(ws: ApiWorkout[]): HevyWorkout[] {
+  return ws.map((w) => ({
+    title: w.title || "Workout", note: w.description ?? "", start: new Date(w.start_time), end: new Date(w.end_time ?? w.start_time),
+    exercises: w.exercises.map((e) => ({
+      name: e.title, superset: e.superset_id === null || e.superset_id === undefined ? undefined : String(e.superset_id),
+      sets: e.sets.map((s) => {
+        const secs = s.duration_seconds || 0, t = TYPE[(s.type ?? "").toLowerCase()];
+        return { kg: s.weight_kg || 0, reps: s.reps || 0, ...(secs ? { secs } : {}), ...(t ? { type: t } : {}) };
+      }),
+    })),
+  })).filter((w) => !isNaN(+w.start)).sort((a, b) => +a.start - +b.start);
+}
