@@ -1,0 +1,79 @@
+# Builds the Android app (mobile/, Expo) into spotter.apk on GitHub's Linux runners and attaches it to a release.
+# Windows can't do this build: its 260-character path limit breaks React Native's native compile.
+#   Release:  git tag v1.0.0 && git push origin v1.0.0     (or Actions > Android APK > Run workflow, with a tag)
+#   Just build: Actions > Android APK > Run workflow, tag left empty (the APK is attached to the run)
+# The landing page's download button points at releases/latest/download/spotter.apk.
+name: Android APK
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (for example v1.0.0). Leave empty to only build."
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # public values baked into the app: the Supabase project (publishable key) and the website the app calls for the timetable
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_KEY }}
+      EXPO_PUBLIC_WEB_URL: ${{ vars.EXPO_PUBLIC_WEB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install
+        working-directory: mobile
+        run: npm ci
+
+      - name: Generate the Android project
+        working-directory: mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build the release APK
+        working-directory: mobile/android
+        # 64-bit ARM (every current phone) and x86_64 (emulators); a universal build would be twice the size
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,x86_64
+
+      - name: Name it spotter.apk
+        run: cp mobile/android/app/build/outputs/apk/release/app-release.apk spotter.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spotter-apk
+          path: spotter.apk
+
+      - name: Publish to the release
+        if: github.ref_type == 'tag' || inputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+        run: |
+          cat > notes.md <<'EOF'
+          Spotter for Android: clock in with a scan, log every set, eat from the APU cafeteria, find any machine on the 3D gym map and climb the ranks.
+
+          **Install:** download `spotter.apk` on your phone and open it. Android will ask to allow installs from your browser, and Play Protect may warn because the app isn't from the Play Store.
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" spotter.apk --clobber
+          else
+            gh release create "$TAG" spotter.apk --target "$GITHUB_SHA" --title "Spotter ${TAG#v} for Android" --notes-file notes.md
+          fi
