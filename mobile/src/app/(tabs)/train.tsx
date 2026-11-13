@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { BookmarkCheck, BookmarkPlus, Check, Clock, Disc3, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from 'lucide-react-native';
 import PlateCalc from '@/components/plate-calc';
+import SupersetPicker from '@/components/superset-picker';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Alert, Dimensions, Modal, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
@@ -31,7 +32,7 @@ import { art } from '@/lib/art';
 import { Input } from '@/components/ui/input';
 import { InfoTip } from '@/components/ui/info-tip';
 import { help } from '@shared/help';
-import { sessionVolume } from '@shared/workout';
+import { sessionVolume, setSuperset } from '@shared/workout';
 import { wTotal } from '@shared/units';
 
 const REST_KEY = 'spotter:rest', REST_ON_KEY = 'spotter:rest-on'; // same keys as the website
@@ -138,6 +139,7 @@ function Workout() {
   const [picking, setPicking] = useState(false);
   const [typing, setTyping] = useState<{ i: number; j: number } | null>(null);
   const [plates, setPlates] = useState<number | null>(null); // plate calculator for this exercise
+  const [pairing, setPairing] = useState<number | null>(null); // superset picker for this exercise
   const [saved, setSaved] = useState(false);
 
   const body = bodyFor(s.library, Number(me.bw));
@@ -199,19 +201,6 @@ function Workout() {
       }
     });
     setPicking(false);
-  }
-  function superset(i: number) { // link exercise i with the next one, or unlink it
-    edit((x) => {
-      if (x[i].superset !== undefined) {
-        const g = x[i].superset; delete x[i].superset;
-        const left = x.filter((e) => e.superset === g);
-        if (left.length < 2) left.forEach((e) => delete e.superset);
-        return;
-      }
-      if (!x[i + 1]) return;
-      const g = x[i + 1].superset ?? Date.now();
-      x[i].superset = g; x[i + 1].superset = g;
-    });
   }
   async function saveAsRoutine() {
     const doSave = async (name?: string) => {
@@ -313,9 +302,9 @@ function Workout() {
             const timed = isTimed(ex), added = isLoadedBodyweight(item?.id);
             const sc = ex.superset !== undefined ? supersetHex(groups.indexOf(ex.superset)) : undefined;
             const dragging = drag?.i === i;
-            const top = Math.max(heavy[ex.name] ?? 0, ...ex.sets.filter((st) => st.done && st.reps > 0 && countsPR(st.type)).map((st) => st.kg));
+            const top = Math.max(heavy[ex.name] ?? 0, ...ex.sets.filter((st) => st.done && st.reps > 0 && countsPR(st.type)).map((st, i) => st.kg));
             return (
-              <Animated.View key={ex.name} layout={dragging ? undefined : layout}
+              <Animated.View key={`${ex.name}-${i}`} layout={dragging ? undefined : layout}
                 style={[sorting ? [styles.collapsed, { backgroundColor: theme.backgroundElement }] : [styles.card, { borderBottomColor: theme.border }],
                   sc ? { borderLeftWidth: 4, borderLeftColor: sc } : null, dragging && [styles.held, held]]}>
                 {sc && !sorting && <ThemedText style={[styles.ssTag, { backgroundColor: sc }]}>SUPERSET {letter(ex.superset)}</ThemedText>}
@@ -334,17 +323,21 @@ function Workout() {
                         <ThemedText type="smallBold" style={{ fontSize: 12 }}>{added ? '+' : ''}{Math.round(top * 10) / 10} kg</ThemedText>
                       </View>
                     )}
-                    {!sorting && (a.exercises[i + 1] || ex.superset !== undefined) && (
-                      <Pressable onPress={() => superset(i)} style={styles.smallAction}>
-                        <Link2 size={13} color={sc ?? theme.textSecondary} />
-                        <ThemedText type="smallBold" style={{ fontSize: 12, color: sc ?? theme.textSecondary }}>{ex.superset !== undefined ? 'Unlink superset' : 'Superset'}</ThemedText>
-                      </Pressable>
-                    )}
-                    {!sorting && !timed && (item?.equipment === 'barbell' || item?.equipment === 'ez-bar') && (
-                      <Pressable onPress={() => setPlates(i)} style={styles.smallAction}>
-                        <Disc3 size={13} color={theme.textSecondary} />
-                        <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 12 }}>Plates</ThemedText>
-                      </Pressable>
+                    {!sorting && (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 16 }}>
+                        {(a.exercises.length > 1 || ex.superset !== undefined) && (
+                          <Pressable onPress={() => setPairing(i)} style={styles.smallAction}>
+                            <Link2 size={13} color={sc ?? theme.textSecondary} />
+                            <ThemedText type="smallBold" style={{ fontSize: 12, color: sc ?? theme.textSecondary }}>{ex.superset !== undefined ? `Superset ${letter(ex.superset)}` : 'Superset'}</ThemedText>
+                          </Pressable>
+                        )}
+                        {!timed && (item?.equipment === 'barbell' || item?.equipment === 'ez-bar') && (
+                          <Pressable onPress={() => setPlates(i)} style={styles.smallAction}>
+                            <Disc3 size={13} color={theme.textSecondary} />
+                            <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 12 }}>Plates</ThemedText>
+                          </Pressable>
+                        )}
+                      </View>
                     )}
                     {!sorting && (ex.timed || timedByDefault(item?.id)) && (
                       <Pressable onPress={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((st) => { st.secs ??= 30; }); })} style={styles.smallAction}>
@@ -474,6 +467,10 @@ function Workout() {
       </Modal>
       <SetTypeSheet open={!!typingSet} current={typingSet ? typingSet.type : undefined} onClose={() => setTyping(null)}
         onPick={(t: SetType | undefined) => { if (typing) edit((x) => { x[typing.i].sets[typing.j].type = t; }); setTyping(null); }} />
+      {pairing !== null && a.exercises[pairing] && (
+        <SupersetPicker exercises={a.exercises} i={pairing} lib={lib} hex={(g) => supersetHex(groups.indexOf(g))} letter={letter} onClose={() => setPairing(null)}
+          onSave={(chosen) => { const at = pairing; setPairing(null); setActive((x) => (x ? { ...x, exercises: setSuperset(x.exercises, at, chosen) } : x)); }} />
+      )}
       {plates !== null && a.exercises[plates] && (
         <PlateCalc name={a.exercises[plates].name} bar={lib.get(a.exercises[plates].name)?.equipment === 'ez-bar' ? 10 : 20} onClose={() => setPlates(null)}
           start={Math.max(0, ...a.exercises[plates].sets.map((st) => st.kg))} />

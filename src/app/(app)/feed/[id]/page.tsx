@@ -111,7 +111,7 @@ export default function WorkoutDetail() {
       <section className="space-y-4">
         <h3 className="text-lg font-bold">Workout</h3>
         {rows.map(({ e, ex, log, pr, top, labels }) => (
-          <div key={e.name} className="relative rounded-xl transition active:bg-zinc-100 dark:active:bg-zinc-900/60">
+          <div key={`${e.name}-${ex}`} className="relative rounded-xl transition active:bg-zinc-100 dark:active:bg-zinc-900/60">
             <div className="flex items-center gap-3">
               <ExerciseThumb ex={ex} size={48} />
               <div className="min-w-0">

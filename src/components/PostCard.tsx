@@ -31,10 +31,10 @@ function Summary({ p, find }: { p: Post; find: Find }) {
         <div><p className="muted text-xs">Records</p><p className="flex items-center gap-1 font-semibold"><Icon name="medal" size={18} />{p.prs.length}</p></div>
       </div>
       <ul className="mt-3 space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-        {p.exercises.slice(0, SHOWN).map((e) => {
+        {p.exercises.slice(0, SHOWN).map((e, k) => {
           const ex = find(e.id, e.name);
           return (
-            <li key={e.name} className="flex items-center gap-3">
+            <li key={`${e.name}-${k}`} className="flex items-center gap-3">
               <ExerciseThumb ex={ex} />
               <p className="min-w-0 flex-1 font-medium leading-snug">{ex?.name ?? e.name}</p>
             </li>

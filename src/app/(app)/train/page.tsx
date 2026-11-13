@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookmarkCheck, BookmarkPlus, Check, Clock, Disc3, GripVertical, Hash, Link2, MapPin, Play, Plus, Square, Timer, X } from "lucide-react";
 import PlateCalc from "@/components/PlateCalc";
+import SupersetPicker from "@/components/SupersetPicker";
 import ExerciseThumb from "@/components/ExerciseThumb";
 import EmptyState from "@/components/EmptyState";
 import WeightInput from "@/components/WeightInput";
@@ -22,7 +23,7 @@ import dynamic from "next/dynamic";
 import InfoTip from "@/components/InfoTip";
 import MeButton from "@/components/MeButton";
 import { help } from "@/lib/help";
-import { sessionVolume } from "@/lib/workout";
+import { sessionVolume, setSuperset } from "@/lib/workout";
 const MuscleModel = dynamic(() => import("@/components/MuscleModel"), { ssr: false, loading: () => <div className="bone h-full min-h-10 w-full rounded-xl" /> });
 
 const REST_KEY = "spotter:rest"; // default rest in seconds, remembered on this device
@@ -57,6 +58,7 @@ export default function Train() {
   const [picking, setPicking] = useState(false);
   const [typing, setTyping] = useState<{ i: number; j: number } | null>(null); // set-type sheet
   const [plates, setPlates] = useState<number | null>(null); // plate calculator for this exercise
+  const [pairing, setPairing] = useState<number | null>(null); // superset picker for this exercise
   const lib = new Map(s.library.map((e) => [e.name, e]));
 
   useEffect(() => {
@@ -274,21 +276,6 @@ export default function Train() {
   }
 
   // Link exercise i with the next one (or unlink it). Linked exercises share a superset id.
-  function superset(i: number) {
-    edit((x) => {
-      if (x[i].superset !== undefined) {
-        const g = x[i].superset;
-        delete x[i].superset;
-        const left = x.filter((e) => e.superset === g);
-        if (left.length < 2) left.forEach((e) => delete e.superset);
-        return;
-      }
-      if (!x[i + 1]) return;
-      const g = x[i + 1].superset ?? Date.now();
-      x[i].superset = g;
-      x[i + 1].superset = g;
-    });
-  }
 
   function openPost() {
     router.push("/train/finish" + location.search);
@@ -455,7 +442,7 @@ export default function Train() {
         // While dragging, every card shrinks to its name row (same elements, contents hidden) so the held name stays under the finger.
         const hide = sorting ? "hidden" : "", dragging = drag?.i === i;
         return (
-          <section key={ex.name} ref={(el) => { rows.current[i] = el; }}
+          <section key={`${ex.name}-${i}`} ref={(el) => { rows.current[i] = el; }}
             style={dragging ? {
               // held: glued 1:1 to the finger and lifted; released: springs (slight bounce, it was moving) into its slot
               transform: `translateY(${drag!.dy}px) scale(${drag!.dropping ? 1 : 1.03})`,
@@ -471,14 +458,18 @@ export default function Train() {
               <div className="min-w-0 flex-1">
                 <h2 {...longPress(i)} className="select-none font-semibold [-webkit-touch-callout:none]" title="Hold to reorder">{lib.get(ex.name) ? <Link href={`/exercise/${lib.get(ex.name)!.id}${q}`} draggable={false} className={`underline-offset-2 hover:underline ${sorting ? "" : "after:absolute after:inset-0"}`}>{ex.name}</Link> : ex.name}</h2>
                 {!isTimed(ex) && !sorting && <OneRM kg={Math.max(heavy[ex.name] ?? 0, ...ex.sets.filter((st) => st.done && st.reps > 0 && countsPR(st.type)).map((st) => st.kg))} added={isLoadedBodyweight(lib.get(ex.name)?.id)} u={u} />}
-                {!sorting && (a.exercises[i + 1] || ex.superset !== undefined) && (
-                  <button onClick={() => superset(i)} aria-pressed={ex.superset !== undefined}
-                    className={`relative z-10 mt-1 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
-                    <Link2 size={13} />{ex.superset !== undefined ? "Unlink superset" : "Superset"}
-                  </button>
-                )}
-                {!sorting && !isTimed(ex) && ["barbell", "ez-bar"].includes(lib.get(ex.name)?.equipment ?? "") && (
-                  <button onClick={() => setPlates(i)} className="muted relative z-10 mt-1 flex items-center gap-1 text-xs font-semibold"><Disc3 size={13} />Plates</button>
+                {!sorting && (
+                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                    {(a.exercises.length > 1 || ex.superset !== undefined) && (
+                      <button onClick={() => setPairing(i)} aria-pressed={ex.superset !== undefined}
+                        className={`relative z-10 flex items-center gap-1 text-xs font-semibold ${ex.superset !== undefined ? sc.text : "muted"}`}>
+                        <Link2 size={13} />{ex.superset !== undefined ? `Superset ${letter(ex.superset)}` : "Superset"}
+                      </button>
+                    )}
+                    {!isTimed(ex) && ["barbell", "ez-bar"].includes(lib.get(ex.name)?.equipment ?? "") && (
+                      <button onClick={() => setPlates(i)} className="muted relative z-10 flex items-center gap-1 text-xs font-semibold"><Disc3 size={13} />Plates</button>
+                    )}
+                  </div>
                 )}
                 {!sorting && (ex.timed || timedByDefault(lib.get(ex.name)?.id)) && <button onClick={() => edit((x) => { const on = !isTimed(x[i]); x[i].timed = on; if (on) x[i].sets.forEach((s) => { s.secs ??= 30; }); })}
                   className="muted relative z-10 mt-1 flex items-center gap-1 text-xs font-semibold">
@@ -587,6 +578,10 @@ export default function Train() {
       )}
 
       {typing && typingSet && <SetTypeSheet current={typingSet.type} onPick={setType} onClose={() => setTyping(null)} />}
+      {pairing !== null && a.exercises[pairing] && (
+        <SupersetPicker exercises={a.exercises} i={pairing} lib={lib} look={color} letter={letter} onClose={() => setPairing(null)}
+          onSave={(chosen) => { const at = pairing; setPairing(null); setActive((x) => (x ? { ...x, exercises: setSuperset(x.exercises, at, chosen) } : x)); }} />
+      )}
       {plates !== null && a.exercises[plates] && (
         <PlateCalc name={a.exercises[plates].name} bar={lib.get(a.exercises[plates].name)?.equipment === "ez-bar" ? 10 : 20} onClose={() => setPlates(null)}
           start={Math.max(0, ...a.exercises[plates].sets.map((st) => st.kg))} />

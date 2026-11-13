@@ -84,7 +84,7 @@ function Editor() {
         const labels = setLabels(ex.sets, setTypes);
         const sc = supersetColor(ex.superset === undefined ? 0 : groups.indexOf(ex.superset));
         return (
-          <section key={ex.name} className={`card relative ${ex.superset !== undefined ? `border-l-4 ${sc.bar}` : ""}`}>
+          <section key={`${ex.name}-${i}`} className={`card relative ${ex.superset !== undefined ? `border-l-4 ${sc.bar}` : ""}`}>
             {ex.superset !== undefined && <span className={`absolute -top-2 left-3 rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${sc.tag}`}>Superset {String.fromCharCode(65 + groups.indexOf(ex.superset))}</span>}
             <div className="flex items-start gap-3">
               <ExerciseThumb ex={lib.get(ex.name)} size={44} />

@@ -64,10 +64,10 @@ function Summary({ p, find }: { p: Post; find: (id?: string, name?: string) => E
         </View>
       </View>
       <View style={[styles.exList, { borderTopColor: theme.border }]}>
-        {p.exercises.slice(0, SHOWN).map((e) => {
+        {p.exercises.slice(0, SHOWN).map((e, k) => {
           const ex = find(e.id, e.name);
           return (
-            <View key={e.name} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View key={`${e.name}-${k}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <ExerciseThumb ex={ex} />
               <ThemedText style={{ flex: 1, fontWeight: '500' }}>{ex?.name ?? e.name}</ThemedText>
             </View>

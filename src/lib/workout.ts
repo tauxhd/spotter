@@ -77,7 +77,7 @@ export function repeatOf(p: { title: string; exercises: PostExercise[] }, librar
 export function setSuperset(exs: ExerciseLog[], i: number, chosen: number[], id = Date.now()): ExerciseLog[] {
   const pick = new Set([i, ...chosen]);
   const g = exs[i].superset ?? id;
-  const out = exs.map((e, k) => {
+  const out: ExerciseLog[] = exs.map((e, k) => {
     const { superset, ...rest } = e;
     if (pick.has(k)) return pick.size > 1 ? { ...rest, superset: g } : rest;
     return superset === g || superset === undefined ? rest : { ...rest, superset };

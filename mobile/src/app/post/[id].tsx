@@ -116,7 +116,7 @@ export default function PostPage() {
       <View style={{ gap: 16 }}>
         <ThemedText style={styles.h3}>Workout</ThemedText>
         {rows.map(({ e, ex, log, pr, top, labels }) => (
-          <Pressable key={e.name} disabled={!ex} onPress={() => ex && router.push({ pathname: '/exercise/[id]', params: { id: ex.id } })}
+          <Pressable key={`${e.name}-${ex}`} disabled={!ex} onPress={() => ex && router.push({ pathname: '/exercise/[id]', params: { id: ex.id } })}
             style={({ pressed }) => [{ borderRadius: 5 }, pressed && { opacity: 0.6 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <ExerciseThumb ex={ex} />

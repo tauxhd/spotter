@@ -88,7 +88,7 @@ export default function Routine() {
           const sc = ex.superset !== undefined ? supersetHex(groups.indexOf(ex.superset)) : undefined;
           const timed = isTimed(ex);
           return (
-            <Section key={ex.name} style={sc ? { borderLeftWidth: 4, borderLeftColor: sc } : undefined}>
+            <Section key={`${ex.name}-${i}`} style={sc ? { borderLeftWidth: 4, borderLeftColor: sc } : undefined}>
               {sc && <ThemedText style={[styles.ssTag, { backgroundColor: sc }]}>SUPERSET {String.fromCharCode(65 + groups.indexOf(ex.superset!))}</ThemedText>}
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
                 <ExerciseThumb ex={lib.get(ex.name)} size={44} />
