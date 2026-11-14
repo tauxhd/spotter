@@ -2,7 +2,7 @@
 // muscle, most first (main muscle 1 set, others ½; warm-ups don't count).
 import { X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, View, Platform } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -47,7 +47,7 @@ export default function MusclesSheet({ open, onClose, hit, areas, ranked }: { op
   const pager = useRef<React.ComponentRef<typeof ScrollView>>(null);
   return (
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
+      <SafeAreaView edges={Platform.OS === 'android' ? ['top', 'bottom'] : ['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
         <View style={styles.head}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="stats" size={22} /><ThemedText style={styles.h1}>Muscles hit</ThemedText><InfoTip text={help.muscles} /></View>
           <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close"><X size={20} color={theme.textSecondary} /></Pressable>

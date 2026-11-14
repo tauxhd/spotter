@@ -63,7 +63,7 @@ export default function ProfileSheet({ open, onClose }: { open: boolean; onClose
   const input = [styles.input, { backgroundColor: theme.backgroundElement, color: theme.text }];
   return (
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
+      <SafeAreaView edges={Platform.OS === 'android' ? ['top', 'bottom'] : ['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.head}>
             <ThemedText style={styles.h1}>Edit profile</ThemedText>

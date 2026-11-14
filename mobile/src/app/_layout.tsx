@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import Quest from '@/components/quest';
@@ -40,6 +41,7 @@ export default function RootLayout() {
 // Signed in and set up → the app (tabs, with pages pushed over them); first launch → profile setup.
 function Gate() {
   const st = useStatus();
+  const insets = useSafeAreaInsets();
   const [fonts] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold }); // the website's font
   if (!fonts) return <Splash />;
   if (st.kind === 'onboarding') return <Quest onSave={st.save} />;
@@ -48,8 +50,8 @@ function Gate() {
   return (
     <>
     {ShareHandler && <ShareHandler />}
-    <Stack screenOptions={{ headerTintColor: Lime, headerTitleStyle: { color: Colors.dark.text, fontFamily: 'Geist_600SemiBold' }, headerShadowVisible: false, headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: Colors.dark.background } }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <Stack screenOptions={{ headerTintColor: Lime, headerTitleStyle: { color: Colors.dark.text, fontFamily: 'Geist_600SemiBold' }, headerShadowVisible: false, headerBackButtonDisplayMode: 'minimal', contentStyle: { backgroundColor: Colors.dark.background, paddingBottom: insets.bottom } }}>{/* pages stop above Android's nav bar */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, contentStyle: { backgroundColor: Colors.dark.background } }} />{/* the tab bar pads itself */}
       <Stack.Screen name="finish" options={{ title: 'Finish workout', presentation: 'modal' }} />
       <Stack.Screen name="exercise/[id]" options={{ headerRight: meHeaderRight, title: '' }} />
       <Stack.Screen name="post/[id]" options={{ headerRight: meHeaderRight, title: 'Workout' }} />

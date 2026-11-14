@@ -2,6 +2,7 @@
 // colour and letter; exercises already in another one show it, and picking them moves them over.
 import { Check, X } from 'lucide-react-native';
 import { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { Exercise, ExerciseLog } from '@shared/data';
@@ -16,13 +17,14 @@ export default function SupersetPicker({ exercises, i, lib, hex, letter, onSave,
   onSave: (chosen: number[]) => void; onClose: () => void;
 }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets(); // keep the buttons above Android's nav bar
   const g = exercises[i].superset;
   const [pick, setPick] = useState(() => new Set(exercises.flatMap((e, k) => (k !== i && g !== undefined && e.superset === g ? [k] : []))));
   const toggle = (k: number) => setPick((p) => { const n = new Set(p); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.scrim} onPress={onClose}>
-        <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
+        <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement, paddingBottom: 20 + insets.bottom }]} onPress={() => {}}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
               <ThemedText style={{ fontSize: 18, fontWeight: '700' }}>Superset {g !== undefined && <ThemedText style={{ fontSize: 18, fontWeight: '700', color: hex(g) }}>{letter(g)}</ThemedText>}</ThemedText>

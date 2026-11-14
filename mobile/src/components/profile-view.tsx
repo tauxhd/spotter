@@ -3,7 +3,7 @@
 import { router, Stack } from 'expo-router';
 import { Share2, X } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Share, StyleSheet, View, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { lifters, type Post } from '@shared/data';
@@ -144,7 +144,7 @@ export default function ProfileView({ userId, startEditing = false }: { userId: 
       {!!posts?.length && <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: 20 }}>{more ? 'Loading more…' : 'That’s every workout'}</ThemedText>}
 
       <Modal visible={!!list} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setList(null)}>
-        <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
+        <SafeAreaView edges={Platform.OS === 'android' ? ['top', 'bottom'] : ['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
           <View style={styles.sheetHead}>
             <ThemedText style={{ fontSize: 22, fontWeight: '700' }}>{list?.kind === 'followers' ? 'Followers' : 'Following'}</ThemedText>
             <Pressable onPress={() => setList(null)} hitSlop={8} accessibilityLabel="Close" style={{ padding: 4 }}><X size={18} color={theme.textSecondary} /></Pressable>

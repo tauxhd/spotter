@@ -40,7 +40,7 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
 
   return (
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
-      <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
+      <SafeAreaView edges={Platform.OS === 'android' ? ['top', 'bottom'] : ['bottom']} style={{ flex: 1, backgroundColor: theme.background }}>
         <View style={styles.head}>
           <ThemedText style={styles.h1}>Add exercise</ThemedText>
           <Press onPress={close} style={[styles.close, { backgroundColor: theme.backgroundElement }]} accessibilityLabel="Close">

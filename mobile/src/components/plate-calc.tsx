@@ -2,6 +2,7 @@
 // any weight, switch the bar.
 import { X } from 'lucide-react-native';
 import { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { PLATE_COLOR, platesFor } from '@shared/lifting';
@@ -14,6 +15,7 @@ const fmt = (n: number) => String(Math.round(n * 100) / 100);
 
 export default function PlateCalc({ name, start, bar: bar0 = 20, onClose }: { name: string; start: number; bar?: number; onClose: () => void }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets(); // keep the buttons above Android's nav bar
   const [kg, setKg] = useState(start ? fmt(start) : '');
   const [bar, setBar] = useState(bar0);
   const total = Number(kg) || 0;
@@ -21,7 +23,7 @@ export default function PlateCalc({ name, start, bar: bar0 = 20, onClose }: { na
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.scrim} onPress={onClose}>
-        <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement }]} onPress={() => {}}>
+        <Pressable style={[styles.sheet, { backgroundColor: theme.backgroundElement, paddingBottom: 20 + insets.bottom }]} onPress={() => {}}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <ThemedText style={{ fontSize: 18, fontWeight: '700' }}>Plate calculator</ThemedText>
