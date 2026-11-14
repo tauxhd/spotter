@@ -11,7 +11,7 @@ export default async function Poster() {
 
   return (
     <div className="rounded-3xl bg-white p-8 text-center text-zinc-950 print:p-0">
-      <Image src="/icon-192.png" alt="" width={56} height={56} className="mx-auto rounded-xl" />
+      <Image src="/logo.png" alt="" width={56} height={56} className="mx-auto rounded-xl" />
       <p className="mt-2 text-sm font-bold uppercase tracking-widest text-lime-600">Spotter</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">{gym.name}</h1>
       <p className="mt-1 text-lg">Scan with your phone camera to clock in</p>

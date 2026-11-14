@@ -32,7 +32,7 @@ export default function Welcome() {
     <div className="min-h-dvh bg-zinc-950 text-zinc-100 [color-scheme:dark]">
       <nav className="sticky top-0 z-10 border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-          <Image src="/icon-192.png" alt="" width={32} height={32} className="rounded-lg" />
+          <Image src="/logo.png" alt="" width={32} height={32} className="rounded-lg" />
           <span className="text-lg font-bold tracking-tight">Spotter</span>
           <div className="ml-auto flex items-center gap-1 text-sm sm:gap-4">
             <a href="#features" className="hidden px-2 py-1 text-zinc-400 hover:text-white sm:block">Features</a>

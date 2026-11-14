@@ -33,7 +33,7 @@ export default function InstallSheet() {
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={close} role="dialog" aria-modal aria-label="Install Spotter">
       <div className="anim-slide-up w-full max-w-md rounded-t-3xl bg-white p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] dark:bg-zinc-900" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-3">
-          <Image src="/icon-192.png" alt="" width={56} height={56} className="rounded-2xl" />
+          <Image src="/logo.png" alt="" width={56} height={56} className="rounded-2xl" />
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-bold">Put Spotter on your home screen</h2>
             <p className="muted text-sm">It opens full screen like an app, with its own icon.</p>

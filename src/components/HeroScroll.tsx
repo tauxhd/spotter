@@ -1139,7 +1139,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
               <div className="absolute inset-0" style={{ background: LIME, clipPath: band(a) }} />
               <div className="absolute inset-0 grid place-items-center" style={{ background: mix("#27272a", "#09090b", fade), clipPath: cut(a) }}>
                 <div className="flex flex-col items-center" style={{ opacity: 1 - fade, transform: `scale(${1 - fade * 0.08})` }}>
-                  <img src="/icon-512.png" alt="Spotter" className="rounded-[28px] shadow-2xl shadow-black/50"
+                  <img src="/logo.png" alt="Spotter" className="rounded-[28px] shadow-2xl shadow-black/50"
                     style={{ width: 120, height: 120, transform: `scale(${back((o - 0.16) / 0.12) * (1 + Math.sin(o * 30) * 0.025)})` }} />
                   <p className="mt-6 text-2xl font-bold uppercase text-lime-400" style={{ letterSpacing: `${0.3 + (1 - smooth(0.24, 0.44, o)) * 0.6}em`, opacity: smooth(0.24, 0.32, o) }}>Spotter</p>
                   <p className="mt-2 text-zinc-400" style={{ opacity: smooth(0.32, 0.42, o) }}>Your gym, in your pocket.</p>
