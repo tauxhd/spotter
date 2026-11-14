@@ -15,7 +15,7 @@ export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw:
 export type Routine = { id: string; name: string; exercises: ExerciseLog[] };
 export type Session = { id: string; at: string; title: string; exercises: ExerciseLog[] };
 export type FoodEntry = { id: string; name: string; kcal: number; p: number; c: number; f: number; at: string };
-export type WeightEntry = { id: string; kg: number; at: string };
+export type WeightEntry = { id: string; kg: number; at: string; fed?: boolean }; // fed: weighed after eating, kept out of the trend
 type Active = { title: string; startedAt: string; exercises: ExerciseLog[] } | null;
 
 type State = { clockedIn: string | null; sessions: Session[]; food: FoodEntry[]; weights: WeightEntry[]; posts: Post[]; morePosts: boolean; rev: number; following: string[]; followers: string[]; library: Exercise[]; routines: Routine[] };
@@ -31,7 +31,7 @@ type Ctx = {
   clockOut: () => Promise<void>;
   addFood: (f: Omit<FoodEntry, "id" | "at">) => Promise<void>;
   removeFood: (id: string) => Promise<void>;
-  addWeight: (kg: number) => Promise<void>;
+  addWeight: (kg: number, fed?: boolean) => Promise<void>;
   finishWorkout: (w: { title: string; exercises: ExerciseLog[] }, post: Pick<Post, "title" | "note" | "exercises" | "volume" | "prs" | "duration" | "visibility"> & { at?: string }, lifts: Pick<Profile, "squat" | "bench" | "deadlift">, media?: File | null) => Promise<void>;
   like: (id: string, wasLiked?: boolean) => Promise<void>;
   comment: (id: string, text: string) => Promise<void>;
@@ -99,7 +99,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       sb.from("visits").select("in_at").is("out_at", null).order("in_at", { ascending: false }).limit(1),
       sb.from("workouts").select("*").order("created_at", { ascending: false }).limit(400), // ~a year of training, for exercise history
       sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(400), // ~5 weeks, for maintenance
-      sb.from("weight_logs").select("id, kg, created_at").order("created_at", { ascending: false }).limit(120),
+      sb.from("weight_logs").select("*").order("created_at", { ascending: false }).limit(120),
       sb.from("follows").select("follower, followee"), // RLS: only rows that involve me
       sb.from("routines").select("id, name, exercises").order("updated_at", { ascending: false }),
     ]);
@@ -108,7 +108,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clockedIn: v.data?.[0]?.in_at ?? null,
       sessions: (w.data ?? []).map((r) => ({ id: r.id, at: r.created_at, title: r.title, exercises: r.exercises.map((e: ExerciseLog) => ({ ...e, name: oldNames[e.name] ?? e.name })) })),
       food: (f.data ?? []).map((r) => ({ id: r.id, name: r.name, kcal: +r.kcal, p: +r.p, c: +r.c, f: +r.f, at: r.created_at })).reverse(),
-      weights: (wl.data ?? []).map((r) => ({ id: r.id, kg: +r.kg, at: r.created_at })).reverse(),
+      weights: (wl.data ?? []).map((r) => ({ id: r.id, kg: +r.kg, at: r.created_at, fed: !!r.fed })).reverse(),
       following: (fo.data ?? []).filter((r) => r.follower === id).map((r) => r.followee),
       followers: (fo.data ?? []).filter((r) => r.followee === id).map((r) => r.follower),
       routines: ro.data ?? [],
@@ -237,10 +237,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setS((x) => ({ ...x, food: x.food.filter((y) => y.id !== id) }));
       await sb.from("food_logs").delete().eq("id", id);
     },
-    async addWeight(kg) { // on screen at once; rolled back if the save fails
+    async addWeight(kg, fed = false) { // on screen at once; rolled back if the save fails
       const at = demoNow().toISOString(), tmp = `tmp-${Date.now()}`;
-      setS((x) => ({ ...x, weights: [...x.weights, { id: tmp, kg, at }] }));
-      const { data, error } = await sb.from("weight_logs").insert({ kg, created_at: at }).select().single();
+      setS((x) => ({ ...x, weights: [...x.weights, { id: tmp, kg, at, fed }] }));
+      const { data, error } = await sb.from("weight_logs").insert({ kg, created_at: at, ...(fed && { fed }) }).select().single();
       setS((x) => ({ ...x, weights: data ? x.weights.map((y) => (y.id === tmp ? { ...y, id: data.id } : y)) : x.weights.filter((y) => y.id !== tmp) }));
       if (error) throw error;
     },
@@ -375,7 +375,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       async clockOut() { setS((x) => ({ ...x, clockedIn: null })); },
       async addFood(f) { setS((x) => ({ ...x, food: [...x.food, { ...f, id: id(), at: now() }] })); },
       async removeFood(fid) { setS((x) => ({ ...x, food: x.food.filter((y) => y.id !== fid) })); },
-      async addWeight(kg) { setS((x) => ({ ...x, weights: [...x.weights, { id: id(), kg, at: now() }] })); },
+      async addWeight(kg, fed) { setS((x) => ({ ...x, weights: [...x.weights, { id: id(), kg, at: now(), fed }] })); },
       async updateProfile(p) { setMe({ ...me, ...p }); },
       async finishWorkout(w, post, lifts, media) {
         const at = post.at ?? now(), wid = id();

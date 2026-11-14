@@ -15,6 +15,7 @@ create table if not exists weight_logs (
   seed boolean not null default false,
   created_at timestamptz not null default now()
 );
+alter table weight_logs add column if not exists fed boolean not null default false; -- weighed after eating: kept out of the trend
 create index if not exists weight_logs_user on weight_logs (user_id, created_at desc);
 alter table weight_logs enable row level security;
 drop policy if exists "own" on weight_logs;

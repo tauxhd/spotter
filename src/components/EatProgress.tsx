@@ -7,7 +7,7 @@ import { ChevronRight, CircleCheck, Info, TrendingDown, TrendingUp } from "lucid
 import Icon from "@/components/Icon";
 import TrendChart from "@/components/TrendChart";
 import { useStore } from "@/lib/store";
-import { dailyIntake, dayOf, goals, maintenanceSteps, nutrition, weekly } from "@/lib/nutrition";
+import { dailyIntake, dayOf, goals, maintenanceSteps, mealGain, nutrition, weekly } from "@/lib/nutrition";
 import InfoTip from "@/components/InfoTip";
 import { help } from "@/lib/help";
 
@@ -17,7 +17,7 @@ const signed = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${fmt(Math.abs
 
 export default function EatProgress() {
   const { s, me, addWeight } = useStore();
-  const [kg, setKg] = useState("");
+  const [kg, setKg] = useState({ pre: "", post: "" }); // before / after eating
   const [busy, setBusy] = useState(false);
   const n = nutrition(me, s.food, s.weights);
   const q = typeof window !== "undefined" ? location.search : "";
@@ -25,12 +25,15 @@ export default function EatProgress() {
   const first = n.trend.find((w) => w.day >= Date.now() - DAYS * 864e5);
   const change = first ? n.current - first.trend : 0;
 
+  const gain = mealGain(s.weights);
+  const ok = (t: string) => parseFloat(t) >= 30 && parseFloat(t) <= 250;
   async function log() {
-    const v = parseFloat(kg);
-    if (!(v >= 30 && v <= 250)) return;
-    setKg(""); // on the chart at once; if the save fails the number comes back so you can retry
+    const todo = ([["pre", false], ["post", true]] as const).filter(([k]) => ok(kg[k]));
+    if (!todo.length) return;
+    const was = kg;
+    setKg({ pre: ok(kg.pre) ? "" : kg.pre, post: ok(kg.post) ? "" : kg.post }); // on screen at once; numbers come back if the save fails
     setBusy(true);
-    try { await addWeight(v); } catch { setKg(String(v)); } finally { setBusy(false); }
+    try { for (const [k, fed] of todo) await addWeight(parseFloat(was[k]), fed); } catch { setKg(was); } finally { setBusy(false); }
   }
 
   return (
@@ -82,15 +85,18 @@ export default function EatProgress() {
           { pts: n.trend.map((w) => ({ day: w.day, v: w.kg })), color: "#a1a1aa", line: false, dots: true },
         ]} />
         <form onSubmit={(e) => { e.preventDefault(); log(); }} className="mt-3 flex gap-2">
-          <label className="relative flex-1">
-            <Icon name="scale" size={18} className="absolute left-3 top-1/2 -translate-y-1/2" />
-            <input value={kg} onChange={(e) => setKg(e.target.value)} inputMode="decimal" placeholder="Today’s weight" aria-label="Today's weight in kg"
-              className="w-full rounded-xl bg-white py-2.5 pl-9 pr-10 text-base tabular-nums outline-none ring-1 ring-zinc-200 focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900 dark:ring-zinc-800" />
-            <span className="muted absolute right-3 top-1/2 -translate-y-1/2 text-sm">kg</span>
-          </label>
-          <button disabled={busy || !kg} className="btn px-4 py-2 text-sm disabled:opacity-50">Log</button>
+          {([["pre", "Before eating"], ["post", "After eating"]] as const).map(([k, label]) => (
+            <label key={k} className="relative min-w-0 flex-1">
+              <input value={kg[k]} onChange={(e) => setKg({ ...kg, [k]: e.target.value })} inputMode="decimal" placeholder={label} aria-label={`Weight ${label.toLowerCase()} in kg`}
+                className="w-full rounded-xl bg-white py-2.5 pl-3 pr-8 text-base tabular-nums outline-none ring-1 ring-zinc-200 focus:ring-2 focus:ring-lime-500 dark:bg-zinc-900 dark:ring-zinc-800" />
+              <span className="muted absolute right-3 top-1/2 -translate-y-1/2 text-sm">kg</span>
+            </label>
+          ))}
+          <button disabled={busy || !(ok(kg.pre) || ok(kg.post))} className="btn px-4 py-2 text-sm disabled:opacity-50">Log</button>
         </form>
-        <p className="muted mt-1.5 text-xs">Weigh in each morning, after the toilet and before eating or drinking.</p>
+        <p className="muted mt-1.5 text-xs">{gain === null
+          ? "The trend uses your before-eating weight: weigh in each morning, after the toilet."
+          : <>Today: <b className="tabular-nums text-zinc-900 dark:text-zinc-100">{gain >= 0 ? "+" : "−"}{Math.abs(gain).toFixed(1)} kg</b> after eating. That&apos;s food and water, not fat, so it stays out of the trend.</>}</p>
         <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-1.5 text-sm font-semibold"><Icon name="target" size={18} />Goal status</h3>

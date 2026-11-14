@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { dailyIntake, DAY, dayOf, goals, maintenanceSteps, nutrition, weekly } from '@shared/nutrition';
+import { dailyIntake, DAY, dayOf, goals, maintenanceSteps, mealGain, nutrition, weekly } from '@shared/nutrition';
 import { ThemedText } from '@/components/themed-text';
 import { TrendChart } from '@/components/trend-chart';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ export function EatProgress() {
   const { s, me, addWeight } = useStore();
   const theme = useTheme();
   const [now] = useState(() => Date.now());
-  const [kg, setKg] = useState('');
+  const [kg, setKg] = useState({ pre: '', post: '' }); // before / after eating
   const [busy, setBusy] = useState(false);
   const n = nutrition(me, s.food, s.weights, now);
   const delta = n.kcal - n.prev;
@@ -63,14 +63,19 @@ export function EatProgress() {
   const muted = { color: theme.textSecondary };
   const plan = () => router.push('/plan');
 
+  const gain = mealGain(s.weights, now);
+  const num = (t: string) => parseFloat(t.replace(',', '.'));
+  const ok = (t: string) => num(t) >= 30 && num(t) <= 250;
   async function log() {
-    const v = parseFloat(kg.replace(',', '.'));
-    if (!(v >= 30 && v <= 250)) return;
-    setKg(''); // on the chart at once; if the save fails the number comes back so you can retry
+    const todo = ([['pre', false], ['post', true]] as const).filter(([k]) => ok(kg[k]));
+    if (!todo.length) return;
+    const was = kg;
+    setKg({ pre: ok(kg.pre) ? '' : kg.pre, post: ok(kg.post) ? '' : kg.post }); // on screen at once; numbers come back if the save fails
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setBusy(true);
-    try { await addWeight(v); } catch { setKg(String(v)); } finally { setBusy(false); }
+    try { for (const [k, fed] of todo) await addWeight(num(was[k]), fed); } catch { setKg(was); } finally { setBusy(false); }
   }
+
 
   return (
     <View>
@@ -128,15 +133,18 @@ export function EatProgress() {
           { pts: n.trend.map((w) => ({ day: w.day, v: w.kg })), color: '#a1a1aa', line: false, dots: true },
         ]} />
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <Icon name="scale" size={18} style={{ position: 'absolute', left: 12, zIndex: 1 }} />
-            <Input value={kg} onChangeText={setKg} keyboardType="decimal-pad" placeholder="Today’s weight" placeholderTextColor={theme.textSecondary} onSubmitEditing={log}
-              accessibilityLabel="Today's weight in kg" style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]} />
-            <ThemedText type="small" themeColor="textSecondary" style={{ position: 'absolute', right: 12 }}>kg</ThemedText>
-          </View>
-          <Button onPress={log} disabled={busy || !kg} style={{ paddingHorizontal: 18 }}>Log</Button>
+          {([['pre', 'Before eating'], ['post', 'After eating']] as const).map(([k, label]) => (
+            <View key={k} style={{ flex: 1, justifyContent: 'center' }}>
+              <Input value={kg[k]} onChangeText={(t) => setKg((x) => ({ ...x, [k]: t }))} keyboardType="decimal-pad" placeholder={label} placeholderTextColor={theme.textSecondary} onSubmitEditing={log}
+                accessibilityLabel={`Weight ${label.toLowerCase()} in kg`} style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]} />
+              <ThemedText type="small" themeColor="textSecondary" style={{ position: 'absolute', right: 10 }}>kg</ThemedText>
+            </View>
+          ))}
+          <Button onPress={log} disabled={busy || !(ok(kg.pre) || ok(kg.post))} style={{ paddingHorizontal: 18 }}>Log</Button>
         </View>
-        <ThemedText style={[{ fontSize: 12, marginTop: 6 }, muted]}>Weigh in each morning, after the toilet and before eating or drinking.</ThemedText>
+        <ThemedText style={[{ fontSize: 12, marginTop: 6 }, muted]}>{gain === null
+          ? 'The trend uses your before-eating weight: weigh in each morning, after the toilet.'
+          : <>Today: <ThemedText style={{ fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{gain >= 0 ? '+' : '−'}{Math.abs(gain).toFixed(1)} kg</ThemedText> after eating. That’s food and water, not fat, so it stays out of the trend.</>}</ThemedText>
         <View style={[styles.split, { borderTopColor: theme.border }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Icon name="target" size={18} /><ThemedText type="smallBold">Goal status</ThemedText></View>
@@ -198,7 +206,7 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12, lineHeight: 16, fontWeight: '600', fontVariant: ['tabular-nums'] },
   chip: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 2 },
   note: { fontSize: 12, lineHeight: 17, marginTop: 12 },
-  input: { borderRadius: 5, paddingVertical: 10, paddingLeft: 36, paddingRight: 40, fontSize: 16, fontVariant: ['tabular-nums'] },
+  input: { borderRadius: 5, paddingVertical: 10, paddingLeft: 12, paddingRight: 32, fontSize: 16, fontVariant: ['tabular-nums'] },
   split: { marginTop: 16, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
   track: { flex: 1, height: 8, borderRadius: 2, overflow: 'hidden' },
   stat: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },

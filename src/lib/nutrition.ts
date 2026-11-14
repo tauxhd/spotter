@@ -20,7 +20,7 @@ export const activities = [
 
 export type Body = { sex: Sex; bw: number; height?: number | null; age?: number | null; activity?: number | null; goal?: string | null; goal_bw?: number | null };
 type Food = { kcal: number; at: string };
-type Weight = { kg: number; at: string };
+type Weight = { kg: number; at: string; fed?: boolean }; // fed: weighed after eating
 
 export const DAY = 864e5;
 const KCAL_PER_KG = 7700; // energy in a kg of body-weight change
@@ -44,10 +44,11 @@ export function dailyIntake(food: Food[]) {
   return [...m].map(([day, kcal]) => ({ day, kcal })).sort((a, b) => a.day - b.day);
 }
 
-// One weigh-in per day (the latest), each with its 7-day moving average: the trend that hides water-weight noise.
+// One weigh-in per day (the latest before eating), each with its 7-day moving average: the trend that hides
+// water-weight noise. After-meal weigh-ins stay out: they measure the meal, not you.
 export function weightTrend(weights: Weight[]) {
   const m = new Map<number, number>();
-  for (const w of [...weights].sort((a, b) => +new Date(a.at) - +new Date(b.at))) m.set(dayOf(w.at), w.kg);
+  for (const w of weights.filter((w) => !w.fed).sort((a, b) => +new Date(a.at) - +new Date(b.at))) m.set(dayOf(w.at), w.kg);
   const days = [...m].sort((a, b) => a[0] - b[0]);
   return days.map(([day, kg]) => {
     const win = days.filter(([d]) => d > day - 7 * DAY && d <= day);
@@ -93,6 +94,13 @@ export function nutrition(b: Body, food: Food[], weights: Weight[], now = Date.n
   };
 }
 
+// Today's after-eating weight minus today's before-eating weight (latest of each); null until both are logged.
+export function mealGain(weights: Weight[], now = Date.now()) {
+  const today = weights.filter((w) => dayOf(w.at) === dayOf(now)).sort((a, b) => +new Date(a.at) - +new Date(b.at));
+  const pre = today.filter((w) => !w.fed).at(-1), post = today.filter((w) => w.fed).at(-1);
+  return pre && post ? post.kg - pre.kg : null;
+}
+
 // kg per week from the trend line over the last 14 days; null until it spans at least 5 days.
 export function weeklyRate(trend: { day: number; trend: number }[], today: number) {
   const w = trend.filter((t) => t.day >= today - 14 * DAY);
@@ -135,5 +143,9 @@ if (typeof process !== "undefined" && process.argv?.[1]?.endsWith("nutrition.ts"
   console.assert(n.adjust === Math.round((n.targets.kcal - 2500) / 50) * 50, "adjust", n.adjust);
   console.assert(nutrition(me, [], []).rate === null && nutrition(me, [], []).adjust === null, "no data");
   console.assert(weekly({ rate: -0.42, adjust: 200, targets: { kcal: 2550 } }).rate === "Losing 0.4 kg/week" && weekly({ rate: -0.42, adjust: 200, targets: { kcal: 2550 } }).adjust === "Eat ~200 kcal more a day to hit your 2,550 kcal target", "weekly");
+  const fed = [...weights, { kg: 95, at: at(1), fed: true }];
+  console.assert(nutrition(me, food, fed).current === n.current, "after-meal weigh-ins stay out of the trend");
+  const td = new Date(t0 + 8 * 36e5).toISOString(), tl = new Date(t0 + 13 * 36e5).toISOString();
+  console.assert(Math.abs(mealGain([{ kg: 80, at: td }, { kg: 80.6, at: tl, fed: true }], t0 + 14 * 36e5)! - 0.6) < 1e-9 && mealGain([{ kg: 80, at: td }], t0 + 14 * 36e5) === null, "mealGain");
   console.log("nutrition ok", n.kcal, n.targets);
 }
