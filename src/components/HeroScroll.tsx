@@ -939,7 +939,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
         {/* intro product shot: a Cycles render of five phones fanned across the width (tools/hero_shot.py), behind the headline, fading back as the live
             phone rises through it. rendered on alpha so the grid sits behind the phones */}
         {!video && (
-          <div className="pointer-events-none absolute left-1/2 top-[34dvh] z-10 aspect-[16/9] h-[72dvh] md:top-[6dvh] md:h-auto md:w-[max(104vw,150dvh)]"
+          <div className="pointer-events-none absolute left-1/2 top-[30dvh] z-10 aspect-[16/9] h-[72dvh] md:top-[14dvh] md:h-auto md:w-[max(104vw,150dvh)]"
             style={{ opacity: 1 - smooth(0, 0.25, p), transform: `translateX(-50%) translateY(${p * 12}dvh) scale(${1 - p * 0.15})` }} aria-hidden>
             <img src="/hero/phone-shot.webp" alt="" width={3200} height={1800} className="block h-full w-full" />
             {/* the phones' tops sink into the page colour under the copy (an overlay, not a mask, so they stay solid over the grid) */}
@@ -950,12 +950,12 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
         {/* intro headline: zooms past you as you scroll */}
         <div className="absolute inset-x-0 top-[10dvh] z-20 mx-auto max-w-6xl origin-top px-6 text-center md:top-[9dvh]"
           style={{ opacity: video ? 0 : 1 - smooth(0, 0.55, p), transform: `scale(${1 + p * 0.5})`, filter: `blur(${smooth(0, 0.6, p) * 12}px)`, pointerEvents: p > 0.3 ? "none" : undefined }}>
-          {/* quiet launch-page copy: one plain headline, a grey line, small pills */}
-          <h1 className="text-balance pb-1 text-[clamp(2.25rem,5vw,4rem)] font-bold leading-[1.05] tracking-[-0.04em] text-white">
-            The SweatZone, in your pocket.
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-lime-400">Built for the APU SweatZone</p>
+          <h1 className="mx-auto mt-4 max-w-4xl text-[clamp(2.75rem,9vw,7.5rem)] font-bold leading-[0.95] tracking-[-0.05em]">
+            Your gym,{" "}
+            <span className="text-lime-400">in your pocket.</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-zinc-400 md:text-base">Introducing Spotter, the APU gym app: clock in with a scan, log every set, count the cafeteria nasi lemak and see who&apos;s benching what.</p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <a href="#demo" className="rounded-full bg-lime-400 px-4 py-2 text-sm font-semibold sm:px-5 text-zinc-950 transition hover:bg-lime-300 active:scale-[0.97]">Try the demo</a>
             <a href={apk} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 py-2 pl-3 pr-4 text-sm sm:gap-2 sm:pl-4 sm:pr-5 font-semibold text-zinc-100 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="#a3e635" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
