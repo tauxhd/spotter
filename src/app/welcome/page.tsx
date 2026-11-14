@@ -93,7 +93,7 @@ export default function Welcome() {
               Download the APK
             </a>
             {/* ponytail: hand-kept; update with each release (Actions > Android APK) */}
-            <Facts rows={[["Size", "92 MB"], ["Version", "1.0.15"], ["Requires", "Android 7.0 or newer"], ["Works on", "64-bit phones (almost every phone since 2017)"], ["Price", "Free, no ads"]]} />
+            <Facts rows={[["Size", "92 MB"], ["Version", "1.0.16"], ["Requires", "Android 7.0 or newer"], ["Works on", "64-bit phones (almost every phone since 2017)"], ["Price", "Free, no ads"]]} />
 
             <p className="mt-3 text-sm text-zinc-400">Download not starting? <a href="/download" download="spotter.apk" className="font-medium text-lime-400 underline underline-offset-4">Get it straight from this site</a></p>
             <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
