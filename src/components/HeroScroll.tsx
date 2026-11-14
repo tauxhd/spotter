@@ -936,11 +936,11 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           );
         })()}
 
-        {/* intro product shot: a Cycles render of the phone (tools/hero_shot.py), fading back as the live phone rises through it.
-            lighten blend: its black studio drops out against the page */}
+        {/* intro product shot: a Cycles render of the phone (tools/hero_shot.py), big and behind the headline, fading back as the live
+            phone rises through it. lighten blend: its black studio drops out; the mask sinks its top into the dark under the copy */}
         {!video && (
           <img src="/hero/phone-shot.webp" alt="" width={2400} height={1350} aria-hidden
-            className="pointer-events-none absolute bottom-[-4dvh] left-1/2 z-10 h-[50dvh] w-auto max-w-none mix-blend-lighten [mask-image:radial-gradient(ellipse_55%_75%_at_50%_42%,#000_70%,transparent)] md:bottom-[1dvh] md:h-[62dvh]"
+            className="pointer-events-none absolute left-1/2 top-[22dvh] z-10 h-[95dvh] w-auto max-w-none mix-blend-lighten [mask-image:linear-gradient(to_bottom,transparent_14%,rgba(0,0,0,.3)_30%,#000_52%)] md:top-[2dvh] md:h-[128dvh]"
             style={{ opacity: 1 - smooth(0, 0.25, p), transform: `translateX(-50%) translateY(${p * 12}dvh) scale(${1 - p * 0.15})` }} />
         )}
 

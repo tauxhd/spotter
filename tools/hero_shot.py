@@ -37,19 +37,19 @@ def slab(name, w, h, r, thick, z, m, edge=0.0, segs=24):
 
 # --- the phone, built lying flat (screen up), then stood up as one group ------------------------------------------
 PH = 0.1505; PW = PH * 390 / 844; PT = 0.0082; BEZEL = 0.022 * PW
-frame = mat("frame", (0.06, 0.062, 0.066), rough=0.22, metal=1.0)  # graphite titanium
+frame = mat("frame", (0.05, 0.052, 0.055), rough=0.38, metal=1.0)  # satin graphite titanium
 parts = [slab("phone", PW, PH, 0.15 * PW, PT, 0, frame, edge=0.0022)]
 
 g = bpy.data.materials.new("screen"); g.use_nodes = True
 nt = g.node_tree; b = nt.nodes["Principled BSDF"]
 b.inputs["Base Color"].default_value = (0.002, 0.002, 0.002, 1)
-b.inputs["Roughness"].default_value = 0.02
-b.inputs["Coat Weight"].default_value = 1.0; b.inputs["Coat Roughness"].default_value = 0.0
+b.inputs["Roughness"].default_value = 0.12
+b.inputs["Coat Weight"].default_value = 1.0; b.inputs["Coat Roughness"].default_value = 0.04; b.inputs["Coat Weight"].default_value = 0.2
 tc = nt.nodes.new("ShaderNodeTexCoord"); tex = nt.nodes.new("ShaderNodeTexImage"); tex.image = bpy.data.images.load(screen_png)
 tex.interpolation = "Cubic"
 nt.links.new(tc.outputs["Generated"], tex.inputs["Vector"])  # the screen's bounding box -> the whole screenshot
 nt.links.new(tex.outputs["Color"], b.inputs["Emission Color"])
-b.inputs["Emission Strength"].default_value = 2.2
+b.inputs["Emission Strength"].default_value = 1.0
 parts.append(slab("screen", PW - 2 * BEZEL, PH - 2 * BEZEL, 0.135 * (PW - 2 * BEZEL), 0, PT + 0.00015, g))
 
 ink = mat("ink", (0.0, 0.0, 0.0), rough=0.15)
@@ -85,12 +85,13 @@ def area(name, loc, power, size, color=(1, 1, 1), aim=centre, spread=180, sy=Non
     l.rotation_euler = (aim - l.location).to_track_quat("-Z", "Y").to_euler()
     return l
 LIME = (0.45, 1.0, 0.08)
-area("key", (0.55, -0.55, 0.55), 10, 0.5, (1, 0.98, 0.95), spread=25)            # big soft white top-front-right: the glass sheen
-area("rimL", (-0.32, 0.22, 0.16), 2.2, 0.06, LIME, sy=0.3, spread=25)             # lime strips behind, grazing both edges
-area("rimR", (0.30, 0.25, 0.20), 1.2, 0.06, LIME, sy=0.3, spread=25)
-area("top", (0.0, 0.12, 0.42), 4, 0.25, (0.85, 0.9, 1.0), spread=50)             # cool hair light on the top edge
+# a studio set-up, not neon: one big soft key, a dim fill, broad soft lime kickers behind (gradients on the frame, not lines)
+area("key", (-0.75, -0.05, 0.55), 3.5, 0.8, (1, 0.97, 0.93), spread=60)             # big softbox high left: lights the frame, stays off the glass
+area("fill", (0.8, 0.05, 0.12), 0.5, 0.8, (0.85, 0.9, 1.0), spread=60)             # dim cool fill front-right
+area("rimL", (-0.4, 0.35, 0.18), 0.9, 0.35, LIME, sy=0.5, spread=60)                # soft lime kickers behind both edges
+area("rimR", (0.4, 0.35, 0.22), 0.5, 0.35, LIME, sy=0.5, spread=60)
 bpy.ops.object.light_add(type="SPOT", location=(0, 0.05, 0.7))                   # the lime pool on the floor beneath
-pool = bpy.context.object; pool.data.energy = 14; pool.data.color = LIME; pool.data.spot_size = math.radians(14)
+pool = bpy.context.object; pool.data.energy = 4; pool.data.color = LIME; pool.data.spot_size = math.radians(30)
 pool.data.spot_blend = 1.0; pool.data.shadow_soft_size = 0.15
 pool.rotation_euler = (Vector((0, 0.02, 0)) - pool.location).to_track_quat("-Z", "Y").to_euler()
 
@@ -101,7 +102,7 @@ w.node_tree.nodes["Background"].inputs[0].default_value = (0, 0, 0, 1)
 bpy.ops.object.camera_add(location=(0, -1.0, 0.17)); cam = bpy.context.object; sc.camera = cam
 cam.data.lens = 85
 cam.rotation_euler = (centre + Vector((0, 0, -0.004)) - cam.location).to_track_quat("-Z", "Y").to_euler()
-cam.data.dof.use_dof = True; cam.data.dof.focus_distance = (centre - cam.location).length; cam.data.dof.aperture_fstop = 5.6
+cam.data.dof.use_dof = True; cam.data.dof.focus_distance = (centre - cam.location).length; cam.data.dof.aperture_fstop = 4
 
 # --- render ------------------------------------------------------------------------------------------------------
 sc.render.engine = "CYCLES"
@@ -115,11 +116,7 @@ for d in prefs.devices: d.use = d.type != "CPU"
 sc.cycles.device = "GPU"
 sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True
 sc.render.resolution_x, sc.render.resolution_y = W, W * 9 // 16
-sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Medium High Contrast"
+sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Base Contrast"
 sc.render.image_settings.file_format = "PNG"
-sc.use_nodes = True
-ct = sc.node_tree; rl = ct.nodes["Render Layers"]; comp = ct.nodes["Composite"]
-gl = ct.nodes.new("CompositorNodeGlare"); gl.glare_type = "FOG_GLOW"; gl.quality = "HIGH"; gl.threshold = 1.4; gl.size = 7; gl.mix = -0.5
-ct.links.new(rl.outputs["Image"], gl.inputs["Image"]); ct.links.new(gl.outputs["Image"], comp.inputs["Image"])
 sc.render.filepath = out
 bpy.ops.render.render(write_still=True)
