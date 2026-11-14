@@ -804,27 +804,35 @@ const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fad
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
 /** a still phone showing scene k at its own time t (k = -1: the logo screen the Blender phone wakes up to) */
 /** "poc" redrawn as solid letters (no counters) with a barbell cut through them, side on: the p's bowl holds one end's
- *  plates and collar, the bar runs straight through the solid o, and the c's bowl holds the other end, its collar sliding
+ *  round weight, the bar runs straight through the solid o, and the c's bowl holds the other end, its collar sliding
  *  out through the c's mouth. Units are 1/100 em: x-height top at y 0, baseline at y 51, descender to 73, matched to
  *  Geist Bold so it sits in the headline with the real "ket." after it. */
 function Poc() {
   const id = useId();
-  const plate = (x: number, w: number, h: number) => <rect x={x} y={25.5 - h / 2} width={w} height={h} rx={Math.min(w / 2, 3)} />;
   return (
     <svg viewBox="0 -2 174 76" className="inline-block h-[0.76em] w-[1.74em] align-[-0.23em]" style={{ marginRight: "0.01em" }} aria-hidden>
-      <mask id={id} maskUnits="userSpaceOnUse" x="-5" y="-5" width="185" height="85">
-        <rect x="-5" y="-5" width="185" height="85" fill="#fff" />
-        <g fill="#000">
-          <rect x="22" y="21.5" width="138" height="8" />{/* the bar */}
-          {plate(19, 7, 18)}{plate(28, 9, 31)}{plate(39, 10, 42)}{/* collar, plate, plate in the p */}
-          {plate(130, 10, 42)}{plate(142, 9, 31)}{plate(153, 7, 18)}{/* plate, plate, collar in the c */}
-          <rect x="155" y="18" width="30" height="15" rx="2" />{/* the c's mouth: a slot the collar sits in */}
+      <defs>
+        <mask id={`${id}m`} maskUnits="userSpaceOnUse" x="-5" y="-5" width="185" height="85">
+          <rect x="-5" y="-5" width="185" height="85" fill="#fff" />
+          <g fill="#000">
+            <rect x="30" y="21.5" width="130" height="8" />{/* the bar */}
+            <circle cx="39" cy="25.5" r="15" />{/* a weight in the p */}
+            <circle cx="143" cy="25.5" r="15" />{/* a weight in the c */}
+            <rect x="150" y="21.5" width="30" height="8" />{/* the bar runs on out of the c's mouth */}
+          </g>
+        </mask>
+        {/* rounds every corner where the cut meets the letters: blur, then snap the alpha back to a crisp edge */}
+        <filter id={`${id}r`} filterUnits="userSpaceOnUse" x="-5" y="-5" width="185" height="85">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.3" />
+          <feComponentTransfer><feFuncA type="linear" slope="12" intercept="-5.5" /></feComponentTransfer>
+        </filter>
+      </defs>
+      <g filter={`url(#${id}r)`}>
+        <g fill="currentColor" mask={`url(#${id}m)`}>
+          <rect x="2" y="0" width="15" height="73" /><ellipse cx="35" cy="25.5" rx="23.5" ry="26.5" />{/* p */}
+          <ellipse cx="91" cy="25.5" rx="26" ry="26.5" />{/* o */}
+          <ellipse cx="147" cy="25.5" rx="25.5" ry="26.5" />{/* c */}
         </g>
-      </mask>
-      <g fill="currentColor" mask={`url(#${id})`}>
-        <rect x="2" y="0" width="15" height="73" /><ellipse cx="35" cy="25.5" rx="23.5" ry="26.5" />{/* p */}
-        <ellipse cx="91" cy="25.5" rx="26" ry="26.5" />{/* o */}
-        <ellipse cx="147" cy="25.5" rx="25.5" ry="26.5" />{/* c */}
       </g>
     </svg>
   );
