@@ -815,10 +815,10 @@ function Poc() {
         <mask id={`${id}m`} maskUnits="userSpaceOnUse" x="-5" y="-5" width="185" height="85">
           <rect x="-5" y="-5" width="185" height="85" fill="#fff" />
           <g fill="#000">
-            <rect x="30" y="21.5" width="130" height="8" />{/* the bar */}
-            <circle cx="39" cy="25.5" r="15" />{/* a weight in the p */}
-            <circle cx="143" cy="25.5" r="15" />{/* a weight in the c */}
-            <rect x="150" y="21.5" width="30" height="8" />{/* the bar runs on out of the c's mouth */}
+            <rect x="36" y="21.5" width="111" height="8" />{/* the bar */}
+            <circle cx="36" cy="25.5" r="13" />{/* a weight in the p, dead centre of its bowl */}
+            <circle cx="147" cy="25.5" r="13" />{/* a weight in the c, dead centre of its bowl */}
+            <rect x="147" y="21.5" width="33" height="8" />{/* the bar runs on out of the c's mouth */}
           </g>
         </mask>
         {/* rounds every corner where the cut meets the letters: blur, then snap the alpha back to a crisp edge */}
@@ -829,9 +829,9 @@ function Poc() {
       </defs>
       <g filter={`url(#${id}r)`}>
         <g fill="currentColor" mask={`url(#${id}m)`}>
-          <rect x="2" y="0" width="15" height="73" /><ellipse cx="35" cy="25.5" rx="23.5" ry="26.5" />{/* p */}
-          <ellipse cx="91" cy="25.5" rx="26" ry="26.5" />{/* o */}
-          <ellipse cx="147" cy="25.5" rx="25.5" ry="26.5" />{/* c */}
+          <rect x="2" y="0" width="15" height="73" /><circle cx="36" cy="25.5" r="26" />{/* p: round bowls, so the ring round each weight is even */}
+          <circle cx="91.5" cy="25.5" r="26" />{/* o */}
+          <circle cx="147" cy="25.5" r="26" />{/* c */}
         </g>
       </g>
     </svg>
