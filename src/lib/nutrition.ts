@@ -83,11 +83,32 @@ export function nutrition(b: Body, food: Food[], weights: Weight[], now = Date.n
   const avg = week.length ? Math.round(week.reduce((s, d) => s + d.kcal, 0) / week.length) : null;
   const current = trend.at(-1)?.trend ?? b.bw;
   const start = trend[0]?.trend ?? b.bw, goalBw = b.goal_bw ?? null;
+  const targets = targetsFor(b, m.kcal);
   return {
     goal: bodyOf(b).goal, ...m, prev: maintenance(b, food, weights, today - 7 * DAY).kcal,
-    targets: targetsFor(b, m.kcal), trend, current,
+    targets, trend, current, rate: weeklyRate(trend, today),
     weekAvg: avg, balance: avg === null ? null : avg - m.kcal,
+    adjust: avg === null ? null : round(targets.kcal - avg, 50), // + eat more, − eat less, per day
     goalBw, progress: goalBw === null || goalBw === start ? null : Math.max(0, Math.min(1, (current - start) / (goalBw - start))),
+  };
+}
+
+// kg per week from the trend line over the last 14 days; null until it spans at least 5 days.
+export function weeklyRate(trend: { day: number; trend: number }[], today: number) {
+  const w = trend.filter((t) => t.day >= today - 14 * DAY);
+  if (w.length < 2 || w.at(-1)!.day - w[0].day < 5 * DAY) return null;
+  return ((w.at(-1)!.trend - w[0].trend) / ((w.at(-1)!.day - w[0].day) / DAY)) * 7;
+}
+
+// The readout the trend and intake charts add up to: "Losing 0.4 kg/week" + "Eat ~200 kcal more a day".
+export function weekly(n: { rate: number | null; adjust: number | null; targets: { kcal: number } }) {
+  const kcal = (v: number) => Math.abs(v).toLocaleString("en-MY"), goal = `your ${kcal(n.targets.kcal)} kcal target`;
+  return {
+    rate: n.rate === null ? "Log a few morning weigh-ins to see your weekly rate"
+      : Math.abs(n.rate) < 0.05 ? "Your weight is steady" : `${n.rate < 0 ? "Losing" : "Gaining"} ${Math.abs(n.rate).toFixed(1)} kg/week`,
+    adjust: n.adjust === null ? "Log your meals to get a calorie suggestion"
+      : n.adjust === 0 ? `You're eating right on ${goal}`
+      : `Eat ~${kcal(n.adjust)} kcal ${n.adjust > 0 ? "more" : "less"} a day to hit ${goal}`,
   };
 }
 
@@ -110,5 +131,9 @@ if (typeof process !== "undefined" && process.argv?.[1]?.endsWith("nutrition.ts"
   console.assert(n.adaptive && Math.abs(n.kcal - 2400) < 60, "adaptive", n.kcal);
   console.assert(n.targets.kcal === Math.round((n.kcal * 1.08) / 50) * 50 && n.targets.p === 160, "targets", n.targets);
   console.assert(!nutrition(me, [], []).adaptive, "formula fallback");
+  console.assert(n.rate !== null && n.rate > 0.08 && n.rate < 0.18, "rate", n.rate); // 0.5 kg over 27 days ~ 0.13 kg/week
+  console.assert(n.adjust === Math.round((n.targets.kcal - 2500) / 50) * 50, "adjust", n.adjust);
+  console.assert(nutrition(me, [], []).rate === null && nutrition(me, [], []).adjust === null, "no data");
+  console.assert(weekly({ rate: -0.42, adjust: 200, targets: { kcal: 2550 } }).rate === "Losing 0.4 kg/week" && weekly({ rate: -0.42, adjust: 200, targets: { kcal: 2550 } }).adjust === "Eat ~200 kcal more a day to hit your 2,550 kcal target", "weekly");
   console.log("nutrition ok", n.kcal, n.targets);
 }

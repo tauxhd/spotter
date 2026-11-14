@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { dailyIntake, DAY, dayOf, goals, maintenanceSteps, nutrition } from '@shared/nutrition';
+import { dailyIntake, DAY, dayOf, goals, maintenanceSteps, nutrition, weekly } from '@shared/nutrition';
 import { ThemedText } from '@/components/themed-text';
 import { TrendChart } from '@/components/trend-chart';
 import { Button } from '@/components/ui/button';
@@ -136,6 +136,7 @@ export function EatProgress() {
           </View>
           <Button onPress={log} disabled={busy || !kg} style={{ paddingHorizontal: 18 }}>Log</Button>
         </View>
+        <ThemedText style={[{ fontSize: 12, marginTop: 6 }, muted]}>Weigh in each morning, after the toilet and before eating or drinking.</ThemedText>
         <View style={[styles.split, { borderTopColor: theme.border }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Icon name="target" size={18} /><ThemedText type="smallBold">Goal status</ThemedText></View>
@@ -178,6 +179,11 @@ export function EatProgress() {
             <View><View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><ThemedText style={[{ fontSize: 12 }, muted]}>Energy balance</ThemedText><InfoTip text={help.balance} size={13} /></View><ThemedText style={[styles.statValue, n.balance !== null && { color: n.balance < 0 ? Sky : Lime }]}>{n.balance === null ? '–' : signed(n.balance)}<ThemedText style={[{ fontSize: 12 }, muted]}> kcal</ThemedText></ThemedText></View>
           </View>
         </View>
+        <View style={[styles.weekly, { backgroundColor: theme.backgroundElement }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Icon name="target" size={18} /><ThemedText type="smallBold">Weekly check</ThemedText><InfoTip text={help.weekly} size={13} /></View>
+          <ThemedText type="smallBold" style={{ marginTop: 4, fontVariant: ['tabular-nums'] }}>{weekly(n).rate}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ fontVariant: ['tabular-nums'] }}>{weekly(n).adjust}</ThemedText>
+        </View>
       </View>
     </View>
   );
@@ -196,5 +202,6 @@ const styles = StyleSheet.create({
   split: { marginTop: 16, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
   track: { flex: 1, height: 8, borderRadius: 2, overflow: 'hidden' },
   stat: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  weekly: { marginTop: 12, borderRadius: 10, padding: 12 },
   statValue: { fontWeight: '700', fontVariant: ['tabular-nums'] },
 });

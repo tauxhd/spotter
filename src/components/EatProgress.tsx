@@ -7,7 +7,7 @@ import { ChevronRight, CircleCheck, Info, TrendingDown, TrendingUp } from "lucid
 import Icon from "@/components/Icon";
 import TrendChart from "@/components/TrendChart";
 import { useStore } from "@/lib/store";
-import { dailyIntake, dayOf, goals, maintenanceSteps, nutrition } from "@/lib/nutrition";
+import { dailyIntake, dayOf, goals, maintenanceSteps, nutrition, weekly } from "@/lib/nutrition";
 import InfoTip from "@/components/InfoTip";
 import { help } from "@/lib/help";
 
@@ -90,6 +90,7 @@ export default function EatProgress() {
           </label>
           <button disabled={busy || !kg} className="btn px-4 py-2 text-sm disabled:opacity-50">Log</button>
         </form>
+        <p className="muted mt-1.5 text-xs">Weigh in each morning, after the toilet and before eating or drinking.</p>
         <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-1.5 text-sm font-semibold"><Icon name="target" size={18} />Goal status</h3>
@@ -131,6 +132,11 @@ export default function EatProgress() {
             <Icon name="scale" size={30} />
             <div><p className="muted flex items-center gap-1 text-xs">Energy balance<InfoTip text={help.balance} size={13} /></p><p className={`font-bold tabular-nums ${n.balance === null ? "" : n.balance < 0 ? "text-sky-600 dark:text-sky-400" : "text-lime-600 dark:text-lime-400"}`}>{n.balance === null ? "–" : signed(n.balance)} <span className="muted text-xs font-medium">kcal</span></p></div>
           </div>
+        </div>
+        <div className="mt-3 rounded-xl bg-zinc-100 p-3 dark:bg-zinc-800/60">
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold"><Icon name="target" size={18} />Weekly check<InfoTip text={help.weekly} size={13} /></h3>
+          <p className="mt-1 text-sm font-semibold tabular-nums">{weekly(n).rate}</p>
+          <p className="muted text-sm tabular-nums">{weekly(n).adjust}</p>
         </div>
       </section>
     </div>

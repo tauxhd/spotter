@@ -11,6 +11,7 @@ export const help = {
   targets: "Your maintenance adjusted for your goal, rounded to the nearest 50 kcal. Protein and fat scale with your bodyweight; carbs fill the rest.",
   trend: "Daily weigh-ins jump around with water and food. The purple line is the 7-day average, which shows where your weight is really heading.",
   intake: "Green is what you ate each day; the dashed orange line is your maintenance. Eat under the line to lose weight, over it to gain.",
+  weekly: "How fast your 7-day average weight is moving, and how far your average intake this week is from your goal's calorie target. Weigh in each morning after the toilet and before eating or drinking, so days compare fairly.",
   balance: "Your average daily intake this week minus your maintenance. Negative is a deficit (losing weight), positive is a surplus (gaining).",
   lifts: "Every different weight × reps you've done, strongest first. Warm-up and assisted sets are left out.",
   strength: "Your best estimated one-rep max against strength standards for your bodyweight and sex, from Beginner to Elite. The marks under the bar show the kg each level starts at.",
