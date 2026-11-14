@@ -804,7 +804,7 @@ const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fad
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
 /** a still phone showing scene k at its own time t (k = -1: the logo screen the Blender phone wakes up to) */
 /** "poc" redrawn as solid letters (no counters) with a barbell cut through them, side on: the p's bowl holds one end's
- *  plates and collar, the bar runs through a small oval in the o, and the c's bowl holds the other end, its collar sliding
+ *  plates and collar, the bar runs straight through the solid o, and the c's bowl holds the other end, its collar sliding
  *  out through the c's mouth. Units are 1/100 em: x-height top at y 0, baseline at y 51, descender to 73, matched to
  *  Geist Bold so it sits in the headline with the real "ket." after it. */
 function Poc() {
@@ -815,11 +815,10 @@ function Poc() {
       <mask id={id} maskUnits="userSpaceOnUse" x="-5" y="-5" width="185" height="85">
         <rect x="-5" y="-5" width="185" height="85" fill="#fff" />
         <g fill="#000">
-          <rect x="22" y="22.75" width="134" height="5.5" />{/* the bar */}
-          {plate(21, 5, 15)}{plate(28, 6, 29)}{plate(36, 7, 39)}{/* collar, plate, plate in the p */}
-          <ellipse cx="91" cy="25.5" rx="10" ry="12.5" />{/* the o's small eye, the bar through it */}
-          {plate(130, 7, 39)}{plate(139, 6, 29)}{plate(147, 5, 15)}{/* plate, plate, collar in the c */}
-          <rect x="147" y="19" width="30" height="13" rx="2" />{/* the c's mouth: a slot the collar sits in */}
+          <rect x="22" y="21.5" width="138" height="8" />{/* the bar */}
+          {plate(19, 7, 18)}{plate(28, 9, 31)}{plate(39, 10, 42)}{/* collar, plate, plate in the p */}
+          {plate(130, 10, 42)}{plate(142, 9, 31)}{plate(153, 7, 18)}{/* plate, plate, collar in the c */}
+          <rect x="155" y="18" width="30" height="15" rx="2" />{/* the c's mouth: a slot the collar sits in */}
         </g>
       </mask>
       <g fill="currentColor" mask={`url(#${id})`}>
