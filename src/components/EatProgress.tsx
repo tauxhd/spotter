@@ -83,11 +83,11 @@ export default function EatProgress() {
           {fed.length > 0 && <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-amber-500" />After eating</span>}
           <span>Lines: 7-day average</span>
         </div>
-        <TrendChart days={DAYS} label="Weight trend" series={[
-          { pts: n.trend.map((w) => ({ day: w.day, v: w.trend })), color: "#8b5cf6", area: true },
-          { pts: n.trend.map((w) => ({ day: w.day, v: w.kg })), color: "#a1a1aa", line: false, dots: true },
-          { pts: fed.map((w) => ({ day: w.day, v: w.trend })), color: "#f59e0b" },
-          { pts: fed.map((w) => ({ day: w.day, v: w.kg })), color: "#fcd34d", line: false, dots: true },
+        <TrendChart days={DAYS} label="Weight trend" unit="kg" series={[
+          { pts: n.trend.map((w) => ({ day: w.day, v: w.trend })), color: "#8b5cf6", area: true, name: "Before, 7-day avg" },
+          { pts: n.trend.map((w) => ({ day: w.day, v: w.kg })), color: "#a1a1aa", line: false, dots: true, name: "Before eating" },
+          { pts: fed.map((w) => ({ day: w.day, v: w.trend })), color: "#f59e0b", name: "After, 7-day avg" },
+          { pts: fed.map((w) => ({ day: w.day, v: w.kg })), color: "#fcd34d", line: false, dots: true, name: "After eating" },
         ]} />
         <form onSubmit={(e) => { e.preventDefault(); log(); }} className="mt-3 flex gap-2">
           {([["pre", "Before eating"], ["post", "After eating"]] as const).map(([k, label]) => (
@@ -129,10 +129,10 @@ export default function EatProgress() {
           <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-lime-500" />Calorie intake</span>
           <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-orange-500" />Maintenance</span>
         </div>
-        <TrendChart days={DAYS} label="Calorie intake against maintenance" series={[
-          { pts: maintenanceSteps(me, s.food, s.weights, DAYS).map((m) => ({ day: m.day, v: m.kcal })), color: "#f97316", step: true, dashed: true },
+        <TrendChart days={DAYS} label="Calorie intake against maintenance" unit="kcal" series={[
+          { pts: maintenanceSteps(me, s.food, s.weights, DAYS).map((m) => ({ day: m.day, v: m.kcal })), color: "#f97316", step: true, dashed: true, name: "Maintenance" },
           // today is still being eaten, so the line stops at yesterday
-          { pts: dailyIntake(s.food).filter((d) => d.day < dayOf(Date.now())).map((d) => ({ day: d.day, v: d.kcal })), color: "#84cc16", dots: true },
+          { pts: dailyIntake(s.food).filter((d) => d.day < dayOf(Date.now())).map((d) => ({ day: d.day, v: d.kcal })), color: "#84cc16", dots: true, name: "Intake" },
         ]} />
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
           <div className="flex items-center gap-2">

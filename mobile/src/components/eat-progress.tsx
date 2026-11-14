@@ -129,11 +129,11 @@ export function EatProgress() {
           {first && <Badge tint={change < 0 ? Sky : Lime}><ThemedText style={[styles.badgeText, { color: change < 0 ? Sky : Lime }]}>{change > 0 ? '+' : ''}{change.toFixed(1)} kg</ThemedText></Badge>}
         </View>
         <Legend items={[['#a1a1aa', 'Daily', true], ['#8b5cf6', 'Before eating'], ...(fed.length ? [['#f59e0b', 'After eating'] as [string, string]] : [])]} />
-        <TrendChart days={DAYS} label="Weight trend" series={[
-          { pts: n.trend.map((w) => ({ day: w.day, v: w.trend })), color: '#8b5cf6', area: true },
-          { pts: n.trend.map((w) => ({ day: w.day, v: w.kg })), color: '#a1a1aa', line: false, dots: true },
-          { pts: fed.map((w) => ({ day: w.day, v: w.trend })), color: '#f59e0b' },
-          { pts: fed.map((w) => ({ day: w.day, v: w.kg })), color: '#fcd34d', line: false, dots: true },
+        <TrendChart days={DAYS} label="Weight trend" unit="kg" series={[
+          { pts: n.trend.map((w) => ({ day: w.day, v: w.trend })), color: '#8b5cf6', area: true, name: 'Before, 7-day avg' },
+          { pts: n.trend.map((w) => ({ day: w.day, v: w.kg })), color: '#a1a1aa', line: false, dots: true, name: 'Before eating' },
+          { pts: fed.map((w) => ({ day: w.day, v: w.trend })), color: '#f59e0b', name: 'After, 7-day avg' },
+          { pts: fed.map((w) => ({ day: w.day, v: w.kg })), color: '#fcd34d', line: false, dots: true, name: 'After eating' },
         ]} />
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
           {([['pre', 'Before eating'], ['post', 'After eating']] as const).map(([k, label]) => (
@@ -175,10 +175,10 @@ export function EatProgress() {
       <View style={card}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Calorie intake vs maintenance</ThemedText><InfoTip text={help.intake} /></View>
         <Legend items={[[Lime, 'Calorie intake'], ['#f97316', 'Maintenance']]} />
-        <TrendChart days={DAYS} label="Calorie intake against maintenance" series={[
-          { pts: maintenanceSteps(me, s.food, s.weights, DAYS, now).map((m) => ({ day: m.day, v: m.kcal })), color: '#f97316', step: true, dashed: true },
+        <TrendChart days={DAYS} label="Calorie intake against maintenance" unit="kcal" series={[
+          { pts: maintenanceSteps(me, s.food, s.weights, DAYS, now).map((m) => ({ day: m.day, v: m.kcal })), color: '#f97316', step: true, dashed: true, name: 'Maintenance' },
           // today is still being eaten, so the line stops at yesterday
-          { pts: dailyIntake(s.food).filter((d) => d.day < dayOf(now)).map((d) => ({ day: d.day, v: d.kcal })), color: Lime, dots: true },
+          { pts: dailyIntake(s.food).filter((d) => d.day < dayOf(now)).map((d) => ({ day: d.day, v: d.kcal })), color: Lime, dots: true, name: 'Intake' },
         ]} />
         <View style={[styles.split, { flexDirection: 'row', gap: 12, borderTopColor: theme.border }]}>
           <View style={styles.stat}>
