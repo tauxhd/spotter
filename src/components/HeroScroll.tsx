@@ -947,16 +947,21 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
         {/* intro headline: zooms past you as you scroll */}
         <div className="absolute inset-x-0 top-[10dvh] z-20 mx-auto max-w-6xl origin-top px-6 text-center md:top-[9dvh]"
           style={{ opacity: video ? 0 : 1 - smooth(0, 0.55, p), transform: `scale(${1 + p * 0.5})`, filter: `blur(${smooth(0, 0.6, p) * 12}px)`, pointerEvents: p > 0.3 ? "none" : undefined }}>
-          {/* quiet launch-page copy: one plain headline, a grey line, the price, two small pills */}
-          <h1 className="bg-gradient-to-b from-white to-zinc-400 bg-clip-text pb-1 text-balance text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-transparent">
+          {/* quiet launch-page copy: one plain headline, a grey line, small pills */}
+          <h1 className="text-balance pb-1 text-[clamp(2.25rem,5vw,4rem)] font-bold leading-[1.05] tracking-[-0.04em] text-white">
             The SweatZone, in your pocket.
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-zinc-400 md:text-base">Introducing Spotter, the APU gym app: clock in with a scan, log every set, count the cafeteria nasi lemak and see who&apos;s benching what.</p>
-          <p className="mt-4 text-sm font-semibold text-zinc-100">Free</p>
-          <p className="mt-0.5 text-xs text-zinc-500">No ads · Android 7.0 or newer · On iPhone? <Link href="/?install=1" className="text-zinc-300 underline underline-offset-2 hover:text-white">Use the web app</Link></p>
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <a href="#demo" className="rounded-full bg-lime-400 px-5 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-lime-300 active:scale-[0.97]">Try the demo</a>
-            <a href={apk} className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-zinc-100 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">Get it on Android</a>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <a href="#demo" className="rounded-full bg-lime-400 px-4 py-2 text-sm font-semibold sm:px-5 text-zinc-950 transition hover:bg-lime-300 active:scale-[0.97]">Try the demo</a>
+            <a href={apk} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 py-2 pl-3 pr-4 text-sm sm:gap-2 sm:pl-4 sm:pr-5 font-semibold text-zinc-100 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="#a3e635" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
+              Android
+            </a>
+            <Link href="/?install=1" className="inline-flex items-center gap-1.5 rounded-full bg-white/10 py-2 pl-3 pr-4 text-sm sm:gap-2 sm:pl-4 sm:pr-5 font-semibold text-zinc-100 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M12 9v6M9 12h6" /></svg>
+              iPhone
+            </Link>
           </div>
         </div>
 
