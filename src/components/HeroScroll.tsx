@@ -940,10 +940,11 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
         <div className="absolute inset-x-0 top-[11dvh] z-20 mx-auto max-w-6xl origin-top-left px-6 md:top-[14dvh]"
           style={{ opacity: video ? 0 : 1 - smooth(0, 0.55, p), transform: `scale(${1 + p * 0.5})`, filter: `blur(${smooth(0, 0.6, p) * 12}px)`, pointerEvents: p > 0.3 ? "none" : undefined }}>
           <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">APU · SweatZone</p>
-          {/* the slogan as lettering art (made in ChatGPT, magenta keyed out); the h1 text stays for screen readers and search */}
-          <h1 className="mt-5">
-            <span className="sr-only">The SweatZone, in your pocket.</span>
-            <img src="/hero/slogan.webp" alt="" width={1600} height={346} className="h-auto w-full max-w-[min(56rem,100%)] drop-shadow-[0_20px_40px_rgba(163,230,53,0.12)]" />
+          {/* the second line reads like selected text in an editor: a flat, square lime highlight with a blinking block caret */}
+          <h1 className="mt-4 max-w-4xl text-[clamp(2.75rem,8.5vw,7rem)] font-bold leading-[0.92] tracking-[-0.055em]">
+            The SweatZone,<br />
+            <span className="mt-2 inline-flex items-center bg-lime-400 px-[0.12em] pb-[0.06em] text-zinc-950 md:mt-3">in your pocket.</span>
+            <span className="ml-[0.08em] inline-block h-[0.78em] w-[0.08em] translate-y-[0.08em] bg-lime-400 motion-safe:animate-pulse" aria-hidden />
           </h1>
           <p className="mt-6 max-w-md text-base text-zinc-400 md:text-lg">Clock in with a scan, log every set, count the cafeteria nasi lemak and see who&apos;s benching what.</p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
