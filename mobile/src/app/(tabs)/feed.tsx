@@ -2,7 +2,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Avatar from '@/components/avatar';
@@ -60,11 +59,9 @@ export default function Feed() {
           </View>
         }
         ListEmptyComponent={<EmptyState art="workouts" title="No workouts yet" text="Finish a workout in Train and it shows up here." />}
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 40).springify().dampingRatio(1).duration(350)}>
-            <PostCard post={item} />
-          </Animated.View>
-        )}
+        // no entering animation on the cells: FlatList mounts and unmounts them as you scroll, and an interrupted slide-in
+        // left a card stuck part-way up, drawn over the post above it
+        renderItem={({ item }) => <PostCard post={item} />}
       />
       <WorkoutPill />
     </SafeAreaView>
