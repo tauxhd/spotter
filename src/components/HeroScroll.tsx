@@ -803,37 +803,26 @@ const L = 2.5; // screens of scrolling per scene (more = slower)
 const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fading into the page)
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
 /** a still phone showing scene k at its own time t (k = -1: the logo screen the Blender phone wakes up to) */
-/** "poc" redrawn as solid letters (no counters) with a barbell cut through them, side on: the p's bowl holds one end's
- *  round weight, the bar runs straight through the solid o, and the c's bowl holds the other end, its collar sliding
- *  out through the c's mouth. Units are 1/100 em: x-height top at y 0, baseline at y 51, descender to 73, matched to
- *  Geist Bold so it sits in the headline with the real "ket." after it. */
-function Poc() {
+/** the "o" of "pocket" as a 20 kg powerlifting plate, face on: a rim, a raised face ring, "20" over the hub and "KG" under
+ *  it, and the sleeve hole. Engravings are cut out (a mask) so the page shows through. Units are 1/100 em: x-height top at
+ *  y 0, baseline at y 51, matched to Geist Bold's o. */
+function PlateO() {
   const id = useId();
   return (
-    <svg viewBox="0 -2 174 76" className="inline-block h-[0.76em] w-[1.74em] align-[-0.23em]" style={{ marginRight: "0.01em" }} aria-hidden>
-      <defs>
-        <mask id={`${id}m`} maskUnits="userSpaceOnUse" x="-5" y="-5" width="185" height="85">
-          <rect x="-5" y="-5" width="185" height="85" fill="#fff" />
-          <g fill="#000">
-            <rect x="36" y="21.5" width="111" height="8" />{/* the bar */}
-            <circle cx="36" cy="25.5" r="13" />{/* a weight in the p, dead centre of its bowl */}
-            <circle cx="147" cy="25.5" r="13" />{/* a weight in the c, dead centre of its bowl */}
-            <rect x="147" y="21.5" width="33" height="8" />{/* the bar runs on out of the c's mouth */}
-          </g>
-        </mask>
-        {/* rounds every corner where the cut meets the letters: blur, then snap the alpha back to a crisp edge */}
-        <filter id={`${id}r`} filterUnits="userSpaceOnUse" x="-5" y="-5" width="185" height="85">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="1.3" />
-          <feComponentTransfer><feFuncA type="linear" slope="12" intercept="-5.5" /></feComponentTransfer>
-        </filter>
-      </defs>
-      <g filter={`url(#${id}r)`}>
-        <g fill="currentColor" mask={`url(#${id}m)`}>
-          <rect x="2" y="0" width="15" height="73" /><circle cx="36" cy="25.5" r="26" />{/* p: round bowls, so the ring round each weight is even */}
-          <circle cx="91.5" cy="25.5" r="26" />{/* o */}
-          <circle cx="147" cy="25.5" r="26" />{/* c */}
+    <svg viewBox="0 -3 58 57" className="inline-block h-[0.57em] w-[0.58em] align-[-0.03em]" style={{ margin: "0 0.005em" }} aria-hidden>
+      <mask id={id} maskUnits="userSpaceOnUse" x="-2" y="-5" width="62" height="62">
+        <circle cx="29" cy="25.5" r="27.5" fill="#fff" />
+        <g fill="none" stroke="#000">
+          <circle cx="29" cy="25.5" r="23.5" strokeWidth="1.8" />{/* the rim */}
+          <circle cx="29" cy="25.5" r="11" strokeWidth="1.8" />{/* the hub's raised ring */}
         </g>
-      </g>
+        <circle cx="29" cy="25.5" r="5.5" fill="#000" />{/* the sleeve hole */}
+        <g fill="#000" fontFamily="inherit" fontWeight="800" textAnchor="middle">
+          <text x="29" y="12.5" fontSize="8.5" letterSpacing="0.3">20</text>{/* own spacing: the headline's -0.05em would pile the digits up */}
+          <text x="29" y="44" fontSize="6.5" letterSpacing="0.6">KG</text>
+        </g>
+      </mask>
+      <circle cx="29" cy="25.5" r="27.5" fill="currentColor" mask={`url(#${id})`} />
     </svg>
   );
 }
@@ -989,7 +978,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           <h1 className="mx-auto mt-4 max-w-4xl text-[clamp(2.75rem,9vw,7.5rem)] font-bold leading-[0.95] tracking-[-0.05em]">
             Your gym,{" "}
             <span className="sr-only">in your pocket.</span>
-            <span className="text-lime-400" aria-hidden>in your <Poc />ket.</span>
+            <span className="text-lime-400" aria-hidden>in your p<PlateO />cket.</span>
           </h1>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <a href="#demo" className="rounded-full bg-lime-400 px-4 py-2 text-sm font-semibold sm:px-5 text-zinc-950 transition hover:bg-lime-300 active:scale-[0.97]">Try the demo</a>
