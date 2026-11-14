@@ -947,32 +947,16 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
         {/* intro headline: zooms past you as you scroll */}
         <div className="absolute inset-x-0 top-[10dvh] z-20 mx-auto max-w-6xl origin-top px-6 text-center md:top-[9dvh]"
           style={{ opacity: video ? 0 : 1 - smooth(0, 0.55, p), transform: `scale(${1 + p * 0.5})`, filter: `blur(${smooth(0, 0.6, p) * 12}px)`, pointerEvents: p > 0.3 ? "none" : undefined }}>
-          <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">APU · SweatZone</p>
-          {/* the second half reads like selected text in an editor: a flat, square lime highlight with a blinking block caret */}
-          <h1 className="mt-4 text-[clamp(2.5rem,6.2vw,5rem)] font-bold leading-[0.95] tracking-[-0.05em]">
-            The SweatZone,<br className="md:hidden" />{" "}
-            <span className="mt-2 inline-block bg-lime-400 px-[0.12em] pb-[0.06em] text-zinc-950 md:mt-0">in your pocket.</span>
-            <span className="ml-[0.08em] inline-block h-[0.78em] w-[0.08em] translate-y-[0.08em] bg-lime-400 motion-safe:animate-pulse" aria-hidden />
+          {/* quiet launch-page copy: one plain headline, a grey line, the price, two small pills */}
+          <h1 className="bg-gradient-to-b from-white to-zinc-400 bg-clip-text pb-1 text-balance text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-transparent">
+            The SweatZone, in your pocket.
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-zinc-400 md:text-lg">Clock in with a scan, log every set, count the cafeteria nasi lemak and see who&apos;s benching what.</p>
-          <div className="mx-auto mt-7 flex max-w-sm flex-wrap items-center justify-center gap-3 sm:max-w-none">
-            {/* a chunky plate of a button: it sits on a hard shadow and presses down into it */}
-            <a href="#demo" className="group inline-flex w-full items-center justify-between gap-3 rounded-2xl bg-lime-400 py-2.5 pl-5 pr-2.5 font-semibold text-zinc-950 shadow-[0_5px_0_#4d7c0f] transition-[transform,box-shadow] duration-100 hover:-translate-y-0.5 hover:shadow-[0_7px_0_#4d7c0f] active:translate-y-[5px] active:shadow-[0_0_0_#4d7c0f] sm:w-auto">
-              Try the live demo
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-zinc-950 text-lime-400 transition-transform group-hover:translate-x-0.5" aria-hidden>
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-              </span>
-            </a>
-            <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto">
-              <a href={apk} className="inline-flex items-center gap-3 rounded-2xl bg-zinc-900/80 py-2.5 pl-3.5 pr-4 ring-1 ring-white/10 backdrop-blur transition hover:bg-zinc-800 hover:ring-white/20 active:scale-[0.97] sm:pr-5">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="#a3e635" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
-                <span className="text-left leading-tight"><span className="block text-[11px] text-zinc-400">Download the APK</span><span className="block font-semibold">Android</span></span>
-              </a>
-              <Link href="/?install=1" className="inline-flex items-center gap-3 rounded-2xl bg-zinc-900/80 py-2.5 pl-3.5 pr-4 ring-1 ring-white/10 backdrop-blur transition hover:bg-zinc-800 hover:ring-white/20 active:scale-[0.97] sm:pr-5">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M12 9v6M9 12h6" /></svg>
-                <span className="text-left leading-tight"><span className="block text-[11px] text-zinc-400">Use the web app</span><span className="block font-semibold">iPhone</span></span>
-              </Link>
-            </div>
+          <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-zinc-400 md:text-base">Introducing Spotter, the APU gym app: clock in with a scan, log every set, count the cafeteria nasi lemak and see who&apos;s benching what.</p>
+          <p className="mt-4 text-sm font-semibold text-zinc-100">Free</p>
+          <p className="mt-0.5 text-xs text-zinc-500">No ads · Android 7.0 or newer · On iPhone? <Link href="/?install=1" className="text-zinc-300 underline underline-offset-2 hover:text-white">Use the web app</Link></p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <a href="#demo" className="rounded-full bg-lime-400 px-5 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-lime-300 active:scale-[0.97]">Try the demo</a>
+            <a href={apk} className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-zinc-100 backdrop-blur transition hover:bg-white/15 active:scale-[0.97]">Get it on Android</a>
           </div>
         </div>
 
