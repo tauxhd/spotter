@@ -7,7 +7,7 @@
 // Everything is a pure function of scroll position, so scrolling back plays it in reverse.
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import { equipment, floor } from "@/lib/data";
 
@@ -803,21 +803,31 @@ const L = 2.5; // screens of scrolling per scene (more = slower)
 const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fading into the page)
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
 /** a still phone showing scene k at its own time t (k = -1: the logo screen the Blender phone wakes up to) */
-/** "poc" with a barbell cut out of it, side on: a thin bar through the middle of the letters, a plate and collar at each end
- *  (left in the p's bowl, right in the c's mouth), so the gap in the letters is the barbell. The barbell is an SVG mask
- *  excluded from a solid layer; its viewBox is the span's box (1 unit = 1/100 em), tuned to Geist Bold at leading 0.95. */
-const BB = 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 95" preserveAspectRatio="none"';
-// baseline at y 88.75, x-height 50.8, so the bar runs through the middle of the x-height at y 63
-const CUT = `url("data:image/svg+xml,${encodeURIComponent(`<svg ${BB}><g fill="#000">
-  <rect x="17" y="60" width="136" height="6" rx="1" />
-  <rect x="22" y="46" width="9" height="34" rx="2.5" /><rect x="17" y="54" width="5" height="18" rx="1.5" />
-  <rect x="139" y="46" width="9" height="34" rx="2.5" /><rect x="148" y="54" width="5" height="18" rx="1.5" />
-</g></svg>`)}")`;
+/** "poc" redrawn as solid letters (no counters) with a barbell cut through them, side on: the p's bowl holds one end's
+ *  plates and collar, the bar runs through a small oval in the o, and the c's bowl holds the other end, its collar sliding
+ *  out through the c's mouth. Units are 1/100 em: x-height top at y 0, baseline at y 51, descender to 73, matched to
+ *  Geist Bold so it sits in the headline with the real "ket." after it. */
 function Poc() {
-  const m = `linear-gradient(#000 0 0), ${CUT}`;
+  const id = useId();
+  const plate = (x: number, w: number, h: number) => <rect x={x} y={25.5 - h / 2} width={w} height={h} rx={Math.min(w / 2, 3)} />;
   return (
-    <span className="inline-block" style={{ maskImage: m, WebkitMaskImage: m, maskSize: "100% 100%", WebkitMaskSize: "100% 100%",
-      maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskComposite: "exclude", WebkitMaskComposite: "xor" }}>poc</span>
+    <svg viewBox="0 -2 174 76" className="inline-block h-[0.76em] w-[1.74em] align-[-0.23em]" style={{ marginRight: "0.01em" }} aria-hidden>
+      <mask id={id} maskUnits="userSpaceOnUse" x="-5" y="-5" width="185" height="85">
+        <rect x="-5" y="-5" width="185" height="85" fill="#fff" />
+        <g fill="#000">
+          <rect x="22" y="22.75" width="134" height="5.5" />{/* the bar */}
+          {plate(21, 5, 15)}{plate(28, 6, 29)}{plate(36, 7, 39)}{/* collar, plate, plate in the p */}
+          <ellipse cx="91" cy="25.5" rx="10" ry="12.5" />{/* the o's small eye, the bar through it */}
+          {plate(130, 7, 39)}{plate(139, 6, 29)}{plate(147, 5, 15)}{/* plate, plate, collar in the c */}
+          <rect x="147" y="19" width="30" height="13" rx="2" />{/* the c's mouth: a slot the collar sits in */}
+        </g>
+      </mask>
+      <g fill="currentColor" mask={`url(#${id})`}>
+        <rect x="2" y="0" width="15" height="73" /><ellipse cx="35" cy="25.5" rx="23.5" ry="26.5" />{/* p */}
+        <ellipse cx="91" cy="25.5" rx="26" ry="26.5" />{/* o */}
+        <ellipse cx="147" cy="25.5" rx="25.5" ry="26.5" />{/* c */}
+      </g>
+    </svg>
   );
 }
 
