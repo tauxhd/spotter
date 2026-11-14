@@ -893,7 +893,8 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
   const kick = Math.max(live ? Math.max(0, ...live.clicks.map((c) => bump(t, c, 0.03))) : 0, beat * 0.5);
 
   return (
-    <section ref={ref} style={{ height: video ? "100dvh" : `${U * 100}dvh` }} className="relative">
+    // svh, not dvh: dvh changes as a phone's address bar hides, and ×20 screens that made the page jump mid-scroll
+    <section ref={ref} style={{ height: video ? "100dvh" : `${U * 100}svh` }} className="relative">
             <div className="sticky top-0 h-dvh overflow-hidden">
         {/* each scene's colour swipes across on a hard diagonal, led by a contrasting stripe */}
         <div className="pointer-events-none absolute inset-0 bg-zinc-950" aria-hidden />

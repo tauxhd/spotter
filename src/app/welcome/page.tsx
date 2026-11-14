@@ -132,7 +132,7 @@ function Info({ text }: { text: string }) {
       <button type="button" aria-label={text} className="grid h-6 w-6 place-items-center rounded-full text-zinc-500 transition hover:text-zinc-200 focus:text-zinc-200 focus:outline-none">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
       </button>
-      <span role="tooltip" className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg bg-zinc-800 p-3 text-sm font-normal leading-snug tracking-normal text-zinc-200 opacity-0 shadow-xl transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">{text}</span>
+      <span role="tooltip" className="pointer-events-none absolute right-0 top-full z-10 mt-2 hidden w-64 rounded-lg bg-zinc-800 p-3 text-sm font-normal leading-snug tracking-normal text-zinc-200 shadow-xl group-focus-within:block group-hover:block">{text}</span>{/* hidden, not opacity-0: an invisible box still widens the page on phones */}
     </span>
   );
 }
