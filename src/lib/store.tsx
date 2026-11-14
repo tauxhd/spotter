@@ -98,8 +98,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [v, w, f, wl, fo, ro] = await Promise.all([
       sb.from("visits").select("in_at").is("out_at", null).order("in_at", { ascending: false }).limit(1),
       sb.from("workouts").select("*").order("created_at", { ascending: false }).limit(400), // ~a year of training, for exercise history
-      sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(400), // ~5 weeks, for maintenance
-      sb.from("weight_logs").select("*").order("created_at", { ascending: false }).limit(120),
+      sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(1000), // ponytail: Supabase caps a read at 1000 rows (~7 months of meals); page it if 1Y intake looks short
+      sb.from("weight_logs").select("*").order("created_at", { ascending: false }).limit(800),
       sb.from("follows").select("follower, followee"), // RLS: only rows that involve me
       sb.from("routines").select("id, name, exercises").order("updated_at", { ascending: false }),
     ]);

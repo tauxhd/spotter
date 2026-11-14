@@ -19,7 +19,7 @@ import { useStore } from '@/lib/store';
 import { InfoTip } from '@/components/ui/info-tip';
 import { help } from '@shared/help';
 
-const DAYS = 30;
+const RANGES = [['7D', 7], ['1M', 30], ['3M', 91], ['1Y', 365]] as const;
 const fmt = (v: number) => Math.round(v).toLocaleString('en-MY');
 const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${fmt(Math.abs(v))}`;
 const Sky = '#0ea5e9';
@@ -53,6 +53,18 @@ export function EatProgress() {
   const { s, me, addWeight } = useStore();
   const theme = useTheme();
   const [now] = useState(() => Date.now());
+  const [range, setRange] = useState(1);
+  const DAYS = RANGES[range][1];
+  const rangeTabs = (
+    <View accessibilityRole="tablist" style={[styles.seg, { backgroundColor: theme.backgroundElement }]}>
+      {RANGES.map(([l], i) => (
+        <Pressable key={l} accessibilityRole="tab" accessibilityState={{ selected: range === i }} onPress={() => { Haptics.selectionAsync().catch(() => {}); setRange(i); }} hitSlop={4}
+          style={[styles.segItem, range === i && { backgroundColor: theme.backgroundSelected }]}>
+          <ThemedText style={{ fontSize: 12, fontWeight: '600', color: range === i ? theme.text : theme.textSecondary }}>{l}</ThemedText>
+        </Pressable>
+      ))}
+    </View>
+  );
   const [kg, setKg] = useState({ pre: '', post: '' }); // before / after eating
   const [busy, setBusy] = useState(false);
   const n = nutrition(me, s.food, s.weights, now);
@@ -123,7 +135,7 @@ export function EatProgress() {
       </View>
 
       <View style={card}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Weight trend ({DAYS} days)</ThemedText><InfoTip text={help.trend} /></View>
+        <View style={styles.head}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Weight trend</ThemedText><InfoTip text={help.trend} /></View>{rangeTabs}</View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 }}>
           <ThemedText style={styles.big}>{n.current.toFixed(1)}<ThemedText type="small" themeColor="textSecondary" style={{ fontWeight: '500' }}> kg</ThemedText></ThemedText>
           {first && <Badge tint={change < 0 ? Sky : Lime}><ThemedText style={[styles.badgeText, { color: change < 0 ? Sky : Lime }]}>{change > 0 ? '+' : ''}{change.toFixed(1)} kg</ThemedText></Badge>}
@@ -173,7 +185,7 @@ export function EatProgress() {
       </View>
 
       <View style={card}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Calorie intake vs maintenance</ThemedText><InfoTip text={help.intake} /></View>
+        <View style={styles.head}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><ThemedText style={styles.eyebrow}>Intake vs maintenance</ThemedText><InfoTip text={help.intake} /></View>{rangeTabs}</View>
         <Legend items={[[Lime, 'Calorie intake'], ['#f97316', 'Maintenance']]} />
         <TrendChart days={DAYS} label="Calorie intake against maintenance" unit="kcal" series={[
           { pts: maintenanceSteps(me, s.food, s.weights, DAYS, now).map((m) => ({ day: m.day, v: m.kcal })), color: '#f97316', step: true, dashed: true, name: 'Maintenance' },
@@ -213,6 +225,9 @@ const styles = StyleSheet.create({
   split: { marginTop: 16, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
   track: { flex: 1, height: 8, borderRadius: 2, overflow: 'hidden' },
   stat: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  seg: { flexDirection: 'row', borderRadius: 8, padding: 2 },
+  segItem: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   weekly: { marginTop: 12, borderRadius: 10, padding: 12 },
   statValue: { fontWeight: '700', fontVariant: ['tabular-nums'] },
 });

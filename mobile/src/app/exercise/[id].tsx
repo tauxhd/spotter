@@ -22,7 +22,7 @@ import { help } from '@shared/help';
 
 type Point = { at: number; heaviest: number; orm: number; setVol: number; vol: number; reps: number; hold: number };
 type Metric = { key: keyof Point; label: string; kind: 'kg' | 'reps' | 'time' };
-const RANGES = [['3M', 91], ['1Y', 365], ['All', Infinity]] as const;
+const RANGES = [['1M', 30], ['3M', 91], ['1Y', 365], ['All', Infinity]] as const;
 const DAY = 864e5, TOP = 5;
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const kg = (v: number) => `${Math.round(v * 10) / 10} kg`;
@@ -110,7 +110,7 @@ export default function ExerciseStats() {
   const ex = s.library.find((e) => e.id === id);
   const [tab, setTab] = useState(0);
   const [metric, setMetric] = useState(0);
-  const [range, setRange] = useState(1);
+  const [range, setRange] = useState(2); // 1Y
   const [pick, setPick] = useState<number | null>(null);
   const [allLifts, setAllLifts] = useState(false);
   const timed = timedByDefault(id), added = isLoadedBodyweight(id);

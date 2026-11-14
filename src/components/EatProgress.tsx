@@ -11,12 +11,19 @@ import { dailyIntake, dayOf, goals, maintenanceSteps, mealGain, nutrition, weekl
 import InfoTip from "@/components/InfoTip";
 import { help } from "@/lib/help";
 
-const DAYS = 30;
+const RANGES = [["7D", 7], ["1M", 30], ["3M", 91], ["1Y", 365]] as const;
 const fmt = (v: number) => Math.round(v).toLocaleString("en-MY");
 const signed = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${fmt(Math.abs(v))}`;
 
 export default function EatProgress() {
   const { s, me, addWeight } = useStore();
+  const [range, setRange] = useState(1);
+  const DAYS = RANGES[range][1];
+  const rangeTabs = (
+    <div role="tablist" aria-label="Time range" className="flex rounded-lg bg-zinc-100 p-0.5 text-xs font-semibold dark:bg-zinc-900">
+      {RANGES.map(([l], i) => <button key={l} role="tab" aria-selected={range === i} onClick={() => setRange(i)} className={`rounded-md px-2 py-0.5 transition ${range === i ? "bg-white shadow-sm dark:bg-zinc-700" : "muted"}`}>{l}</button>)}
+    </div>
+  );
   const [kg, setKg] = useState({ pre: "", post: "" }); // before / after eating
   const [busy, setBusy] = useState(false);
   const n = nutrition(me, s.food, s.weights);
@@ -72,7 +79,7 @@ export default function EatProgress() {
       </section>
 
       <section className="card">
-        <h2 className="eyebrow flex items-center gap-1.5">Weight trend ({DAYS} days)<InfoTip text={help.trend} /></h2>
+        <div className="flex items-center justify-between gap-2"><h2 className="eyebrow flex items-center gap-1.5">Weight trend<InfoTip text={help.trend} /></h2>{rangeTabs}</div>
         <div className="mt-2 flex items-end justify-between gap-3">
           <p className="text-2xl font-bold tabular-nums">{n.current.toFixed(1)}<span className="muted ml-1 text-sm font-medium">kg</span></p>
           {first && <span className={`rounded-sm px-2 py-1 text-xs font-semibold tabular-nums ${change < 0 ? "bg-sky-500/10 text-sky-600 dark:text-sky-400" : "bg-lime-500/10 text-lime-700 dark:text-lime-400"}`}>{change > 0 ? "+" : ""}{change.toFixed(1)} kg</span>}
@@ -124,7 +131,7 @@ export default function EatProgress() {
       </section>
 
       <section className="card">
-        <h2 className="eyebrow flex items-center gap-1.5">Calorie intake vs maintenance<InfoTip text={help.intake} /></h2>
+        <div className="flex items-center justify-between gap-2"><h2 className="eyebrow flex items-center gap-1.5">Intake vs maintenance<InfoTip text={help.intake} /></h2>{rangeTabs}</div>
         <div className="muted mt-2 flex gap-4 text-xs">
           <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-lime-500" />Calorie intake</span>
           <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-orange-500" />Maintenance</span>

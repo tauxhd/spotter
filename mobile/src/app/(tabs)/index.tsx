@@ -50,12 +50,12 @@ function Bar({ pct, color, height = 8, delay = 0 }: { pct: number; color: string
   return <Animated.View style={[{ height, borderRadius: 2, backgroundColor: color }, anim]} />;
 }
 
-function HourBar({ p, now, i }: { p: number; now: boolean; i: number }) {
+function HourBar({ p, now, i, on }: { p: number; now: boolean; i: number; on?: boolean }) {
   const theme = useTheme();
   const h = useSharedValue(0);
   useEffect(() => { h.set(withDelay(i * 30, withTiming(Math.max(p, 4) * 0.5, { duration: 700, easing: easeInOut }))); }, [p, i, h]);
   const anim = useAnimatedStyle(() => ({ height: h.value }));
-  return <Animated.View style={[{ width: '100%', borderRadius: 2, backgroundColor: now ? level(p).color : theme.backgroundSelected }, anim]} />;
+  return <Animated.View style={[{ width: '100%', borderRadius: 2, backgroundColor: on ? '#84cc16' : now ? level(p).color : theme.backgroundSelected }, anim]} />;
 }
 
 export default function GymHome() {
@@ -63,6 +63,7 @@ export default function GymHome() {
   const pull = usePullRefresh();
   const theme = useTheme();
   const [now, setNow] = useState(() => new Date());
+  const [hr, setHr] = useState<number | null>(null); // tapped hour on the crowd chart
   const [scanning, setScanning] = useState(false);
   const [inside, setInside] = useState(0);
   const [friends, setFriends] = useState<{ id: string; name: string; avatar_url: string | null; in_at: string }[]>([]); // mutual follows clocked in
@@ -183,13 +184,14 @@ export default function GymHome() {
             {Object.entries(crowdByHour).map(([h, p], i) => {
               const isNow = Number(h) === Math.floor(m / 60);
               return (
-                <View key={h} style={styles.hour}>
-                  <HourBar p={p} now={isNow && open} i={i} />
+                <Pressable key={h} style={styles.hour} onPress={() => setHr(hr === Number(h) ? null : Number(h))} accessibilityLabel={`${h}:00, usually ${p}% full`} accessibilityState={{ selected: hr === Number(h) }}>
+                  <HourBar p={p} now={isNow && open} i={i} on={hr === Number(h)} />
                   <ThemedText style={{ fontSize: 9, color: isNow ? theme.text : theme.textSecondary, fontWeight: isNow ? '700' : '400' }}>{Number(h) % 3 === 0 ? h : ' '}</ThemedText>
-                </View>
+                </Pressable>
               );
             })}
           </View>
+          {hr !== null && <ThemedText style={{ fontSize: 12, fontVariant: ['tabular-nums'] }}><ThemedText style={{ fontSize: 12, fontWeight: '700' }}>{hr}:00–{hr + 1}:00</ThemedText><ThemedText themeColor="textSecondary" style={{ fontSize: 12 }}> · usually {crowdByHour[hr as keyof typeof crowdByHour]}% full</ThemedText></ThemedText>}
         </Section>
 
         <Section>

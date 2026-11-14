@@ -23,6 +23,7 @@ export default function GymHome() {
   const now = useNow(5000);
   const { s, me, clockIn: doClockIn, clockOut } = useStore();
   const [scanning, setScanning] = useState(false);
+  const [hr, setHr] = useState<number | null>(null); // tapped hour on the crowd chart
   const [inside, setInside] = useState(0); // real open clock-ins, from Supabase
   const [friends, setFriends] = useState<{ id: string; name: string; avatar_url: string | null; in_at: string }[]>([]); // mutual follows clocked in
   useEffect(() => {
@@ -154,12 +155,14 @@ export default function GymHome() {
                     {friends.length > 3 && <span className="grid h-[26px] w-[26px] place-items-center rounded-full bg-lime-400 text-[10px] font-bold text-zinc-950 ring-2 ring-lime-400">+{friends.length - 3}</span>}
                   </div>
                 )}
-                <div className={`w-full rounded-sm ${isNow ? level(p).bar : "bg-zinc-200 dark:bg-zinc-700"}`} style={{ height: `${Math.max(p, 4) * 0.5}px` }} title={`${h}:00 · ${p}%`} />
+                <button onClick={() => setHr(hr === Number(h) ? null : Number(h))} aria-label={`${h}:00, usually ${p}% full`} aria-pressed={hr === Number(h)}
+                  className={`w-full rounded-sm ${hr === Number(h) ? "bg-lime-500" : isNow ? level(p).bar : "bg-zinc-200 dark:bg-zinc-700"}`} style={{ height: `${Math.max(p, 4) * 0.5}px` }} />
                 <span className={`text-[9px] tabular-nums ${isNow ? "font-bold" : "muted"}`}>{Number(h) % 3 === 0 ? h : ""}</span>
               </div>
             );
           })}
         </div>
+        {hr !== null && <p className="mt-2 text-xs tabular-nums"><b>{hr}:00–{hr + 1}:00</b> <span className="muted">· usually {crowdByHour[hr as keyof typeof crowdByHour]}% full</span></p>}
       </section>
 
       {/* Best slot from timetable */}
