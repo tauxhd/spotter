@@ -7,7 +7,7 @@ import { ChevronRight, CircleCheck, Info, TrendingDown, TrendingUp } from "lucid
 import Icon from "@/components/Icon";
 import TrendChart from "@/components/TrendChart";
 import { useStore } from "@/lib/store";
-import { dailyIntake, dayOf, goals, maintenanceSteps, mealGain, nutrition, weekly } from "@/lib/nutrition";
+import { dailyIntake, dayOf, goals, maintenanceSteps, mealGain, nutrition, weekly, weightTrend } from "@/lib/nutrition";
 import InfoTip from "@/components/InfoTip";
 import { help } from "@/lib/help";
 
@@ -26,6 +26,7 @@ export default function EatProgress() {
   const change = first ? n.current - first.trend : 0;
 
   const gain = mealGain(s.weights);
+  const fed = weightTrend(s.weights, true);
   const ok = (t: string) => parseFloat(t) >= 30 && parseFloat(t) <= 250;
   async function log() {
     const todo = ([["pre", false], ["post", true]] as const).filter(([k]) => ok(kg[k]));
@@ -78,11 +79,15 @@ export default function EatProgress() {
         </div>
         <div className="muted mt-2 flex gap-4 text-xs">
           <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />Daily</span>
-          <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-violet-500" />Trend (7-day average)</span>
+          <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-violet-500" />Before eating</span>
+          {fed.length > 0 && <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-sm bg-amber-500" />After eating</span>}
+          <span>Lines: 7-day average</span>
         </div>
         <TrendChart days={DAYS} label="Weight trend" series={[
           { pts: n.trend.map((w) => ({ day: w.day, v: w.trend })), color: "#8b5cf6", area: true },
           { pts: n.trend.map((w) => ({ day: w.day, v: w.kg })), color: "#a1a1aa", line: false, dots: true },
+          { pts: fed.map((w) => ({ day: w.day, v: w.trend })), color: "#f59e0b" },
+          { pts: fed.map((w) => ({ day: w.day, v: w.kg })), color: "#fcd34d", line: false, dots: true },
         ]} />
         <form onSubmit={(e) => { e.preventDefault(); log(); }} className="mt-3 flex gap-2">
           {([["pre", "Before eating"], ["post", "After eating"]] as const).map(([k, label]) => (

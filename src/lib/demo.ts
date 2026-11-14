@@ -42,9 +42,11 @@ export function demoAccount() {
     }
   }
   const weights: WeightEntry[] = Array.from({ length: 20 }, (_, i) => ({ id: `demo-kg${i}`, kg: Math.round(jitter(75 - i * 0.15, 0.3) * 10) / 10, at: iso(57 - i * 3, 8) }));
+  // after-lunch weigh-ins on the same days: ~0.7 kg heavier (the meal), drawn as their own line
+  weights.push(...weights.map((w, i) => ({ id: `demo-fed${i}`, kg: Math.round(jitter(w.kg + 0.7, 0.2) * 10) / 10, at: iso(57 - i * 3, 14), fed: true })));
   const best = (name: string) => Math.max(...sessions.flatMap((s) => s.exercises.filter((e) => e.name === name).flatMap((e) => e.sets.map((x) => x.kg))));
   const me: Profile = {
-    id: "demo", name: pickOne(["Aiden Lim", "Hafiz Rahman", "Ravi Kumar", "Daniel Tan", "Jason Wong"]), faculty: "Computing", sex: "M", bw: weights[weights.length - 1].kg,
+    id: "demo", name: pickOne(["Aiden Lim", "Hafiz Rahman", "Ravi Kumar", "Daniel Tan", "Jason Wong"]), faculty: "Computing", sex: "M", bw: weights[19].kg,
     squat: best("Squat (Barbell)"), bench: best("Bench Press (Barbell)"), deadlift: best("Deadlift (Barbell)"), intake: null,
     avatar_url: null, tp: null, course: "BSc (Hons) Computer Science", bio: "Demo account: everything here is made up.", unit: "kg",
     height: 176, age: 21, goal: "cut", activity: 1.55, goal_bw: 72,

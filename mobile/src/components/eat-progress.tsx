@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { dailyIntake, DAY, dayOf, goals, maintenanceSteps, mealGain, nutrition, weekly } from '@shared/nutrition';
+import { dailyIntake, DAY, dayOf, goals, maintenanceSteps, mealGain, nutrition, weekly, weightTrend } from '@shared/nutrition';
 import { ThemedText } from '@/components/themed-text';
 import { TrendChart } from '@/components/trend-chart';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,7 @@ export function EatProgress() {
   const plan = () => router.push('/plan');
 
   const gain = mealGain(s.weights, now);
+  const fed = weightTrend(s.weights, true);
   const num = (t: string) => parseFloat(t.replace(',', '.'));
   const ok = (t: string) => num(t) >= 30 && num(t) <= 250;
   async function log() {
@@ -127,10 +128,12 @@ export function EatProgress() {
           <ThemedText style={styles.big}>{n.current.toFixed(1)}<ThemedText type="small" themeColor="textSecondary" style={{ fontWeight: '500' }}> kg</ThemedText></ThemedText>
           {first && <Badge tint={change < 0 ? Sky : Lime}><ThemedText style={[styles.badgeText, { color: change < 0 ? Sky : Lime }]}>{change > 0 ? '+' : ''}{change.toFixed(1)} kg</ThemedText></Badge>}
         </View>
-        <Legend items={[['#a1a1aa', 'Daily', true], ['#8b5cf6', 'Trend (7-day average)']]} />
+        <Legend items={[['#a1a1aa', 'Daily', true], ['#8b5cf6', 'Before eating'], ...(fed.length ? [['#f59e0b', 'After eating'] as [string, string]] : [])]} />
         <TrendChart days={DAYS} label="Weight trend" series={[
           { pts: n.trend.map((w) => ({ day: w.day, v: w.trend })), color: '#8b5cf6', area: true },
           { pts: n.trend.map((w) => ({ day: w.day, v: w.kg })), color: '#a1a1aa', line: false, dots: true },
+          { pts: fed.map((w) => ({ day: w.day, v: w.trend })), color: '#f59e0b' },
+          { pts: fed.map((w) => ({ day: w.day, v: w.kg })), color: '#fcd34d', line: false, dots: true },
         ]} />
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
           {([['pre', 'Before eating'], ['post', 'After eating']] as const).map(([k, label]) => (

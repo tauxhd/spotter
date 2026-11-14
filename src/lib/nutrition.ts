@@ -44,11 +44,11 @@ export function dailyIntake(food: Food[]) {
   return [...m].map(([day, kcal]) => ({ day, kcal })).sort((a, b) => a.day - b.day);
 }
 
-// One weigh-in per day (the latest before eating), each with its 7-day moving average: the trend that hides
-// water-weight noise. After-meal weigh-ins stay out: they measure the meal, not you.
-export function weightTrend(weights: Weight[]) {
+// One weigh-in per day (the latest), each with its 7-day moving average: the trend that hides water-weight noise.
+// Before-eating weigh-ins by default; `fed` gives the after-eating line, which the maths never uses (it measures meals).
+export function weightTrend(weights: Weight[], fed = false) {
   const m = new Map<number, number>();
-  for (const w of weights.filter((w) => !w.fed).sort((a, b) => +new Date(a.at) - +new Date(b.at))) m.set(dayOf(w.at), w.kg);
+  for (const w of weights.filter((w) => !!w.fed === fed).sort((a, b) => +new Date(a.at) - +new Date(b.at))) m.set(dayOf(w.at), w.kg);
   const days = [...m].sort((a, b) => a[0] - b[0]);
   return days.map(([day, kg]) => {
     const win = days.filter(([d]) => d > day - 7 * DAY && d <= day);
@@ -145,6 +145,7 @@ if (typeof process !== "undefined" && process.argv?.[1]?.endsWith("nutrition.ts"
   console.assert(weekly({ rate: -0.42, adjust: 200, targets: { kcal: 2550 } }).rate === "Losing 0.4 kg/week" && weekly({ rate: -0.42, adjust: 200, targets: { kcal: 2550 } }).adjust === "Eat ~200 kcal more a day to hit your 2,550 kcal target", "weekly");
   const fed = [...weights, { kg: 95, at: at(1), fed: true }];
   console.assert(nutrition(me, food, fed).current === n.current, "after-meal weigh-ins stay out of the trend");
+  console.assert(weightTrend(fed, true).length === 1 && weightTrend(fed, true)[0].kg === 95, "after-eating line");
   const td = new Date(t0 + 8 * 36e5).toISOString(), tl = new Date(t0 + 13 * 36e5).toISOString();
   console.assert(Math.abs(mealGain([{ kg: 80, at: td }, { kg: 80.6, at: tl, fed: true }], t0 + 14 * 36e5)! - 0.6) < 1e-9 && mealGain([{ kg: 80, at: td }], t0 + 14 * 36e5) === null, "mealGain");
   console.log("nutrition ok", n.kcal, n.targets);
