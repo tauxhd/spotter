@@ -803,6 +803,27 @@ const L = 2.5; // screens of scrolling per scene (more = slower)
 const O = 1.6; // screens of scrolling for the outro (the logo on grey, then fading into the page)
 const U = 1 + L * N + O; // scroll units: the intro, the scenes, the outro
 /** a still phone showing scene k at its own time t (k = -1: the logo screen the Blender phone wakes up to) */
+/** the "oc" of "pocket" drawn as two weight plates on a bar (a dumbbell), sized in em to sit on the headline's x-height.
+ *  viewBox units are 1/100 em; the c's gap on the right is where the bar runs out like a sleeve */
+function Plates() {
+  const arc = (cx: number, r: number, gap: number) => { // a ring with an opening of `gap` degrees on the right
+    const a = (gap / 2) * (Math.PI / 180);
+    return `M ${cx + r * Math.cos(a)} ${26.5 - r * Math.sin(a)} A ${r} ${r} 0 1 0 ${cx + r * Math.cos(a)} ${26.5 + r * Math.sin(a)}`;
+  };
+  return (
+    <svg viewBox="0 0 124 53" className="inline-block h-[0.53em] w-[1.24em] overflow-visible align-baseline" style={{ margin: "0 0.03em 0 0.01em" }} fill="none" stroke="currentColor">
+      <rect x="27" y="23" width="90" height="7" rx="2" fill="currentColor" stroke="none" />{/* the bar */}
+      <rect x="112" y="18.5" width="7" height="16" rx="2" fill="currentColor" stroke="none" />{/* a collar on the sleeve */}
+      <circle cx="28" cy="26.5" r="21" strokeWidth="11.5" />{/* o: a plate */}
+      <circle cx="28" cy="26.5" r="21" strokeWidth="1.6" stroke="#09090b" />{/* the groove round its face */}
+      <circle cx="28" cy="26.5" r="7" fill="currentColor" stroke="none" />{/* its hub */}
+      <path d={arc(85, 21, 80)} strokeWidth="11.5" strokeLinecap="butt" />{/* c: a plate with its gap */}
+      <path d={arc(85, 21, 80)} strokeWidth="1.6" stroke="#09090b" />
+      <circle cx="85" cy="26.5" r="7" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 function PhoneMock({ k, t, style }: { k: number; t: number; style?: CSSProperties }) {
   const Screen = k >= 0 ? scenes[k].Screen : null;
   return (
@@ -953,7 +974,8 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-lime-400">Built for the APU SweatZone</p>
           <h1 className="mx-auto mt-4 max-w-4xl text-[clamp(2.75rem,9vw,7.5rem)] font-bold leading-[0.95] tracking-[-0.05em]">
             Your gym,{" "}
-            <span className="text-lime-400">in your pocket.</span>
+            <span className="sr-only">in your pocket.</span>
+            <span className="text-lime-400" aria-hidden>in your p<Plates />ket.</span>
           </h1>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <a href="#demo" className="rounded-full bg-lime-400 px-4 py-2 text-sm font-semibold sm:px-5 text-zinc-950 transition hover:bg-lime-300 active:scale-[0.97]">Try the demo</a>
