@@ -36,7 +36,12 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
   const add = () => { const p = picked; setPicked([]); onPick(p); };
   const logged = useMemo(() => heaviest(baseOf(me), s.sessions), [me, s.sessions]); // heaviest weight actually lifted
   const inGroup = pickerGroups.find(([x]) => x === g)![1];
-  const list = s.library.filter((e) => inGroup(e) && (k === 'any' || family(e.equipment) === k) && `${e.name} ${e.muscle} ${e.equipment}`.toLowerCase().includes(q.toLowerCase()));
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean); // every word, any order: "single leg rdl" finds Single Leg Romanian Deadlift
+  const list = s.library.filter((e) => {
+    if (!inGroup(e) || (k !== 'any' && family(e.equipment) !== k)) return false;
+    const hay = `${e.name} ${e.muscle} ${e.equipment}${/romanian deadlift/i.test(e.name) ? ' rdl' : ''}`.toLowerCase();
+    return words.every((w) => hay.includes(w));
+  });
 
   return (
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>

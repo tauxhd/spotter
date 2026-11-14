@@ -26,7 +26,12 @@ export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (li
   const [picked, setPicked] = useState<Exercise[]>([]);
   const toggle = (e: Exercise) => setPicked((p) => (p.some((x) => x.id === e.id) ? p.filter((x) => x.id !== e.id) : [...p, e]));
   const inGroup = groups.find(([x]) => x === g)![1];
-  const list = s.library.filter((e) => inGroup(e) && (k === "any" || family(e.equipment) === k) && `${e.name} ${e.muscle} ${e.equipment}`.toLowerCase().includes(q.toLowerCase()));
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean); // every word, any order: "single leg rdl" finds Single Leg Romanian Deadlift
+  const list = s.library.filter((e) => {
+    if (!inGroup(e) || (k !== "any" && family(e.equipment) !== k)) return false;
+    const hay = `${e.name} ${e.muscle} ${e.equipment}${/romanian deadlift/i.test(e.name) ? " rdl" : ""}`.toLowerCase();
+    return words.every((w) => hay.includes(w));
+  });
 
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto bg-zinc-100 dark:bg-zinc-950" role="dialog" aria-modal aria-label="Add exercise">
