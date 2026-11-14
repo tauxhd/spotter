@@ -1,14 +1,14 @@
 // Settings (from the gear on your profile; the website's /settings): your account, quick links, and log out.
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronRight, LogOut } from 'lucide-react-native';
+import { ChevronRight, Lock, LogOut } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import Avatar from '@/components/avatar';
 import HevyImport from '@/components/hevy-import';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/kit';
-import { Red } from '@/constants/theme';
+import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
 
@@ -16,7 +16,7 @@ const WARN = 'Sign back in any time with your TP number and password.';
 
 export default function Settings() {
   const { hevy } = useLocalSearchParams<{ hevy?: string }>(); // a Hevy CSV shared to Spotter (ShareHandler)
-  const { me, signOut } = useStore();
+  const { me, signOut, updateProfile } = useStore();
   const theme = useTheme();
   const [busy, setBusy] = useState(false);
 
@@ -46,6 +46,16 @@ export default function Settings() {
             <Icon name={ic} size={26} /><ThemedText style={{ flex: 1, fontWeight: '500' }}>{label}</ThemedText><ChevronRight size={18} color={theme.textSecondary} />
           </Pressable>
         ))}
+      </View>
+      {/* Private account: posts set to Everyone only reach friends (mutual follows); enforced in the database (can_see_post) */}
+      <View style={[styles.row, styles.list, { borderBottomColor: theme.border }]}>
+        <View style={{ width: 26, alignItems: 'center' }}><Lock size={20} color={Lime} /></View>
+        <View style={{ flex: 1 }}>
+          <ThemedText style={{ fontWeight: '500' }}>Private account</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Only friends (people you follow who follow you back) see your workouts.</ThemedText>
+        </View>
+        <Switch value={!!me.private} onValueChange={(v) => updateProfile({ private: v }).catch(() => Alert.alert("Couldn't save that", 'Check your connection and try again.'))}
+          trackColor={{ true: Lime, false: theme.backgroundSelected }} thumbColor="#fff" accessibilityLabel="Private account" />
       </View>
       <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }}><HevyImport shared={hevy} /></View>
       <Pressable onPress={logOut} disabled={busy} accessibilityRole="button"

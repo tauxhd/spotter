@@ -29,7 +29,7 @@ export default function SaveWorkout() {
   const [note, setNote] = useState("");
   const [duration, setDuration] = useState(() => (a ? String(Math.max(1, Math.round((Date.now() - new Date(a.startedAt).getTime()) / 60000))) : ""));
   const [when, setWhen] = useState(() => localInput(a ? new Date(a.startedAt) : new Date()));
-  const [visibility, setVisibility] = useState<Visibility>("everyone");
+  const [visibility, setVisibility] = useState<Visibility>(me.private ? "friends" : "everyone"); // a private account starts at Friends
   const [media, setMedia] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -163,7 +163,7 @@ export default function SaveWorkout() {
             );
           })}
         </div>
-        <p className="muted text-xs">{visibilities.find((v) => v.id === visibility)!.hint}</p>
+        <p className="muted text-xs">{me.private && visibility === "everyone" ? "Your account is private, so only friends will see it." : visibilities.find((v) => v.id === visibility)!.hint}</p>
       </div>
 
       {err && <p className="py-3 text-sm text-red-600">{err}</p>}

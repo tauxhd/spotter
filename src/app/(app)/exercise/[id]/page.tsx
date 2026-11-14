@@ -106,7 +106,7 @@ export default function ExerciseStats() {
       {tab === "summary" ? (
         <>
           <section className="-mx-4 flex items-center gap-4 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800/80">
-            <Image src={ex.image} alt="" width={112} height={112} className="shrink-0 rounded-lg bg-zinc-900" />
+            {ex.image ? <Image src={ex.image} alt="" width={112} height={112} className="shrink-0 rounded-lg bg-zinc-900" /> : <span className="grid h-28 w-28 shrink-0 place-items-center rounded-lg bg-zinc-900"><Icon name="barbell" size={64} /></span>}
             <div className="min-w-0">
               <h2 className="text-lg font-bold leading-tight">{ex.name}</h2>
               <p className="muted mt-1 text-sm">Primary: <span className="text-zinc-800 dark:text-zinc-200">{cap(ex.muscle)}</span></p>

@@ -228,6 +228,11 @@ export type Comment = { by: string; text: string; uid?: string | null };
 // One entry of the exercise library (Supabase "exercises" table).
 export type Exercise = { id: string; name: string; muscle: string; equipment: string; secondary: string[]; lift: Lift | null; image: string };
 export type Visibility = "everyone" | "friends" | "private";
+// An exercise a student added from the picker because the library didn't have it (table custom_exercises, only theirs).
+// It joins their library with no picture until we add it properly.
+export type CustomRow = { id: string; name: string; muscle: string; equipment: string };
+export const customExercise = (r: CustomRow): Exercise => ({ id: `custom-${r.id}`, name: r.name, muscle: r.muscle, equipment: r.equipment, secondary: [], lift: null, image: "" });
+export const isCustom = (e: Exercise) => e.id.startsWith("custom-");
 export type PostExercise = { id?: string; name: string; sets?: number; best: string; log?: { kg: number; reps: number; type?: SetType; secs?: number }[]; superset?: string };
 export type Post = {
   id: string; by: string; faculty: string; at: string; title: string; note?: string;

@@ -6,7 +6,7 @@ import { Alert, AppState } from "react-native";
 import { createClient } from "@supabase/supabase-js";
 import type { Converted } from '@shared/hevy';
 import type { Lifts } from '@shared/lifting';
-import { oldNames, type Exercise, type ExerciseLog, type Post, type Sex } from "@shared/data";
+import { customExercise, isCustom, oldNames, type CustomRow, type Exercise, type ExerciseLog, type Post, type Sex } from "@shared/data";
 import type { Unit } from "@shared/units";
 
 export const sb = createClient(process.env.EXPO_PUBLIC_SUPABASE_URL!, process.env.EXPO_PUBLIC_SUPABASE_KEY!, {
@@ -16,7 +16,7 @@ export const sb = createClient(process.env.EXPO_PUBLIC_SUPABASE_URL!, process.en
 // refresh the session only while the app is on screen
 AppState.addEventListener("change", (st) => (st === "active" ? sb.auth.startAutoRefresh() : sb.auth.stopAutoRefresh()));
 
-export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit; height?: number | null; age?: number | null; goal?: string | null; activity?: number | null; goal_bw?: number | null; };
+export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; private?: boolean; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit; height?: number | null; age?: number | null; goal?: string | null; activity?: number | null; goal_bw?: number | null; };
 export type Routine = { id: string; name: string; exercises: ExerciseLog[] };
 export type Session = { id: string; at: string; title: string; exercises: ExerciseLog[] };
 export type FoodEntry = { id: string; name: string; kcal: number; p: number; c: number; f: number; at: string };
@@ -42,6 +42,7 @@ type Ctx = {
   refresh: () => Promise<void>;
   saveRoutine: (r: { id?: string; name: string; exercises: ExerciseLog[] }) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
+  addExercise: (e: Omit<CustomRow, "id">) => Promise<Exercise>; // one the library is missing, saved to custom_exercises (yours only)
   clockIn: () => Promise<void>;
   clockOut: () => Promise<void>;
   updateProfile: (p: Partial<Omit<Profile, "id">>) => Promise<void>;
@@ -50,7 +51,7 @@ type Ctx = {
   removeFood: (id: string) => Promise<void>;
   addWeight: (kg: number, fed?: boolean) => Promise<void>;
 };
-const ACTIONS = ["setActive", "finishWorkout", "like", "comment", "follow", "unfollow", "signOut", "refresh", "loadMore", "importHevy", "saveRoutine", "deleteRoutine",
+const ACTIONS = ["setActive", "finishWorkout", "like", "comment", "follow", "unfollow", "signOut", "refresh", "loadMore", "importHevy", "saveRoutine", "deleteRoutine", "addExercise",
   "clockIn", "clockOut", "updateProfile", "setAvatar", "addFood", "removeFood", "addWeight"] as const satisfies readonly (keyof Ctx)[];
 type Action = (typeof ACTIONS)[number];
 export type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "onboarding"; save: (p: Omit<Profile, "id">) => Promise<void> } | { kind: "ready" };
@@ -123,13 +124,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } finally { paging = false; }
   }, []);
   const loadMine = useCallback(async (id: string) => {
-    const [w, ro, v, f, wl, fo] = await Promise.all([
+    const [w, ro, v, f, wl, fo, cx] = await Promise.all([
       sb.from("workouts").select("*").order("created_at", { ascending: false }).limit(400),
       sb.from("routines").select("id, name, exercises").order("updated_at", { ascending: false }),
       sb.from("visits").select("in_at").is("out_at", null).order("in_at", { ascending: false }).limit(1),
       sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(1000), // ponytail: Supabase caps a read at 1000 rows (~7 months of meals); page it if 1Y intake looks short
       sb.from("weight_logs").select("*").order("created_at", { ascending: false }).limit(800),
       sb.from("follows").select("follower, followee"),
+      sb.from("custom_exercises").select("id, name, muscle, equipment").order("created_at"), // RLS: only mine
     ]);
     setS((x) => ({
       ...x,
@@ -138,6 +140,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       weights: (wl.data ?? []).map((r) => ({ id: r.id, kg: +r.kg, at: r.created_at, fed: !!r.fed })).reverse(),
       sessions: (w.data ?? []).map((r) => ({ id: r.id, at: r.created_at, title: r.title, exercises: r.exercises.map((e: ExerciseLog) => ({ ...e, name: oldNames[e.name] ?? e.name })) })),
       routines: ro.data ?? [],
+      library: [...x.library.filter((e) => !isCustom(e)), ...(cx.data ?? []).map(customExercise)],
       following: (fo.data ?? []).filter((r) => r.follower === id).map((r) => r.followee),
       followers: (fo.data ?? []).filter((r) => r.followee === id).map((r) => r.follower),
     }));
@@ -162,7 +165,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort")
-      .then(({ data }) => { if (!data) return; setS((x) => ({ ...x, library: data })); try { localStorage.setItem(LIB, JSON.stringify(data)); } catch {} });
+      .then(({ data }) => { if (!data) return; setS((x) => ({ ...x, library: [...data, ...x.library.filter(isCustom)] })); try { localStorage.setItem(LIB, JSON.stringify(data)); } catch {} });
     Promise.resolve().then(boot); // async: the state it sets lands after the first render
   }, [boot]);
   // signing in to an existing account (the quest's sign-in form): load that account
@@ -311,6 +314,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     async deleteRoutine(id) {
       setS((x) => ({ ...x, routines: x.routines.filter((y) => y.id !== id) }));
       await sb.from("routines").delete().eq("id", id);
+    },
+    async addExercise(e) {
+      const { data, error } = await sb.from("custom_exercises").insert({ ...e, name: e.name.trim().slice(0, 60) }).select("id, name, muscle, equipment").single();
+      if (error) throw new Error(error.code === "23505" ? "You've already added one with that name" : error.message);
+      const ex = customExercise(data);
+      setS((x) => ({ ...x, library: [...x.library, ex] }));
+      return ex;
     },
     async clockIn() { // shows you as in straight away; undone if the server refuses
       const at = new Date().toISOString();

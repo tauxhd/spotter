@@ -222,3 +222,27 @@ alter table profiles add column if not exists tp text unique check (tp ~ '^TP[0-
 alter table profiles add column if not exists course text check (length(course) <= 80);
 alter table profiles add column if not exists bio text check (length(bio) <= 150);
 alter table profiles add column if not exists unit text not null default 'kg' check (unit in ('kg', 'lb')); -- display only, weights stay kg
+
+-- Exercises students add when the library doesn't have one. Only the person who added it sees it; we review the table
+-- and move the good ones into exercises.
+create table if not exists custom_exercises (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references profiles on delete cascade,
+  name text not null check (length(name) between 2 and 60),
+  muscle text not null check (length(muscle) <= 20),
+  equipment text not null check (length(equipment) <= 20),
+  created_at timestamptz not null default now(),
+  unique (user_id, name)
+);
+alter table custom_exercises enable row level security;
+create policy "own" on custom_exercises for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Private account: posts set to "everyone" are shown to friends (mutual follows) only.
+alter table profiles add column if not exists private boolean not null default false;
+create or replace function can_see_post(p posts) returns boolean language sql stable security definer set search_path = public as $$
+  select p.user_id is null or p.user_id = auth.uid()
+    or (p.visibility = 'everyone' and not coalesce((select private from profiles where id = p.user_id), false))
+    or (p.visibility in ('everyone', 'friends') and exists (
+      select 1 from follows a join follows b on b.follower = a.followee and b.followee = a.follower
+      where a.follower = auth.uid() and a.followee = p.user_id))
+$$;

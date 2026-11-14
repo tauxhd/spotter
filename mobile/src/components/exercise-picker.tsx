@@ -23,6 +23,61 @@ import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/kit';
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+const MUSCLES = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms', 'abs', 'quads', 'hamstrings', 'glutes', 'calves', 'full body', 'cardio'];
+
+// "Can't find it?": add the exercise yourself. It goes to custom_exercises (only you see it) and is picked straight away;
+// we review that table later and add the good ones to the library properly. (The website's twin: AddMissing in ExercisePicker.)
+function AddMissing({ q, onAdd }: { q: string; onAdd: (e: Exercise) => void }) {
+  const { s, addExercise } = useStore();
+  const theme = useTheme();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(''), [muscle, setMuscle] = useState('chest'), [equipment, setEquipment] = useState('dumbbell');
+  const [busy, setBusy] = useState(false), [err, setErr] = useState('');
+  const chips = (all: readonly (readonly [string, string])[], on: string, set: (v: string) => void) => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6 }}>
+      {all.map(([v, l]) => (
+        <Pressable key={v} onPress={() => set(v)} style={[styles.chip, { backgroundColor: on === v ? Lime : theme.backgroundElement }]} accessibilityState={{ selected: on === v }}>
+          <ThemedText type="small" style={{ fontWeight: '600', color: on === v ? '#09090b' : theme.text }}>{l}</ThemedText>
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
+  if (!open) return (
+    <Press onPress={() => { setName(q.trim().replace(/\b\w/g, (c) => c.toUpperCase())); setErr(''); setOpen(true); }} style={[styles.missing, { backgroundColor: theme.backgroundElement }]}>
+      <View style={[styles.badge, { borderWidth: 2, borderColor: 'rgba(132,204,22,0.4)' }]}><Plus size={16} color={Lime} /></View>
+      <View style={{ flex: 1 }}>
+        <ThemedText style={{ fontWeight: '600' }}>Can&apos;t find it?</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">{q.trim() ? `Add “${q.trim()}” as your own exercise` : 'Add your own exercise'}</ThemedText>
+      </View>
+    </Press>
+  );
+  async function save() {
+    const n = name.trim();
+    if (n.length < 2) return setErr('Give it a name');
+    if (s.library.some((e) => e.name.toLowerCase() === n.toLowerCase())) return setErr("That one's already in the list: search for it");
+    setBusy(true); setErr('');
+    try { onAdd(await addExercise({ name: n, muscle, equipment })); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); setOpen(false); }
+    catch (e) { setErr(e instanceof Error ? e.message : "Couldn't save it"); }
+    finally { setBusy(false); }
+  }
+  return (
+    <View style={[styles.missing, { backgroundColor: theme.backgroundElement, flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
+      <ThemedText style={{ fontWeight: '700' }}>Add your own exercise</ThemedText>
+      <Input autoFocus value={name} onChangeText={setName} maxLength={60} placeholder="Exercise name" placeholderTextColor={theme.textSecondary}
+        style={[styles.search, { marginHorizontal: 0, paddingLeft: 12, backgroundColor: theme.background, color: theme.text }]} />
+      <ThemedText type="small" themeColor="textSecondary">Main muscle</ThemedText>
+      {chips(MUSCLES.map((m) => [m, cap(m)] as const), muscle, setMuscle)}
+      <ThemedText type="small" themeColor="textSecondary">Equipment</ThemedText>
+      {chips(kit.slice(1), equipment, setEquipment)}
+      {!!err && <ThemedText type="small" style={{ color: '#ef4444' }}>{err}</ThemedText>}
+      <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>Only you will see it for now. We&apos;ll review it and add it to everyone&apos;s list.</ThemedText>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Button variant="ghost" onPress={() => setOpen(false)} style={{ flex: 1 }}><ThemedText style={{ fontWeight: '600' }}>Cancel</ThemedText></Button>
+        <Button onPress={save} disabled={busy} style={{ flex: 1 }}><ThemedText style={{ color: '#09090b', fontWeight: '700' }}>{busy ? 'Adding…' : 'Add and pick it'}</ThemedText></Button>
+      </View>
+    </View>
+  );
+}
 
 export default function ExercisePicker({ open, onPick, onClose, taken }: { open: boolean; onPick: (list: Exercise[]) => void; onClose: () => void; taken: string[] }) {
   const { s, me } = useStore();
@@ -85,6 +140,7 @@ export default function ExercisePicker({ open, onPick, onClose, taken }: { open:
           ListHeaderComponent={<ThemedText type="small" themeColor="textSecondary" style={{ paddingVertical: 8 }}>{list.length} exercise{list.length === 1 ? '' : 's'}</ThemedText>}
           ListEmptyComponent={<EmptyState art="search" size={96} title="No matches" text={q ? `Nothing called “${q}” with these filters.` : 'Try another muscle or equipment filter.'} />}
           extraData={picked}
+          ListFooterComponent={<AddMissing q={q} onAdd={(e) => setPicked((p) => [...p, e])} />}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: picked.length ? 96 : 30 }}
           renderItem={({ item: e }) => {
             const has = taken.includes(e.name), pic = img(e.image), n = picked.findIndex((x) => x.id === e.id) + 1;
@@ -132,4 +188,6 @@ const styles = StyleSheet.create({
   badge: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   bar: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12 },
   thumb: { width: 52, height: 52, borderRadius: 26 },
+  missing: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 6, marginTop: 12 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16 },
 });

@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { createClient } from "@supabase/supabase-js";
 import type { Converted } from "./hevy";
 import type { Lifts } from "./lifting";
-import { demoNow, oldNames, type Exercise, type ExerciseLog, type Post, type Sex } from "./data";
+import { customExercise, demoNow, isCustom, oldNames, type CustomRow, type Exercise, type ExerciseLog, type Post, type Sex } from "./data";
 import Splash from "@/components/Splash";
 import Quest from "@/components/Quest";
 import type { Unit } from "./units";
@@ -11,7 +11,7 @@ import { demoAccount } from "./demo";
 
 export const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_KEY!);
 
-export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit; height?: number | null; age?: number | null; goal?: string | null; activity?: number | null; goal_bw?: number | null; };
+export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; private?: boolean; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit; height?: number | null; age?: number | null; goal?: string | null; activity?: number | null; goal_bw?: number | null; };
 export type Routine = { id: string; name: string; exercises: ExerciseLog[] };
 export type Session = { id: string; at: string; title: string; exercises: ExerciseLog[] };
 export type FoodEntry = { id: string; name: string; kcal: number; p: number; c: number; f: number; at: string };
@@ -39,6 +39,7 @@ type Ctx = {
   setAvatar: (file: File) => Promise<void>;
   saveRoutine: (r: { id?: string; name: string; exercises: ExerciseLog[] }) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
+  addExercise: (e: Omit<CustomRow, "id">) => Promise<Exercise>; // one the library is missing, saved to custom_exercises (yours only)
   unfollow: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
   loadMore: () => Promise<void>;
@@ -95,13 +96,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } finally { paging = false; }
   }, []);
   const loadMine = useCallback(async (id: string) => {
-    const [v, w, f, wl, fo, ro] = await Promise.all([
+    const [v, w, f, wl, fo, ro, cx] = await Promise.all([
       sb.from("visits").select("in_at").is("out_at", null).order("in_at", { ascending: false }).limit(1),
       sb.from("workouts").select("*").order("created_at", { ascending: false }).limit(400), // ~a year of training, for exercise history
       sb.from("food_logs").select("*").order("created_at", { ascending: false }).limit(1000), // ponytail: Supabase caps a read at 1000 rows (~7 months of meals); page it if 1Y intake looks short
       sb.from("weight_logs").select("*").order("created_at", { ascending: false }).limit(800),
       sb.from("follows").select("follower, followee"), // RLS: only rows that involve me
       sb.from("routines").select("id, name, exercises").order("updated_at", { ascending: false }),
+      sb.from("custom_exercises").select("id, name, muscle, equipment").order("created_at"), // RLS: only mine
     ]);
     setS((x) => ({
       ...x,
@@ -112,6 +114,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       following: (fo.data ?? []).filter((r) => r.follower === id).map((r) => r.followee),
       followers: (fo.data ?? []).filter((r) => r.followee === id).map((r) => r.follower),
       routines: ro.data ?? [],
+      library: [...x.library.filter((e) => !isCustom(e)), ...(cx.data ?? []).map(customExercise)],
     }));
   }, []);
 
@@ -125,7 +128,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       document.head.appendChild(Object.assign(document.createElement("style"), { textContent: `html{scrollbar-width:none}html::-webkit-scrollbar{display:none}${self !== top && !location.search.includes("full=1") ? "*{cursor:none !important}" : ""}` }));
       setMe(d.me);
       setS((x) => ({ ...x, sessions: d.sessions, food: d.food, weights: d.weights, routines: d.routines }));
-      sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort").then(({ data }) => data && setS((x) => ({ ...x, library: data })));
+      sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort").then(({ data }) => data && setS((x) => ({ ...x, library: [...data, ...x.library.filter(isCustom)] })));
       (async () => {
         let { data: { session } } = await sb.auth.getSession();
         if (!session) session = (await sb.auth.signInAnonymously()).data.session;
@@ -142,7 +145,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (lib) setS((x) => ({ ...x, library: lib }));
     } catch {}
     sb.from("exercises").select("id, name, muscle, equipment, secondary, lift, image").order("sort")
-      .then(({ data }) => { if (!data) return; setS((x) => ({ ...x, library: data })); try { localStorage.setItem(LIB, JSON.stringify(data)); } catch {} });
+      .then(({ data }) => { if (!data) return; setS((x) => ({ ...x, library: [...data, ...x.library.filter(isCustom)] })); try { localStorage.setItem(LIB, JSON.stringify(data)); } catch {} });
     (async () => {
       let { data: { session } } = await sb.auth.getSession();
       // a first-time visitor typing the bare address gets the landing page; the installed app, the landing page's own
@@ -331,6 +334,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setS((x) => ({ ...x, routines: x.routines.filter((y) => y.id !== id) }));
       await sb.from("routines").delete().eq("id", id);
     },
+    async addExercise(e) {
+      const { data, error } = await sb.from("custom_exercises").insert({ ...e, name: e.name.trim().slice(0, 60) }).select("id, name, muscle, equipment").single();
+      if (error) throw new Error(error.code === "23505" ? "You've already added one with that name" : error.message);
+      const ex = customExercise(data);
+      setS((x) => ({ ...x, library: [...x.library, ex] }));
+      return ex;
+    },
     async unfollow(id) {
       setS((x) => ({ ...x, following: x.following.filter((y) => y !== id) }));
       await sb.from("follows").delete().match({ follower: me.id, followee: id });
@@ -398,6 +408,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       async setAvatar(file) { setMe({ ...me, avatar_url: URL.createObjectURL(file) }); },
       async saveRoutine(rt) { const row = { id: rt.id ?? id(), name: rt.name.trim() || "My routine", exercises: rt.exercises }; setS((x) => ({ ...x, routines: [row, ...x.routines.filter((y) => y.id !== row.id)] })); },
       async deleteRoutine(rid) { setS((x) => ({ ...x, routines: x.routines.filter((y) => y.id !== rid) })); },
+      async addExercise(e) { const ex = customExercise({ ...e, id: id() }); setS((x) => ({ ...x, library: [...x.library, ex] })); return ex; },
       async signOut() { try { sessionStorage.removeItem("spotter:demo"); } catch {} location.href = "/"; }, // leave the demo: the real sign-up / sign-in quest
     } satisfies Partial<Ctx>);
   }

@@ -17,6 +17,50 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 // Full-screen library browser: search + muscle chips; tap exercises to select several (numbered in the order picked),
 // then one button adds them all.
+const MUSCLES = ["chest", "back", "shoulders", "biceps", "triceps", "forearms", "abs", "quads", "hamstrings", "glutes", "calves", "full body", "cardio"];
+
+// "Can't find it?": add the exercise yourself. It goes to custom_exercises (only you see it) and is picked straight away;
+// we review that table later and add the good ones to the library properly.
+function AddMissing({ q, onAdd }: { q: string; onAdd: (e: Exercise) => void }) {
+  const { s, addExercise } = useStore();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(""), [muscle, setMuscle] = useState("chest"), [equipment, setEquipment] = useState("dumbbell");
+  const [busy, setBusy] = useState(false), [err, setErr] = useState("");
+  const field = "w-full rounded-lg bg-zinc-100 px-3 py-2 text-base outline-none focus:ring-2 focus:ring-lime-500 dark:bg-zinc-800";
+  if (!open) return (
+    <button onClick={() => { setName(q.trim().replace(/\b\w/g, (c) => c.toUpperCase())); setErr(""); setOpen(true); }}
+      className="card flex w-full items-center gap-3 p-3 text-left transition active:scale-[0.99]">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-lime-500 ring-2 ring-lime-500/40"><Plus size={18} /></span>
+      <span><span className="block font-medium">Can&apos;t find it?</span><span className="muted block text-xs">{q.trim() ? `Add “${q.trim()}” as your own exercise` : "Add your own exercise"}</span></span>
+    </button>
+  );
+  async function save() {
+    const n = name.trim();
+    if (n.length < 2) return setErr("Give it a name");
+    if (s.library.some((e) => e.name.toLowerCase() === n.toLowerCase())) return setErr("That one's already in the list: search for it");
+    setBusy(true); setErr("");
+    try { onAdd(await addExercise({ name: n, muscle, equipment })); setOpen(false); }
+    catch (e) { setErr(e instanceof Error ? e.message : "Couldn't save it"); }
+    finally { setBusy(false); }
+  }
+  return (
+    <div className="card space-y-2.5 p-3">
+      <p className="font-semibold">Add your own exercise</p>
+      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="Exercise name" aria-label="Exercise name" className={field} />
+      <div className="grid grid-cols-2 gap-2">
+        <label className="muted text-xs">Main muscle<select value={muscle} onChange={(e) => setMuscle(e.target.value)} className={`${field} mt-1 text-zinc-900 dark:text-zinc-100`}>{MUSCLES.map((m) => <option key={m} value={m}>{cap(m)}</option>)}</select></label>
+        <label className="muted text-xs">Equipment<select value={equipment} onChange={(e) => setEquipment(e.target.value)} className={`${field} mt-1 text-zinc-900 dark:text-zinc-100`}>{kit.slice(1).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      </div>
+      {err && <p className="text-sm text-red-500">{err}</p>}
+      <p className="muted text-xs">Only you will see it for now. We&apos;ll review it and add it to everyone&apos;s list.</p>
+      <div className="flex gap-2">
+        <button onClick={() => setOpen(false)} className="btn-ghost flex-1 py-2">Cancel</button>
+        <button onClick={save} disabled={busy} className="btn flex-1 py-2 disabled:opacity-50">{busy ? "Adding…" : "Add and pick it"}</button>
+      </div>
+    </div>
+  );
+}
+
 export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (list: Exercise[]) => void; onClose: () => void; taken: string[] }) {
   const { s, me, u } = useStore();
   const logged = heaviest(baseOf(me), s.sessions);
@@ -84,6 +128,7 @@ export default function ExercisePicker({ onPick, onClose, taken }: { onPick: (li
           })}
           {list.length === 0 && <li><EmptyState art="search" size={96} title="No matches" text={q ? `Nothing called “${q}” with these filters.` : "Try another muscle or equipment filter."} /></li>}
         </ul>
+        <AddMissing q={q} onAdd={(e) => setPicked((p) => [...p, e])} />
       </div>
       {picked.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-zinc-100 via-zinc-100 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6 dark:from-zinc-950 dark:via-zinc-950">

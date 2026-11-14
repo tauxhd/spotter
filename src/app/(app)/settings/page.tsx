@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronRight, LogOut } from "lucide-react";
+import { ArrowLeft, ChevronRight, Lock, LogOut } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import Icon, { type IconName } from "@/components/Icon";
 import { useStore } from "@/lib/store";
@@ -11,7 +11,7 @@ import HevyImport from "@/components/HevyImport";
 
 export default function Settings() {
   const router = useRouter();
-  const { me, signOut, demo } = useStore();
+  const { me, signOut, demo, updateProfile } = useStore();
   const [busy, setBusy] = useState(false);
   const q = typeof window !== "undefined" ? location.search : "";
 
@@ -47,6 +47,17 @@ export default function Settings() {
           </li>
         ))}
       </ul>
+
+      {/* Private account: posts set to Everyone only reach friends (mutual follows); enforced in the database (can_see_post) */}
+      <label className="-mx-4 flex cursor-pointer items-center gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800/80">
+        <span className="grid h-[26px] w-[26px] place-items-center"><Lock size={20} className="text-lime-500" /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium">Private account</span>
+          <span className="muted block text-xs">Only friends (people you follow who follow you back) see your workouts.</span>
+        </span>
+        <input type="checkbox" role="switch" checked={!!me.private} onChange={(e) => updateProfile({ private: e.target.checked }).catch(() => alert("Couldn't save that. Check your connection."))} className="peer sr-only" />
+        <span aria-hidden className="relative h-7 w-12 shrink-0 rounded-full bg-zinc-300 transition peer-checked:bg-lime-500 peer-focus-visible:ring-2 peer-focus-visible:ring-lime-500 dark:bg-zinc-700 after:absolute after:left-0.5 after:top-0.5 after:h-6 after:w-6 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
+      </label>
 
       <HevyImport />
 

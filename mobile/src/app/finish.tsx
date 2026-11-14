@@ -34,7 +34,7 @@ export default function Finish() {
   const [note, setNote] = useState('');
   const [duration, setDuration] = useState(() => (a ? String(Math.max(1, Math.round((Date.now() - new Date(a.startedAt).getTime()) / 60000))) : ''));
   const [daysAgo, setDaysAgo] = useState(0);
-  const [visibility, setVisibility] = useState<Visibility>('everyone');
+  const [visibility, setVisibility] = useState<Visibility>(me.private ? 'friends' : 'everyone'); // a private account starts at Friends
   const [media, setMedia] = useState<(Media & { name: string; size?: number }) | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -144,7 +144,7 @@ export default function Finish() {
               );
             })}
           </View>
-          <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{visibilities.find((v) => v.id === visibility)!.hint}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>{me.private && visibility === 'everyone' ? 'Your account is private, so only friends will see it.' : visibilities.find((v) => v.id === visibility)!.hint}</ThemedText>
         </View>
 
         {!!err && <ThemedText type="small" style={{ color: Red, paddingVertical: 12 }}>{err}</ThemedText>}
