@@ -463,7 +463,10 @@ insert into exercises (id, name, muscle, equipment, secondary, lift, image, sort
   ('band-hip-abduction', 'Hip Abduction (Band)', 'glutes', 'other', array[]::text[], null, '/exercises/band-hip-abduction.webp', 446),
   ('hip-thrust-machine', 'Hip Thrust (Machine)', 'glutes', 'machine', array['hamstrings']::text[], null, '/exercises/hip-thrust-machine.webp', 447),
   ('smith-hip-thrust', 'Hip Thrust (Smith Machine)', 'glutes', 'smith', array['hamstrings']::text[], null, '/exercises/smith-hip-thrust.webp', 448),
-  ('glute-kickback-machine', 'Glute Kickback (Machine)', 'glutes', 'machine', array['hamstrings']::text[], null, '/exercises/glute-kickback-machine.webp', 449)
+  ('glute-kickback-machine', 'Glute Kickback (Machine)', 'glutes', 'machine', array['hamstrings']::text[], null, '/exercises/glute-kickback-machine.webp', 449),
+  ('jump-squat-dumbbell', 'Jump Squat (Dumbbell)', 'quads', 'dumbbell', array['glutes', 'calves']::text[], null, '/exercises/jump-squat-dumbbell.webp', 477),
+  ('jumping-lunge-dumbbell', 'Jumping Lunge (Dumbbell)', 'quads', 'dumbbell', array['glutes', 'calves']::text[], null, '/exercises/jumping-lunge-dumbbell.webp', 478),
+  ('jog-in-place', 'Jog in Place', 'cardio', 'bodyweight', array['calves', 'quads']::text[], null, '/exercises/jog-in-place.webp', 479)
 on conflict (id) do update set name = excluded.name, muscle = excluded.muscle, equipment = excluded.equipment,
   secondary = excluded.secondary, lift = excluded.lift, image = excluded.image, sort = excluded.sort;
 

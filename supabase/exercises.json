@@ -474,5 +474,8 @@
   {"id":"swimming","name":"Swimming","muscle":"cardio","equipment":"cardio","secondary":[],"hint":"swimming freestyle in a pool lane"},
   {"id":"walking","name":"Walking","muscle":"cardio","equipment":"cardio","secondary":[],"hint":"brisk walking"},
   {"id":"rafting","name":"Rafting","muscle":"cardio","equipment":"other","secondary":["back","shoulders"],"hint":"paddling an inflatable raft"},
-  {"id":"touch-downs","name":"Touch Downs","muscle":"cardio","equipment":"bodyweight","secondary":["quads","glutes"],"hint":"agility drill: shuffling sideways and touching the floor"}
+  {"id":"touch-downs","name":"Touch Downs","muscle":"cardio","equipment":"bodyweight","secondary":["quads","glutes"],"hint":"agility drill: shuffling sideways and touching the floor"},
+  {"id":"jump-squat-dumbbell","name":"Jump Squat (Dumbbell)","muscle":"quads","equipment":"dumbbell","secondary":["glutes","calves"],"hint":"plyometric: squat with a dumbbell in each hand, then jump straight up"},
+  {"id":"jumping-lunge-dumbbell","name":"Jumping Lunge (Dumbbell)","muscle":"quads","equipment":"dumbbell","secondary":["glutes","calves"],"hint":"plyometric split squat, no bench: jump and switch legs holding dumbbells"},
+  {"id":"jog-in-place","name":"Jog in Place","muscle":"cardio","equipment":"bodyweight","secondary":["calves","quads"],"hint":"easy jog on the spot, arms swinging"}
 ]
