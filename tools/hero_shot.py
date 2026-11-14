@@ -85,6 +85,7 @@ for png, x, y, lift, turn, lean, roll in [
 fl = mat("floor", (0.002, 0.002, 0.0025), rough=0.3)
 fl.node_tree.nodes["Principled BSDF"].inputs["Specular IOR Level"].default_value = 0.35
 bpy.ops.mesh.primitive_plane_add(size=20); bpy.context.object.data.materials.append(fl)
+bpy.context.object.is_shadow_catcher = True  # the render is transparent: the floor keeps only the shadows, so the page shows through
 
 # --- light -------------------------------------------------------------------------------------------------------
 centre = Vector((0, 0.03, LIFT + PH / 2))
@@ -129,6 +130,7 @@ sc.cycles.device = "GPU"
 sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True
 sc.render.resolution_x, sc.render.resolution_y = W, W * 9 // 16
 sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Base Contrast"
-sc.render.image_settings.file_format = "PNG"
+sc.render.image_settings.file_format = "PNG"; sc.render.image_settings.color_mode = "RGBA"
+sc.render.film_transparent = True  # phones on alpha, so the page (and its grid) sits behind them
 sc.render.filepath = out
 bpy.ops.render.render(write_still=True)

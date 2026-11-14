@@ -937,11 +937,14 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
         })()}
 
         {/* intro product shot: a Cycles render of five phones fanned across the width (tools/hero_shot.py), behind the headline, fading back as the live
-            phone rises through it. lighten blend: its black studio drops out; the mask sinks its top into the dark under the copy */}
+            phone rises through it. rendered on alpha so the grid sits behind the phones */}
         {!video && (
-          <img src="/hero/phone-shot.webp" alt="" width={3200} height={1800} aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[34dvh] z-10 h-[72dvh] w-auto max-w-none mix-blend-lighten [mask-image:linear-gradient(to_bottom,transparent_10%,rgba(0,0,0,.22)_34%,#000_58%)] md:top-[6dvh] md:h-auto md:w-[max(104vw,150dvh)]"
-            style={{ opacity: 1 - smooth(0, 0.25, p), transform: `translateX(-50%) translateY(${p * 12}dvh) scale(${1 - p * 0.15})` }} />
+          <div className="pointer-events-none absolute left-1/2 top-[34dvh] z-10 aspect-[16/9] h-[72dvh] md:top-[6dvh] md:h-auto md:w-[max(104vw,150dvh)]"
+            style={{ opacity: 1 - smooth(0, 0.25, p), transform: `translateX(-50%) translateY(${p * 12}dvh) scale(${1 - p * 0.15})` }} aria-hidden>
+            <img src="/hero/phone-shot.webp" alt="" width={3200} height={1800} className="block h-full w-full" />
+            {/* the phones' tops sink into the page colour under the copy (an overlay, not a mask, so they stay solid over the grid) */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#09090b_12%,rgba(9,9,11,.75)_32%,transparent_56%)]" />
+          </div>
         )}
 
         {/* intro headline: zooms past you as you scroll */}
