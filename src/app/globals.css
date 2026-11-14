@@ -113,6 +113,7 @@ button, a { transition: opacity 160ms ease-out; }
 @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
 @keyframes breathe { 50% { transform: scale(1.05); } }
 @keyframes pop { 40% { transform: scale(1.35); } }
+@keyframes cue { from { transform: translateY(-100%); } to { transform: translateY(300%); } }
 
 @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 .bone { position: relative; overflow: hidden; border-radius: var(--radius-sm); background: var(--color-zinc-200); }
