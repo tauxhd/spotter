@@ -269,7 +269,8 @@ function Workout() {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView ref={scrollRef} scrollEnabled={!sorting} onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: BottomTabInset + 120 }} keyboardShouldPersistTaps="handled">
+        // while sorting, a screen of room below so the collapsed list can still scroll the held row under the finger
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: BottomTabInset + 120 + (sorting ? Dimensions.get('window').height : 0) }} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Pressable onPress={() => setTimers(true)} style={{ flex: 1 }} accessibilityLabel={`Workout time ${hhmmss(elapsed)}. Change timers`}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Clock size={24} color={Lime} /><ThemedText style={styles.timer}>{hhmmss(elapsed)}</ThemedText></View>
@@ -304,7 +305,9 @@ function Workout() {
             const dragging = drag?.i === i;
             const top = Math.max(heavy[ex.name] ?? 0, ...ex.sets.filter((st) => st.done && st.reps > 0 && countsPR(st.type)).map((st, i) => st.kg));
             return (
-              <Animated.View key={`${ex.name}-${i}`} layout={dragging ? undefined : layout}
+              // keyed by name (+ which copy of it), not position: a key that changes on a swap remounts the held row, which
+              // kills its drag gesture mid-drag and drops the exercise in the wrong place
+              <Animated.View key={`${ex.name}#${a.exercises.slice(0, i).filter((x) => x.name === ex.name).length}`} layout={dragging ? undefined : layout}
                 style={[sorting ? [styles.collapsed, { backgroundColor: theme.backgroundElement }] : [styles.card, { borderBottomColor: theme.border }],
                   sc ? { borderLeftWidth: 4, borderLeftColor: sc } : null, dragging && [styles.held, held]]}>
                 {sc && !sorting && <ThemedText style={[styles.ssTag, { backgroundColor: sc }]}>SUPERSET {letter(ex.superset)}</ThemedText>}
