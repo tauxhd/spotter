@@ -936,42 +936,44 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
           );
         })()}
 
+        {/* intro product shot: a Cycles render of the phone (tools/hero_shot.py), fading back as the live phone rises through it.
+            lighten blend: its black studio drops out against the page */}
+        {!video && (
+          <img src="/hero/phone-shot.webp" alt="" width={2400} height={1350} aria-hidden
+            className="pointer-events-none absolute bottom-[-4dvh] left-1/2 z-10 h-[50dvh] w-auto max-w-none mix-blend-lighten [mask-image:radial-gradient(ellipse_55%_75%_at_50%_42%,#000_70%,transparent)] md:bottom-[1dvh] md:h-[62dvh]"
+            style={{ opacity: 1 - smooth(0, 0.25, p), transform: `translateX(-50%) translateY(${p * 12}dvh) scale(${1 - p * 0.15})` }} />
+        )}
+
         {/* intro headline: zooms past you as you scroll */}
-        <div className="absolute inset-x-0 top-[11dvh] z-20 mx-auto max-w-6xl origin-top-left px-6 md:top-[14dvh]"
+        <div className="absolute inset-x-0 top-[10dvh] z-20 mx-auto max-w-6xl origin-top px-6 text-center md:top-[9dvh]"
           style={{ opacity: video ? 0 : 1 - smooth(0, 0.55, p), transform: `scale(${1 + p * 0.5})`, filter: `blur(${smooth(0, 0.6, p) * 12}px)`, pointerEvents: p > 0.3 ? "none" : undefined }}>
           <p className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">APU · SweatZone</p>
-          {/* the second line reads like selected text in an editor: a flat, square lime highlight with a blinking block caret */}
-          <h1 className="mt-4 max-w-4xl text-[clamp(2.75rem,8.5vw,7rem)] font-bold leading-[0.92] tracking-[-0.055em]">
-            The SweatZone,<br />
-            <span className="mt-2 inline-flex items-center bg-lime-400 px-[0.12em] pb-[0.06em] text-zinc-950 md:mt-3">in your pocket.</span>
+          {/* the second half reads like selected text in an editor: a flat, square lime highlight with a blinking block caret */}
+          <h1 className="mt-4 text-[clamp(2.5rem,6.2vw,5rem)] font-bold leading-[0.95] tracking-[-0.05em]">
+            The SweatZone,<br className="md:hidden" />{" "}
+            <span className="mt-2 inline-block bg-lime-400 px-[0.12em] pb-[0.06em] text-zinc-950 md:mt-0">in your pocket.</span>
             <span className="ml-[0.08em] inline-block h-[0.78em] w-[0.08em] translate-y-[0.08em] bg-lime-400 motion-safe:animate-pulse" aria-hidden />
           </h1>
-          <p className="mt-6 max-w-md text-base text-zinc-400 md:text-lg">Clock in with a scan, log every set, count the cafeteria nasi lemak and see who&apos;s benching what.</p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <p className="mx-auto mt-5 max-w-xl text-base text-zinc-400 md:text-lg">Clock in with a scan, log every set, count the cafeteria nasi lemak and see who&apos;s benching what.</p>
+          <div className="mx-auto mt-7 flex max-w-sm flex-wrap items-center justify-center gap-3 sm:max-w-none">
             {/* a chunky plate of a button: it sits on a hard shadow and presses down into it */}
-            <a href="#demo" className="group inline-flex w-full items-center justify-between gap-3 rounded-2xl bg-lime-400 py-2.5 sm:w-auto pl-5 pr-2.5 font-semibold text-zinc-950 shadow-[0_5px_0_#4d7c0f] transition-[transform,box-shadow] duration-100 hover:-translate-y-0.5 hover:shadow-[0_7px_0_#4d7c0f] active:translate-y-[5px] active:shadow-[0_0_0_#4d7c0f]">
+            <a href="#demo" className="group inline-flex w-full items-center justify-between gap-3 rounded-2xl bg-lime-400 py-2.5 pl-5 pr-2.5 font-semibold text-zinc-950 shadow-[0_5px_0_#4d7c0f] transition-[transform,box-shadow] duration-100 hover:-translate-y-0.5 hover:shadow-[0_7px_0_#4d7c0f] active:translate-y-[5px] active:shadow-[0_0_0_#4d7c0f] sm:w-auto">
               Try the live demo
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-zinc-950 text-lime-400 transition-transform group-hover:translate-x-0.5" aria-hidden>
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
               </span>
             </a>
             <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto">
-            <a href={apk} className="inline-flex items-center gap-3 rounded-2xl bg-zinc-900 py-2.5 pl-3.5 pr-4 sm:pr-5 ring-1 ring-white/10 transition hover:bg-zinc-800 hover:ring-white/20 active:scale-[0.97]">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="#a3e635" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
-              <span className="text-left leading-tight"><span className="block text-[11px] text-zinc-400">Download the APK</span><span className="block font-semibold">Android</span></span>
-            </a>
-            <Link href="/?install=1" className="inline-flex items-center gap-3 rounded-2xl bg-zinc-900 py-2.5 pl-3.5 pr-4 sm:pr-5 ring-1 ring-white/10 transition hover:bg-zinc-800 hover:ring-white/20 active:scale-[0.97]">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M12 9v6M9 12h6" /></svg>
-              <span className="text-left leading-tight"><span className="block text-[11px] text-zinc-400">Use the web app</span><span className="block font-semibold">iPhone</span></span>
-            </Link>
+              <a href={apk} className="inline-flex items-center gap-3 rounded-2xl bg-zinc-900/80 py-2.5 pl-3.5 pr-4 ring-1 ring-white/10 backdrop-blur transition hover:bg-zinc-800 hover:ring-white/20 active:scale-[0.97] sm:pr-5">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="#a3e635" aria-hidden><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" /></svg>
+                <span className="text-left leading-tight"><span className="block text-[11px] text-zinc-400">Download the APK</span><span className="block font-semibold">Android</span></span>
+              </a>
+              <Link href="/?install=1" className="inline-flex items-center gap-3 rounded-2xl bg-zinc-900/80 py-2.5 pl-3.5 pr-4 ring-1 ring-white/10 backdrop-blur transition hover:bg-zinc-800 hover:ring-white/20 active:scale-[0.97] sm:pr-5">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M12 9v6M9 12h6" /></svg>
+                <span className="text-left leading-tight"><span className="block text-[11px] text-zinc-400">Use the web app</span><span className="block font-semibold">iPhone</span></span>
+              </Link>
             </div>
           </div>
-          {!video && (
-            <p className="mt-10 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-              <span className="relative h-9 w-px overflow-hidden bg-white/15" aria-hidden><span className="absolute inset-x-0 top-0 h-3 bg-lime-400 motion-safe:animate-[cue_1.8s_ease-in-out_infinite]" /></span>
-              Scroll, it plays as you go
-            </p>
-          )}
         </div>
 
         {/* scene copy: the headline types itself, white with the key word in lime */}
@@ -1058,7 +1060,7 @@ export default function HeroScroll({ apk, progress, video = false, beat = 0, bac
                   return `translateX(${(1 - b) * -20}vw) rotateY(${Math.sin(b * Math.PI) * -12}deg) scale(${s0 + (1 - s0) * b + kick * 0.04})`;
                 })()
                 : `translateY(${(1 - intro) * (wide ? 55 : 48)}dvh) rotateX(${(1 - intro) * 28}deg) rotateY(${intro * ((cx - 240) / 240) * -7}deg) scale(${1.1 - intro * 0.1 + kick * 0.04})`,
-              transformOrigin: video ? "50% 50%" : "50% 100%", opacity: video && wide && p > EMERGE[0] && p < SWIPE[1] ? 0 : phoneIn,
+              transformOrigin: video ? "50% 50%" : "50% 100%", opacity: video && wide && p > EMERGE[0] && p < SWIPE[1] ? 0 : phoneIn * (video ? 1 : smooth(0.15, 0.4, p)), // on the page it rises through the product shot
             }}>
             <div className="absolute inset-0" style={{ transformOrigin: `${ox}% ${oy}%`, transform: `translate(${(50 - ox) * centre}%, ${(46 - oy) * centre}%) scale(${z})` }}>
               <div className="relative h-full rounded-[13%/6%] bg-zinc-800 p-[2.6%] shadow-2xl ring-1 ring-white/20">
