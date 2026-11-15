@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { timeAgo } from '@shared/data';
-import { isNew, loadNotes, markSeen, readSeen, writeSeen, type Note, type Seen } from '@shared/notify';
+import { isNew, loadNotes, markSeen, readSeen, seenFrom, writeSeen, type Note, type Seen } from '@shared/notify';
 import Avatar from '@/components/avatar';
 import { StatsSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
@@ -19,17 +19,19 @@ import { sb, useStore } from '@/lib/store';
 const TINT = { follow: '#0ea5e9', like: '#ef4444', comment: Lime };
 
 export default function Notifications() {
-  const { me, s } = useStore();
+  const { me, s, updateProfile } = useStore();
   const theme = useTheme();
   const pull = usePullRefresh();
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [seen, setSeen] = useState<Seen | null>(null);
 
   useEffect(() => {
-    const before = readSeen();
+    const before = seenFrom(readSeen(), me.notes_seen_at);
     loadNotes(sb, me.id).then((n) => {
       setSeen(before); setNotes(n); // highlight what's new since last time, then mark it all seen (the bell clears too)
-      writeSeen(markSeen(n));
+      const m = markSeen(n);
+      writeSeen(m);
+      updateProfile({ notes_seen_at: m.at }).catch(() => {}); // on the account too: the badge clears on your other devices
     }).catch(() => setNotes([]));
   }, [me.id, s.rev]);
 

@@ -246,3 +246,8 @@ create or replace function can_see_post(p posts) returns boolean language sql st
       select 1 from follows a join follows b on b.follower = a.followee and b.followee = a.follower
       where a.follower = auth.uid() and a.followee = p.user_id))
 $$;
+
+-- When you last opened Notifications, kept on the account (not the device) so the badge clears everywhere at once.
+alter table profiles add column if not exists notes_seen_at timestamptz;
+-- follows stream live too, so a new follower lights the bell without a reload (RLS: only rows that involve you)
+alter publication supabase_realtime add table follows;

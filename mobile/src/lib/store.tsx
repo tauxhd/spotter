@@ -16,7 +16,7 @@ export const sb = createClient(process.env.EXPO_PUBLIC_SUPABASE_URL!, process.en
 // refresh the session only while the app is on screen
 AppState.addEventListener("change", (st) => (st === "active" ? sb.auth.startAutoRefresh() : sb.auth.stopAutoRefresh()));
 
-export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; private?: boolean; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit; height?: number | null; age?: number | null; goal?: string | null; activity?: number | null; goal_bw?: number | null; };
+export type Profile = { id: string; name: string; faculty: string; sex: Sex; bw: number; squat: number; bench: number; deadlift: number; intake: string | null; avatar_url?: string | null; private?: boolean; notes_seen_at?: string | null; tp?: string | null; course?: string | null; bio?: string | null; unit?: Unit; height?: number | null; age?: number | null; goal?: string | null; activity?: number | null; goal_bw?: number | null; };
 export type Routine = { id: string; name: string; exercises: ExerciseLog[] };
 export type Session = { id: string; at: string; title: string; exercises: ExerciseLog[] };
 export type FoodEntry = { id: string; name: string; kcal: number; p: number; c: number; f: number; at: string };

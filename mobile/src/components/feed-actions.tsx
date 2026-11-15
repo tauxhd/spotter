@@ -4,7 +4,7 @@ import { Bell, Search } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { isNew, loadNotes, onSeen, readSeen, type Note } from '@shared/notify';
+import { isNew, loadNotes, onSeen, readSeen, seenFrom, type Note } from '@shared/notify';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
 import { sb, useStore } from '@/lib/store';
@@ -29,7 +29,8 @@ export default function FeedActions() {
       .subscribe();
     return () => { live = false; clearTimeout(t); sb.removeChannel(ch); };
   }, [me.id, s.rev]));
-  const unseen = notes.filter((x) => isNew(x, seen)).length;
+  const mark = seenFrom(seen, me.notes_seen_at);
+  const unseen = notes.filter((x) => isNew(x, mark)).length;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
       <Pressable onPress={() => router.push('/search')} hitSlop={6} accessibilityLabel="Search people" style={styles.btn}><Search size={22} color={theme.text} /></Pressable>

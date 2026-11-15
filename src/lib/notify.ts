@@ -35,3 +35,6 @@ const subs = new Set<() => void>();
 export function readSeen(): Seen | null { try { return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "null"); } catch { return null; } }
 export function writeSeen(s: Seen) { try { localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch {} subs.forEach((f) => f()); }
 export function onSeen(f: () => void) { subs.add(f); return () => { subs.delete(f); }; }
+// the later of this device's mark and the account's (profiles.notes_seen_at), so seeing them anywhere clears them everywhere
+export const seenFrom = (local: Seen | null, account?: string | null): Seen | null =>
+  account && (!local || account > local.at) ? { at: account, likes: [] } : local;

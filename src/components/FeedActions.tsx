@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Search } from "lucide-react";
 import MeButton from "./MeButton";
-import { isNew, loadNotes, onSeen, readSeen, type Note } from "@/lib/notify";
+import { isNew, loadNotes, onSeen, readSeen, seenFrom, type Note } from "@/lib/notify";
 import { sb, useStore } from "@/lib/store";
 
 export default function FeedActions() {
@@ -26,7 +26,8 @@ export default function FeedActions() {
       .subscribe();
     return () => { live = false; clearTimeout(t); sb.removeChannel(ch); };
   }, [me.id, demo, s.rev]);
-  const unseen = notes.filter((x) => isNew(x, seen)).length;
+  const mark = seenFrom(seen, me.notes_seen_at);
+  const unseen = notes.filter((x) => isNew(x, mark)).length;
   const q = typeof location === "undefined" ? "" : location.search;
   const btn = "relative grid h-10 w-10 place-items-center rounded-full transition active:scale-95 hover:bg-zinc-100 dark:hover:bg-zinc-900";
   return (

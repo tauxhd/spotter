@@ -6,21 +6,23 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Heart, MessageCircle, UserPlus } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import EmptyState from "@/components/EmptyState";
-import { isNew, loadNotes, markSeen, readSeen, writeSeen, type Note, type Seen } from "@/lib/notify";
+import { isNew, loadNotes, markSeen, readSeen, seenFrom, writeSeen, type Note, type Seen } from "@/lib/notify";
 import { timeAgo } from "@/lib/data";
 import { sb, useStore } from "@/lib/store";
 
 export default function Notifications() {
-  const { me, s } = useStore();
+  const { me, s, updateProfile } = useStore();
   const router = useRouter();
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [seen, setSeen] = useState<Seen | null>(null);
 
   useEffect(() => {
-    const before = readSeen();
+    const before = seenFrom(readSeen(), me.notes_seen_at);
     loadNotes(sb, me.id).then((n) => {
       setSeen(before); setNotes(n); // highlight what's new since last time, then mark it all seen (the bell clears too)
-      writeSeen(markSeen(n));
+      const m = markSeen(n);
+      writeSeen(m);
+      updateProfile({ notes_seen_at: m.at }).catch(() => {}); // on the account too: the badge clears on your other devices
     });
   }, [me.id, s.rev]);
 
