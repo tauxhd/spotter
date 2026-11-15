@@ -2,7 +2,7 @@
   "expo": {
     "name": "Spotter",
     "slug": "spotter",
-    "version": "1.0.16",
+    "version": "1.0.17",
     "orientation": "portrait",
     "icon": "./assets/images/spotter-icon.png",
     "scheme": "spotter",
@@ -17,7 +17,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "my.apu.spotter",
-      "versionCode": 17,
+      "versionCode": 18,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -83,7 +83,10 @@
       "policy": "sdkVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/9f32282c-cb97-4413-b5ec-7d76a546e49a"
+      "url": "https://u.expo.dev/9f32282c-cb97-4413-b5ec-7d76a546e49a",
+      "requestHeaders": {
+        "expo-channel-name": "main"
+      }
     }
   }
 }
