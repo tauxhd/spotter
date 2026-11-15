@@ -2,8 +2,9 @@
 import Constants from 'expo-constants';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronRight, Lock, LogOut } from 'lucide-react-native';
-import { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import * as Updates from 'expo-updates';
+import { useEffect, useState } from 'react';
+import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import Avatar from '@/components/avatar';
 import HevyImport from '@/components/hevy-import';
@@ -12,6 +13,7 @@ import { Icon } from '@/components/ui/kit';
 import { Lime, Red } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useStore } from '@/lib/store';
+import { WEB } from '@/lib/web';
 
 const WARN = 'Sign back in any time with your TP number and password.';
 
@@ -63,11 +65,32 @@ export default function Settings() {
         style={({ pressed }) => [styles.logout, { opacity: busy ? 0.5 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
         <LogOut size={18} color={Red} /><ThemedText style={{ color: Red, fontWeight: '600' }}>{busy ? 'Logging out…' : 'Log out'}</ThemedText>
       </Pressable>
-      {/* for bug reports: the installed APK's build number tells us which fixes a phone has */}
-      <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 16, fontSize: 12 }}>
-        Spotter {Constants.expoConfig?.version}{Constants.platform?.android?.versionCode ? ` · build ${Constants.platform.android.versionCode}` : ''}
-      </ThemedText>
+      <VersionInfo />
     </ScrollView>
+  );
+}
+
+// Which Spotter this phone runs, for bug reports and to spot an old install: the APK's build number (native code: the
+// 3D views, the icon) and the date of the over-the-air update on top of it (everything else). Compared with the newest
+// APK the website lists (public/app-version.json); if this one is older it says so, with a link to download.
+function VersionInfo() {
+  const build = Constants.platform?.android?.versionCode;
+  const [latest, setLatest] = useState<{ version: string; versionCode: number; url: string } | null>(null);
+  useEffect(() => { if (WEB && build) fetch(`${WEB}/app-version.json`, { cache: 'no-store' }).then((r) => r.json()).then(setLatest).catch(() => {}); }, [build]);
+  const at = Updates.createdAt;
+  const behind = !!(latest && build && latest.versionCode > build);
+  return (
+    <View style={{ alignItems: 'center', marginTop: 16, gap: 2 }}>
+      <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>
+        Spotter {Constants.expoConfig?.version}{build ? ` · build ${build}` : ''}
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>
+        {Updates.isEmbeddedLaunch || !at ? 'Running the version built into the app' : `Updated ${at.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}, ${at.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`}
+      </ThemedText>
+      {latest && build ? (behind
+        ? <Pressable onPress={() => Linking.openURL(latest.url)} accessibilityRole="link"><ThemedText type="small" style={{ fontSize: 12, color: Lime, fontWeight: '700' }}>Spotter {latest.version} is out: tap to download</ThemedText></Pressable>
+        : <ThemedText type="small" style={{ fontSize: 12, color: Lime }}>Up to date</ThemedText>) : null}
+    </View>
   );
 }
 

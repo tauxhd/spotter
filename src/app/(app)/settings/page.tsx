@@ -1,6 +1,6 @@
 "use client";
 // Settings (from the gear on your profile): your account, quick links, and log out. The app's twin: mobile/src/app/settings.tsx.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight, Lock, LogOut } from "lucide-react";
@@ -13,6 +13,8 @@ export default function Settings() {
   const router = useRouter();
   const { me, signOut, demo, updateProfile } = useStore();
   const [busy, setBusy] = useState(false);
+  const [apk, setApk] = useState("");
+  useEffect(() => { fetch("/app-version.json").then((r) => r.json()).then((v) => setApk(v.version)).catch(() => {}); }, []);
   const q = typeof window !== "undefined" ? location.search : "";
 
   async function logOut() {
@@ -65,6 +67,8 @@ export default function Settings() {
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 font-semibold text-red-600 transition active:scale-[0.98] disabled:opacity-50 dark:text-red-400">
         <LogOut size={18} />{busy ? "Logging out…" : demo ? "Create my own account" : "Log out"}
       </button>
+      {/* the app shows its build here too; the website is always the newest, so it just says so and names the latest APK */}
+      <p className="muted mt-4 text-center text-xs">Spotter web · always the latest version{apk ? <> · Android app {apk}</> : null}</p>
     </div>
   );
 }
