@@ -1,4 +1,5 @@
 // Settings (from the gear on your profile; the website's /settings): your account, quick links, and log out.
+import Constants from 'expo-constants';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronRight, Lock, LogOut } from 'lucide-react-native';
 import { useState } from 'react';
@@ -62,6 +63,10 @@ export default function Settings() {
         style={({ pressed }) => [styles.logout, { opacity: busy ? 0.5 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
         <LogOut size={18} color={Red} /><ThemedText style={{ color: Red, fontWeight: '600' }}>{busy ? 'Logging out…' : 'Log out'}</ThemedText>
       </Pressable>
+      {/* for bug reports: the installed APK's build number tells us which fixes a phone has */}
+      <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: 16, fontSize: 12 }}>
+        Spotter {Constants.expoConfig?.version}{Constants.platform?.android?.versionCode ? ` · build ${Constants.platform.android.versionCode}` : ''}
+      </ThemedText>
     </ScrollView>
   );
 }

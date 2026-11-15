@@ -87,7 +87,7 @@ export function Splash() {
   return (
     <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: theme.background }]}>
       <Animated.View style={anim}><Image source={img('/icon-512.png')} style={{ width: 88, height: 88, borderRadius: 20 }} /></Animated.View>
-      <ThemedText type="smallBold" style={{ marginTop: 16, letterSpacing: 4, color: Lime }}>SPOTTER</ThemedText>
+      <ThemedText type="smallBold" style={{ marginTop: 16, letterSpacing: 4, paddingLeft: 8, color: Lime }}>{'SPOTTER '}</ThemedText>{/* Android sizes spaced-out text short and clipped the R: a trailing space takes the cut (paddingLeft keeps it centred) */}
       <View style={{ marginTop: 20 }}><Loader /></View>
     </View>
   );

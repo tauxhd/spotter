@@ -174,6 +174,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
   const [height, setHeight] = useState('');
   const [age, setAge] = useState('');
   const [bwText, setBwText] = useState<string | null>(null);
+  const [bump, setBump] = useState(0); // the +/- buttons pop the number; typing must not (it remounted the field and shut the keyboard)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -224,7 +225,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
     try { await onSave({ ...p, bw: r(p.bw), squat: r(p.squat), bench: r(p.bench), deadlift: r(p.deadlift), height: h, age: a, goal_bw: r(g) }); }
     catch (x) { setErr(x instanceof Error ? x.message : 'Couldn’t save'); setBusy(false); }
   }
-  const nudgeBw = (d: number) => { tap(); setBwText(null); setP((x) => x && { ...x, bw: Math.min(250, Math.max(30, Math.round((x.bw + d) * 10) / 10)) }); };
+  const nudgeBw = (d: number) => { tap(); setBwText(null); setBump((n) => n + 1); setP((x) => x && { ...x, bw: Math.min(250, Math.max(30, Math.round((x.bw + d) * 10) / 10)) }); };
 
   const cta: Record<string, { label: string; ok: boolean; run: () => void } | null> = {
     hello: { label: 'Start the quest', ok: true, run: next },
@@ -356,7 +357,7 @@ export default function Quest({ onSave }: { onSave: (p: P) => Promise<void> }) {
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 24 }}>
                   <Pressable onPress={() => nudgeBw(-0.5)} accessibilityLabel="Less" style={[styles.round, { backgroundColor: theme.backgroundElement }]}><Minus size={20} color={theme.text} /></Pressable>
-                  <Animated.View key={Math.round(p.bw)} entering={ZoomIn.springify().dampingRatio(0.6).duration(260)} style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                  <Animated.View key={bump} entering={ZoomIn.springify().dampingRatio(0.6).duration(260)} style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
                     <Input value={bwText ?? String(Math.round(toUnit(p.bw, unit) * 10) / 10)} keyboardType="decimal-pad" selectTextOnFocus accessibilityLabel={`Bodyweight in ${unit}`}
                       onChangeText={(t) => { const v = t.replace(',', '.').replace(/[^\d.]/g, ''); setBwText(v); setP({ ...p, bw: fromUnit(Number(v) || 0, unit) }); }}
                       style={[styles.big, { color: theme.text }]} />
