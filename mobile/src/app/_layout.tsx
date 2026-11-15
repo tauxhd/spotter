@@ -14,6 +14,7 @@ import { Splash } from '@/components/ui/kit';
 import { Colors, Lime } from '@/constants/theme';
 import { StoreProvider, useStatus } from '@/lib/store';
 import { meHeaderRight } from '@/components/me-button';
+import UpdateBanner from '@/components/update-banner';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -66,6 +67,7 @@ function Gate() {
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="plan" options={{ headerRight: meHeaderRight, title: 'Nutrition plan' }} />
     </Stack>
+    <UpdateBanner />
     </>
   );
 }
