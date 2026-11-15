@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { timeAgo } from '@shared/data';
-import { isNew, loadNotes, markSeen, SEEN_KEY, type Note, type Seen } from '@shared/notify';
+import { isNew, loadNotes, markSeen, readSeen, writeSeen, type Note, type Seen } from '@shared/notify';
 import Avatar from '@/components/avatar';
 import { StatsSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
@@ -26,11 +26,10 @@ export default function Notifications() {
   const [seen, setSeen] = useState<Seen | null>(null);
 
   useEffect(() => {
-    let before: Seen | null = null;
-    try { before = JSON.parse(localStorage.getItem(SEEN_KEY) ?? 'null'); } catch {}
+    const before = readSeen();
     loadNotes(sb, me.id).then((n) => {
-      setSeen(before); setNotes(n);
-      try { localStorage.setItem(SEEN_KEY, JSON.stringify(markSeen(n))); } catch {}
+      setSeen(before); setNotes(n); // highlight what's new since last time, then mark it all seen (the bell clears too)
+      writeSeen(markSeen(n));
     }).catch(() => setNotes([]));
   }, [me.id, s.rev]);
 

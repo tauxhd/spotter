@@ -4,18 +4,29 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Search } from "lucide-react";
 import MeButton from "./MeButton";
-import { isNew, loadNotes, SEEN_KEY, type Seen } from "@/lib/notify";
+import { isNew, loadNotes, onSeen, readSeen, type Note } from "@/lib/notify";
 import { sb, useStore } from "@/lib/store";
 
 export default function FeedActions() {
   const { me, s, demo } = useStore();
-  const [unseen, setUnseen] = useState(0);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [seen, setSeen] = useState(readSeen);
+  useEffect(() => onSeen(() => setSeen(readSeen())), []); // opening Notifications clears the badge at once
   useEffect(() => {
     if (demo) return;
-    let seen: Seen | null = null;
-    try { seen = JSON.parse(localStorage.getItem(SEEN_KEY) ?? "null"); } catch {}
-    loadNotes(sb, me.id).then((n) => setUnseen(n.filter((x) => isNew(x, seen)).length));
+    let t: ReturnType<typeof setTimeout> | undefined, live = true;
+    const load = () => loadNotes(sb, me.id).then((n) => live && setNotes(n)).catch(() => {});
+    load();
+    // live: someone likes, comments or follows and the badge updates without a reload (batched, ~1 s)
+    const again = () => { clearTimeout(t); t = setTimeout(load, 1000); };
+    const ch = sb.channel(`notes-${me.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "likes" }, again)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments" }, again)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "follows", filter: `followee=eq.${me.id}` }, again)
+      .subscribe();
+    return () => { live = false; clearTimeout(t); sb.removeChannel(ch); };
   }, [me.id, demo, s.rev]);
+  const unseen = notes.filter((x) => isNew(x, seen)).length;
   const q = typeof location === "undefined" ? "" : location.search;
   const btn = "relative grid h-10 w-10 place-items-center rounded-full transition active:scale-95 hover:bg-zinc-100 dark:hover:bg-zinc-900";
   return (

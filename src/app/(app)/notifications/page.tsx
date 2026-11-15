@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Heart, MessageCircle, UserPlus } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import EmptyState from "@/components/EmptyState";
-import { isNew, loadNotes, markSeen, SEEN_KEY, type Note, type Seen } from "@/lib/notify";
+import { isNew, loadNotes, markSeen, readSeen, writeSeen, type Note, type Seen } from "@/lib/notify";
 import { timeAgo } from "@/lib/data";
 import { sb, useStore } from "@/lib/store";
 
@@ -17,11 +17,10 @@ export default function Notifications() {
   const [seen, setSeen] = useState<Seen | null>(null);
 
   useEffect(() => {
-    let before: Seen | null = null;
-    try { before = JSON.parse(localStorage.getItem(SEEN_KEY) ?? "null"); } catch {}
+    const before = readSeen();
     loadNotes(sb, me.id).then((n) => {
-      setSeen(before); setNotes(n);
-      try { localStorage.setItem(SEEN_KEY, JSON.stringify(markSeen(n))); } catch {}
+      setSeen(before); setNotes(n); // highlight what's new since last time, then mark it all seen (the bell clears too)
+      writeSeen(markSeen(n));
     });
   }, [me.id, s.rev]);
 

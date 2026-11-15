@@ -28,3 +28,10 @@ export async function loadNotes(sb: SupabaseClient, uid: string): Promise<Note[]
 export const isNew = (n: Note, seen: Seen | null) => !seen || n.at > seen.at;
 export const markSeen = (notes: Note[]): Seen => ({ at: new Date().toISOString(), likes: notes.filter((n) => n.kind === "like").map((n) => n.key).slice(0, 500) });
 export const SEEN_KEY = "spotter:notesSeen";
+
+// The "seen up to" mark, kept on the device and shared live: opening Notifications writes it, and the bell's badge
+// (FeedActions), subscribed here, clears that instant instead of on the next reload.
+const subs = new Set<() => void>();
+export function readSeen(): Seen | null { try { return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "null"); } catch { return null; } }
+export function writeSeen(s: Seen) { try { localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch {} subs.forEach((f) => f()); }
+export function onSeen(f: () => void) { subs.add(f); return () => { subs.delete(f); }; }
